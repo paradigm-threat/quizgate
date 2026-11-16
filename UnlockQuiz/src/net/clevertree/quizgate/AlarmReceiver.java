@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.DiagnosticsStore;
+
+import java.util.TimeZone;
+
 public class AlarmReceiver extends BroadcastReceiver {
     public static final String ACTION_INTERVAL = "net.clevertree.quizgate.ACTION_INTERVAL";
     public static final String ACTION_MORNING = "net.clevertree.quizgate.ACTION_MORNING";
@@ -17,25 +21,33 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (ACTION_MORNING.equals(action)) trigger = "morning";
         else if (ACTION_DEBUG_FIRE.equals(action)) trigger = "adb_force";
         else trigger = "interval";
+        long now = System.currentTimeMillis();
+        AppPrefs prefs = new AppPrefs(context);
         Log.i(AlarmScheduler.TAG, "alarm fired trigger=" + trigger + " action=" + action);
         if (ACTION_MORNING.equals(action)) {
-            AppPrefs prefs = new AppPrefs(context);
             net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
-            long now = System.currentTimeMillis();
             if (!sched.needsMorningGate(now, prefs.lastClearedDay())) {
                 Log.i(AlarmScheduler.TAG, "morning already cleared today, skip quiz");
-                AlarmScheduler.scheduleMorning(context, sched.nextMorningAlarm(now));
+                long nextMorning = sched.nextMorningAlarm(now);
+                AlarmScheduler.scheduleMorning(context, nextMorning);
+                Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
+                        now, TimeZone.getDefault(), DiagnosticsStore.KIND_SKIP_FIRE, trigger,
+                        "lock", nextMorning, prefs.getIntervalMs(), prefs.getJitterMs(),
+                        null, "morning_already_cleared"));
                 return;
             }
         }
-        // Capture + pause BEFORE showing the quiz so YouTube/audio stop immediately
+        Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
+                now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_FIRED, trigger,
+                "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                null, ""));
         ForegroundApp.captureNow(context);
         try {
             new MediaGate().pauseForQuiz(context);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "pre-quiz media pause", e);
+            Diag.nonFatal(context, "media_pause", e);
         }
-        // Prefer direct activity start (AlarmManager temp allowlist); FGS as backup
         try {
             Intent quiz = new Intent(context, QuizActivity.class);
             quiz.putExtra(QuizActivity.EXTRA_TRIGGER, trigger);

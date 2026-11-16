@@ -25,6 +25,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import net.clevertree.quizgate.core.Catalog;
+import net.clevertree.quizgate.core.DiagBreadcrumb;
+import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.DigitAnswer;
 import net.clevertree.quizgate.core.Question;
@@ -81,6 +83,8 @@ public class QuizActivity extends Activity {
     private boolean finishing;
     private boolean inTransition;
     private boolean mediaResumePending;
+    /** Wall clock when current question was shown (for latency_ms). */
+    private long questionShownAt;
 
     private TextView spoken;
     private TextView symbolic;
@@ -202,7 +206,7 @@ public class QuizActivity extends Activity {
             prefs.setMathEntryMode(getIntent().getStringExtra("math_entry"));
         }
 
-        stats = new StatsStore(new File(getFilesDir(), "stats"));
+        stats = Diag.stats(this);
         activePack = CurriculumStore.getActive(this);
         catalog = CatalogLoader.get(this);
         picker = new QuestionPicker(catalog, random);
@@ -250,6 +254,11 @@ public class QuizActivity extends Activity {
         finishing = false;
         inTransition = false;
         currentAnswered = false;
+        String sessionType = playMode ? "play" : "lock";
+        Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_STARTED,
+                trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                prefs.getResumePackage() != null, ""));
         logEvent("shown", session.getCurrent().id, "", 0);
         bindQuestion(session.getCurrent());
     }
@@ -1090,7 +1099,16 @@ public class QuizActivity extends Activity {
             if (session != null) stats.appendSession(session);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats session", e);
+            Diag.nonFatal(this, "stats_session", e);
         }
+        String sessionType = playMode ? "play" : "lock";
+        String trigger = session != null ? session.getTrigger() : "";
+        String outcome = session != null && session.getOutcome() != null
+                ? session.getOutcome().name().toLowerCase() : "";
+        Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_ENDED,
+                trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                null, outcome));
         ScoreWidgetProvider.refreshAll(this);
         if (!playMode) {
             AlarmScheduler.scheduleAfterSessionEnd(this);
@@ -1109,10 +1127,34 @@ public class QuizActivity extends Activity {
     }
 
     private void logEvent(String type, String qid, String choice, int streak) {
+        long now = clock.nowMillis();
+        long latency = -1L;
+        if ("shown".equals(type)) {
+            questionShownAt = now;
+        } else if (questionShownAt > 0
+                && ("correct".equals(type) || "wrong".equals(type) || "skipped".equals(type))) {
+            latency = Math.max(0L, now - questionShownAt);
+        }
+        String sessionType = playMode ? "play" : "lock";
+        String curriculumId = prefs.getActiveCurriculumId();
         try {
-            stats.appendEvent(new StatsEvent(clock.nowMillis(), session.getSessionId(), type, qid, choice, streak));
+            stats.appendEvent(new StatsEvent(now, session.getSessionId(), type, qid, choice, streak,
+                    latency, curriculumId, sessionType), TimeZone.getDefault());
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats event", e);
+            Diag.nonFatal(this, "stats_event", e);
+        }
+        if ("correct".equals(type) || "wrong".equals(type) || "skipped".equals(type)
+                || "bypass".equals(type) || "consoling".equals(type)) {
+            Diag.breadcrumb(this, DiagBreadcrumb.builder(now, DiagnosticsStore.KIND_QUIZ)
+                    .sessionType(sessionType)
+                    .curriculumId(curriculumId)
+                    .questionId(qid)
+                    .outcome(type)
+                    .latencyMs(latency)
+                    .missStreak(streak)
+                    .trigger(session != null ? session.getTrigger() : "")
+                    .build());
         }
         if ("shown".equals(type) || "correct".equals(type) || "wrong".equals(type) || "skipped".equals(type)) {
             refreshQuizDayStats();

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup / device transfer: only files/stats/ (quiz rollups + diagnostics).
+  Excludes SharedPreferences (may hold resume package) and other private files.
+  pm clear / fresh install without cloud restore still wipes local data — see docs/TELEMETRY.md.
+-->
+<full-backup-content>
+    <include domain="file" path="stats"/>
+</full-backup-content>

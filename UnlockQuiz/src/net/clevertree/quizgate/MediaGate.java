@@ -25,7 +25,8 @@ public final class MediaGate {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     public void pauseForQuiz(Context ctx) {
-        audioManager = (AudioManager) ctx.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        Context app = ctx.getApplicationContext();
+        audioManager = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
         if (audioManager == null) return;
         shouldResume = audioManager.isMusicActive();
         requestExclusiveTransientFocus();
@@ -33,6 +34,14 @@ public final class MediaGate {
         dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
         handler.postDelayed(() -> dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE), 180);
         Log.i(TAG, "media pause for quiz wasPlaying=" + shouldResume + " focus=" + heldFocus);
+        try {
+            Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
+                            System.currentTimeMillis(),
+                            net.clevertree.quizgate.core.DiagnosticsStore.KIND_MEDIA)
+                    .mediaFocus(heldFocus)
+                    .message(shouldResume ? "was_playing" : "idle")
+                    .build());
+        } catch (Exception ignored) {}
     }
 
     public void resumeAfterQuiz() {
