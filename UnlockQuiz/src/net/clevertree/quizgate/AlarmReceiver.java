@@ -28,11 +28,20 @@ public class AlarmReceiver extends BroadcastReceiver {
                 return;
             }
         }
-        // Prefer direct activity start (AlarmManager temp allowlist); FGS as backup for fullscreen notif
+        // Capture + pause BEFORE showing the quiz so YouTube/audio stop immediately
+        ForegroundApp.captureNow(context);
+        try {
+            new MediaGate().pauseForQuiz(context);
+        } catch (Exception e) {
+            Log.e(AlarmScheduler.TAG, "pre-quiz media pause", e);
+        }
+        // Prefer direct activity start (AlarmManager temp allowlist); FGS as backup
         try {
             Intent quiz = new Intent(context, QuizActivity.class);
             quiz.putExtra(QuizActivity.EXTRA_TRIGGER, trigger);
-            quiz.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            quiz.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
             context.startActivity(quiz);
             Log.i(AlarmScheduler.TAG, "started QuizActivity from receiver");
         } catch (Exception e) {

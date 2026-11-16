@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="net.clevertree.quizgate"
     android:versionCode="1"
     android:versionName="1.0">
@@ -20,6 +21,9 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Special access: detect previous app so unlock returns to YouTube/games effortlessly -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions"/>
 
     <application
         android:label="@string/app_name"
@@ -49,6 +53,8 @@
         <activity
             android:name=".QuizActivity"
             android:exported="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"

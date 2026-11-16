@@ -140,4 +140,17 @@ public final class AppPrefs {
         }
         sp.edit().putString("photo_source", source).apply();
     }
+
+    /** Package to bring back after a soft-gate unlock (YouTube, game, …). */
+    public String getResumePackage() {
+        return sp.getString("resume_package", null);
+    }
+
+    public void setResumePackage(String pkg) {
+        if (pkg == null || pkg.isEmpty()) {
+            sp.edit().remove("resume_package").apply();
+        } else {
+            sp.edit().putString("resume_package", pkg).apply();
+        }
+    }
 }

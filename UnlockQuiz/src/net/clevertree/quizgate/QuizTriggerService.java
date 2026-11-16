@@ -18,9 +18,17 @@ public class QuizTriggerService extends Service {
         String trigger = intent != null ? intent.getStringExtra(QuizActivity.EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
         ensureChannel();
+        ForegroundApp.captureNow(this);
+        try {
+            new MediaGate().pauseForQuiz(this);
+        } catch (Exception e) {
+            Log.e(AlarmScheduler.TAG, "FGS media pause", e);
+        }
         Intent quiz = new Intent(this, QuizActivity.class);
         quiz.putExtra(QuizActivity.EXTRA_TRIGGER, trigger);
-        quiz.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        quiz.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
         PendingIntent pi = PendingIntent.getActivity(this, 0, quiz,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 

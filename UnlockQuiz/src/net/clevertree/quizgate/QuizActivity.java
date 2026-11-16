@@ -62,6 +62,8 @@ public class QuizActivity extends Activity {
     private final SystemClock clock = new SystemClock();
     private final Random random = new Random();
     private final MediaGate mediaGate = new MediaGate();
+    /** When false (Home leave), do not yank the child back into the previous app. */
+    private boolean restorePreviousApp = true;
 
     private QuizSession session;
     private CurriculumPack activePack;
@@ -121,10 +123,13 @@ public class QuizActivity extends Activity {
                         | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
                         | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         setContentView(R.layout.activity_quiz);
-        // Pause YouTube / music while the quiz is up
-        mediaGate.pauseForQuiz(this);
-
         prefs = new AppPrefs(this);
+        // Capture previous app if alarm path missed it (e.g. Test quiz / ADB)
+        if (prefs.getResumePackage() == null) {
+            ForegroundApp.captureNow(this);
+        }
+        // Pause YouTube / music / game audio while the quiz is up
+        mediaGate.pauseForQuiz(this);
         spoken = findViewById(R.id.spoken);
         symbolic = findViewById(R.id.symbolic);
         digitAnswerView = findViewById(R.id.digit_answer);
@@ -203,15 +208,17 @@ public class QuizActivity extends Activity {
 
     @Override protected void onUserLeaveHint() {
         super.onUserLeaveHint();
-        // Bypass: leaving without answering — do not reopen
+        // Home / Recents: soft bypass — stay where the child went (usually Home)
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
+            restorePreviousApp = false;
             finishWithBypass();
         }
     }
 
     @Override public void onBackPressed() {
-        // Treat back as bypass (soft)
+        // Back: soft bypass, then return to the app they were in
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
+            restorePreviousApp = true;
             finishWithBypass();
         } else if (!inTransition) {
             super.onBackPressed();
@@ -891,6 +898,16 @@ public class QuizActivity extends Activity {
             Log.e(AlarmScheduler.TAG, "stats session", e);
         }
         AlarmScheduler.scheduleAfterSessionEnd(this);
+        // Bring YouTube / game / whatever back before we disappear
+        if (restorePreviousApp) {
+            try {
+                ForegroundApp.restore(this);
+            } catch (Exception e) {
+                Log.e(AlarmScheduler.TAG, "restore previous app", e);
+            }
+        } else {
+            new AppPrefs(this).setResumePackage(null);
+        }
         finish();
     }
 

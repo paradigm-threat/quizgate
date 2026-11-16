@@ -10,7 +10,7 @@
     <string name="fail_title">Oh well, better luck next time!</string>
     <string name="success_title">Great job!</string>
     <string name="setup_title">QuizGate</string>
-    <string name="setup_body">Soft quiz on your schedule plus each morning.\n\nTap Arm to grant permissions and schedule.</string>
+    <string name="setup_body">Soft quiz on your schedule plus each morning.\n\nTap Arm to grant permissions and schedule.\nUsage access lets QuizGate pause distractions and return to the app she was just using.</string>
     <string name="setup_arm">Arm scheduling</string>
     <string name="setup_force">Test quiz now</string>
     <string name="setup_schedule_label">Quiz schedule</string>

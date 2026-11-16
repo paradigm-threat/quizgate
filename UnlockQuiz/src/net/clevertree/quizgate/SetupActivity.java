@@ -234,8 +234,17 @@ public class SetupActivity extends Activity {
         AlarmScheduler.armAll(this);
         requestPerms();
         requestBattery();
+        requestUsageAccess();
         Toast.makeText(this, "Armed", Toast.LENGTH_SHORT).show();
         refreshStatus();
+    }
+
+    private void requestUsageAccess() {
+        if (ForegroundApp.hasUsageAccess(this)) return;
+        Toast.makeText(this,
+                "Turn on Usage access for QuizGate — so unlock returns to the last app",
+                Toast.LENGTH_LONG).show();
+        ForegroundApp.openUsageAccessSettings(this);
     }
 
     private void requestPerms() {
@@ -309,6 +318,8 @@ public class SetupActivity extends Activity {
             boolean ign = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
             sb.append("\nBattery unrestricted: ").append(ign ? "yes" : "NO — tap Arm");
         }
+        sb.append("\nUsage access (return to last app): ")
+                .append(ForegroundApp.hasUsageAccess(this) ? "yes" : "NO — tap Arm");
         status.setText(sb.toString());
     }
 

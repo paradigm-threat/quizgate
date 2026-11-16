@@ -11,9 +11,9 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 /**
- * Soft-pause whatever is playing (YouTube, music, etc.) when the quiz appears,
- * then try to resume after unlock. Uses audio focus + media key events — no
- * Accessibility Service required. Resume is best-effort (apps may ignore play).
+ * Soft-pause whatever is playing (YouTube, music, games with audio) when the quiz
+ * appears, then resume after unlock. Uses exclusive transient audio focus + media
+ * key events — no Accessibility Service required. Resume is best-effort.
  */
 public final class MediaGate {
     private static final String TAG = AlarmScheduler.TAG;
@@ -28,40 +28,56 @@ public final class MediaGate {
         audioManager = (AudioManager) ctx.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
         if (audioManager == null) return;
         shouldResume = audioManager.isMusicActive();
-        requestTransientFocus();
-        // Explicit pause helps players that duck instead of stopping on focus loss
+        requestExclusiveTransientFocus();
+        // Explicit pause helps players that only duck on focus loss (YouTube, etc.)
         dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-        Log.i(TAG, "media pause for quiz wasPlaying=" + shouldResume);
+        handler.postDelayed(() -> dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE), 180);
+        Log.i(TAG, "media pause for quiz wasPlaying=" + shouldResume + " focus=" + heldFocus);
     }
 
     public void resumeAfterQuiz() {
         handler.postDelayed(() -> {
             try {
+                // Abandon focus first so the previous player is eligible to resume
+                abandonFocus();
                 if (shouldResume) {
-                    dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-                    Log.i(TAG, "media resume after quiz");
+                    handler.postDelayed(() -> {
+                        dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
+                        Log.i(TAG, "media resume after quiz");
+                    }, 200);
                 }
             } finally {
-                abandonFocus();
                 shouldResume = false;
             }
-        }, 450);
+        }, 350);
     }
 
-    private void requestTransientFocus() {
+    private void requestExclusiveTransientFocus() {
         if (audioManager == null) return;
         try {
             AudioAttributes attrs = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build();
-            focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            // EXCLUSIVE: tell players (incl. YouTube) to pause, not merely duck
+            focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
                     .setAudioAttributes(attrs)
                     .setOnAudioFocusChangeListener(focusChange -> {})
                     .setAcceptsDelayedFocusGain(false)
+                    .setWillPauseWhenDucked(true)
                     .build();
             int r = audioManager.requestAudioFocus(focusRequest);
             heldFocus = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+            if (!heldFocus) {
+                // Fallback if exclusive is denied
+                focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                        .setAudioAttributes(attrs)
+                        .setOnAudioFocusChangeListener(focusChange -> {})
+                        .setAcceptsDelayedFocusGain(false)
+                        .build();
+                r = audioManager.requestAudioFocus(focusRequest);
+                heldFocus = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+            }
         } catch (Exception e) {
             Log.e(TAG, "audio focus request failed", e);
         }
