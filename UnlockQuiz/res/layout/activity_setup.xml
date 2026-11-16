@@ -40,6 +40,41 @@
             android:textSize="17sp"
             android:gravity="center"/>
 
+        <LinearLayout
+            android:id="@+id/setup_req_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/setup_req_card">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/setup_req_title"
+                android:textColor="@color/header"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/setup_req_intro"
+                android:textColor="@color/header"
+                android:textSize="14sp"
+                android:gravity="center"/>
+
+            <LinearLayout
+                android:id="@+id/setup_req_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"/>
+        </LinearLayout>
+
         <!-- Today's stats -->
         <LinearLayout
             android:id="@+id/stats_card"
@@ -361,41 +396,6 @@
             android:textSize="16sp"
             android:backgroundTint="@color/symbolic"
             android:textColor="#FFFFFF"/>
-
-        <LinearLayout
-            android:id="@+id/setup_req_card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="@drawable/setup_req_card">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/setup_req_title"
-                android:textColor="@color/header"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:gravity="center"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/setup_req_intro"
-                android:textColor="@color/header"
-                android:textSize="14sp"
-                android:gravity="center"/>
-
-            <LinearLayout
-                android:id="@+id/setup_req_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="vertical"/>
-        </LinearLayout>
 
         <TextView
             android:id="@+id/setup_status"
