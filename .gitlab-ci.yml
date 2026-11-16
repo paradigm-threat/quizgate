@@ -34,16 +34,22 @@ android-apk:
     - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq wget unzip curl python3 > /dev/null
     - mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
     - |
-      cd /tmp
-      wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-      unzip -q cmdtools.zip
+      set -euo pipefail
+      TMP="$(mktemp -d)"
+      wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O "$TMP/cmdtools.zip"
+      unzip -q "$TMP/cmdtools.zip" -d "$TMP"
       rm -rf "$ANDROID_SDK_ROOT/cmdline-tools/latest"
       mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-      mv cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+      mv "$TMP"/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+      rm -rf "$TMP"
+      # Stay in project dir — GitLab keeps one shell across script lines
+      cd "$CI_PROJECT_DIR"
     - export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
     - yes | sdkmanager --licenses >/dev/null || true
     - sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+    - cd "$CI_PROJECT_DIR"
   script:
+    - cd "$CI_PROJECT_DIR"
     - export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/34.0.0:$PATH"
     - chmod +x scripts/*.sh
     - ./scripts/build_apk.sh
