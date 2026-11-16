@@ -10,8 +10,9 @@ import java.util.TimeZone;
  * Local privacy-safe diagnostics under {@code files/stats/diagnostics/}.
  * Ring-buffered JSONL (line + byte caps). No network I/O.
  *
- * <p>Schedule kinds: {@code alarm_scheduled}, {@code alarm_fired}, {@code quiz_started},
- * {@code quiz_ended}, {@code skip_fire}, {@code arm}.
+ * <p>Schedule kinds: {@code alarm_scheduled}, {@code alarm_fired}, {@code launch_attempt},
+ * {@code bal_blocked}, {@code launch_ok}, {@code quiz_started}, {@code quiz_ended},
+ * {@code skip_fire}, {@code arm}.
  */
 public final class DiagnosticsStore {
     public static final int MAX_BREADCRUMBS = 500;
@@ -24,6 +25,9 @@ public final class DiagnosticsStore {
 
     public static final String KIND_ALARM_SCHEDULED = "alarm_scheduled";
     public static final String KIND_ALARM_FIRED = "alarm_fired";
+    public static final String KIND_LAUNCH_ATTEMPT = "launch_attempt";
+    public static final String KIND_BAL_BLOCKED = "bal_blocked";
+    public static final String KIND_LAUNCH_OK = "launch_ok";
     public static final String KIND_QUIZ_STARTED = "quiz_started";
     public static final String KIND_QUIZ_ENDED = "quiz_ended";
     public static final String KIND_SKIP_FIRE = "skip_fire";

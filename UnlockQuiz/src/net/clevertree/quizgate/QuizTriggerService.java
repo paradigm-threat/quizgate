@@ -1,73 +1,74 @@
 package net.clevertree.quizgate;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.DiagnosticsStore;
+
+import java.util.TimeZone;
+
+/**
+ * Foreground-service reinforcement for quiz launch under BAL.
+ * Posts the FSI notification via {@link QuizLaunch} and sends the PendingIntent.
+ */
 public class QuizTriggerService extends Service {
-    private static final String CHANNEL = "unlock_quiz";
-    private static final int NOTIF_ID = 42;
+    private static final long STOP_AFTER_MS = 8_000L;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         String trigger = intent != null ? intent.getStringExtra(QuizActivity.EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
-        ensureChannel();
         ForegroundApp.captureNow(this);
         try {
             new MediaGate().pauseForQuiz(this);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "FGS media pause", e);
         }
-        Intent quiz = new Intent(this, QuizActivity.class);
-        quiz.putExtra(QuizActivity.EXTRA_TRIGGER, trigger);
-        quiz.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, quiz,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Notification.Builder b;
-        if (Build.VERSION.SDK_INT >= 26) {
-            b = new Notification.Builder(this, CHANNEL);
+        AppPrefs prefs = new AppPrefs(this);
+        long now = System.currentTimeMillis();
+        Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                now, TimeZone.getDefault(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger,
+                "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                null, "path=fgs"));
+
+        boolean ok = QuizLaunch.launchFromService(this, trigger);
+        if (ok) {
+            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                    System.currentTimeMillis(), TimeZone.getDefault(),
+                    DiagnosticsStore.KIND_LAUNCH_OK, trigger, "lock",
+                    prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, "path=fgs_fsi_send"));
+            Log.i(AlarmScheduler.TAG, "FGS FSI send ok trigger=" + trigger);
         } else {
-            b = new Notification.Builder(this);
+            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                    System.currentTimeMillis(), TimeZone.getDefault(),
+                    DiagnosticsStore.KIND_BAL_BLOCKED, trigger, "lock",
+                    prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, "path=fgs_fsi_send_fail"));
+            Log.e(AlarmScheduler.TAG, "FGS FSI send failed trigger=" + trigger);
         }
-        Notification n = b.setContentTitle(getString(R.string.notif_title))
-                .setContentText(getString(R.string.notif_text))
-                .setSmallIcon(R.drawable.ic_stat_quizgate)
-                .setContentIntent(pi)
-                .setFullScreenIntent(pi, true)
-                .setCategory(Notification.CATEGORY_ALARM)
-                .setPriority(Notification.PRIORITY_MAX)
-                .setAutoCancel(true)
-                .build();
-        startForeground(NOTIF_ID, n);
-        try {
-            startActivity(quiz);
-        } catch (Exception e) {
-            Log.e(AlarmScheduler.TAG, "start QuizActivity failed", e);
-        }
-        // Stop shortly; no relaunch loop
-        stopForeground(true);
-        stopSelf();
+
+        final int sid = startId;
+        handler.postDelayed(() -> {
+            try {
+                stopForeground(Service.STOP_FOREGROUND_DETACH);
+            } catch (Exception ignored) {
+                try { stopForeground(false); } catch (Exception ignored2) {}
+            }
+            stopSelf(sid);
+        }, STOP_AFTER_MS);
         return START_NOT_STICKY;
     }
 
-    private void ensureChannel() {
-        if (Build.VERSION.SDK_INT < 26) return;
-        NotificationChannel ch = new NotificationChannel(CHANNEL,
-                getString(R.string.notif_channel), NotificationManager.IMPORTANCE_HIGH);
-        ch.setDescription("Toddler unlock quiz triggers");
-        ch.setBypassDnd(true);
-        NotificationManager nm = getSystemService(NotificationManager.class);
-        nm.createNotificationChannel(ch);
-    }
-
     @Override public IBinder onBind(Intent intent) { return null; }
+
+    @Override public void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDestroy();
+    }
 }

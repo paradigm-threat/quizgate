@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 
 import net.clevertree.quizgate.core.DiagnosticsStore;
@@ -103,34 +104,58 @@ public final class AlarmScheduler {
 
     private static void setExact(Context ctx, long atMs, int req, String action) {
         AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(ctx, AlarmReceiver.class).setAction(action);
-        PendingIntent pi = PendingIntent.getBroadcast(ctx, req, i,
+        // Activity PendingIntent: AlarmManagerService sends it; creator must opt into
+        // background starts (ALLOW_ALWAYS on API 36+) or Android 15+ BAL-blocks.
+        Intent gate = new Intent(ctx, AlarmGateActivity.class).setAction(action);
+        gate.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
+        Bundle balOpts = QuizLaunch.backgroundStartOptions();
+        PendingIntent pi = balOpts != null
+                ? PendingIntent.getActivity(ctx, req, gate, flags, balOpts)
+                : PendingIntent.getActivity(ctx, req, gate, flags);
+        Intent show = new Intent(ctx, SetupActivity.class);
+        show.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent showPi = PendingIntent.getActivity(ctx, req + 50, show,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        try {
+            AlarmManager.AlarmClockInfo info = new AlarmManager.AlarmClockInfo(atMs, showPi);
+            am.setAlarmClock(info, pi);
+            Log.i(TAG, "alarm_clock activity action=" + action + " at=" + atMs);
+            return;
+        } catch (SecurityException se) {
+            Log.e(TAG, "setAlarmClock SecurityException — falling back", se);
+        } catch (Exception e) {
+            Log.e(TAG, "setAlarmClock failed — falling back", e);
+        }
+        // Broadcast fallback still reaches AlarmReceiver → QuizLaunch FSI path.
+        Intent broadcast = new Intent(ctx, AlarmReceiver.class).setAction(action);
+        PendingIntent bPi = PendingIntent.getBroadcast(ctx, req, broadcast,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
             if (Build.VERSION.SDK_INT >= 31) {
                 boolean canExact = am.canScheduleExactAlarms();
                 if (canExact) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
-                    Log.i(TAG, "exact alarm action=" + action + " at=" + atMs);
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, bPi);
+                    Log.i(TAG, "exact alarm broadcast action=" + action + " at=" + atMs);
                 } else {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, bPi);
                     Log.w(TAG, "INEXACT fallback action=" + action + " at=" + atMs
                             + " — open exact-alarm settings");
                 }
             } else {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
-                Log.i(TAG, "exact alarm action=" + action + " at=" + atMs);
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, bPi);
+                Log.i(TAG, "exact alarm broadcast action=" + action + " at=" + atMs);
             }
         } catch (SecurityException se) {
             Log.e(TAG, "setExact SecurityException — exact alarm revoked", se);
             try {
-                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, bPi);
             } catch (Exception e2) {
-                am.set(AlarmManager.RTC_WAKEUP, atMs, pi);
+                am.set(AlarmManager.RTC_WAKEUP, atMs, bPi);
             }
         } catch (Exception e) {
             Log.e(TAG, "setExact failed", e);
-            am.set(AlarmManager.RTC_WAKEUP, atMs, pi);
+            am.set(AlarmManager.RTC_WAKEUP, atMs, bPi);
         }
     }
 }

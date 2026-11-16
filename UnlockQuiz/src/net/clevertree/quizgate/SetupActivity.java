@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -26,8 +28,11 @@ import java.util.List;
 import java.util.TimeZone;
 
 public class SetupActivity extends Activity {
+    private static final long COUNTDOWN_TICK_MS = 30_000L;
+
     private TextView status;
     private TextView minutesJar;
+    private TextView nextQuiz;
     private View statsCard;
     private TextView statsMood;
     private TextView statsAskedNum;
@@ -40,14 +45,23 @@ public class SetupActivity extends Activity {
     private TextView intervalValue;
     private TextView jitterValue;
     private TextView windowValue;
+    private Button addWidget;
     private final List<CurriculumPack> packList = new ArrayList<>();
     private boolean suppressSpinner;
+    private final Handler countdownHandler = new Handler(Looper.getMainLooper());
+    private final Runnable countdownTick = new Runnable() {
+        @Override public void run() {
+            refreshCountdown();
+            countdownHandler.postDelayed(this, COUNTDOWN_TICK_MS);
+        }
+    };
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setup);
         status = findViewById(R.id.setup_status);
         minutesJar = findViewById(R.id.minutes_jar);
+        nextQuiz = findViewById(R.id.setup_next_quiz);
         statsCard = findViewById(R.id.stats_card);
         statsMood = findViewById(R.id.stats_mood);
         statsAskedNum = findViewById(R.id.stats_asked_num);
@@ -62,6 +76,7 @@ public class SetupActivity extends Activity {
         windowValue = findViewById(R.id.setup_window_value);
         Button arm = findViewById(R.id.btn_arm);
         Button force = findViewById(R.id.btn_force);
+        addWidget = findViewById(R.id.btn_add_widget);
         Button syncNow = findViewById(R.id.btn_sync_now);
 
         AppPrefs prefs = new AppPrefs(this);
@@ -91,6 +106,9 @@ public class SetupActivity extends Activity {
             i.putExtra(QuizActivity.EXTRA_TRIGGER, "adb_force");
             startActivity(i);
         });
+        if (addWidget != null) {
+            addWidget.setOnClickListener(v -> requestHomeWidget());
+        }
         bindCurriculumSpinners();
         applyDevExtras(getIntent());
         refreshScheduleLabels();
@@ -193,7 +211,25 @@ public class SetupActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         applyDevExtras(intent);
+        if (intent != null && intent.getBooleanExtra(ScoreWidgetProvider.EXTRA_WIDGET_PINNED, false)) {
+            Toast.makeText(this, R.string.setup_widget_pinned, Toast.LENGTH_SHORT).show();
+            ScoreWidgetProvider.refreshAll(this);
+        }
         refreshStatus();
+    }
+
+    private void requestHomeWidget() {
+        if (ScoreWidgetProvider.isPinned(this)) {
+            Toast.makeText(this, R.string.setup_widget_pinned, Toast.LENGTH_SHORT).show();
+            refreshWidgetButton();
+            return;
+        }
+        boolean prompted = ScoreWidgetProvider.requestPin(this);
+        if (prompted) {
+            Toast.makeText(this, R.string.setup_widget_pin_prompt, Toast.LENGTH_SHORT).show();
+        } else {
+            ScoreWidgetProvider.toastManualAddPath(this);
+        }
     }
 
     private void applyDevExtras(Intent in) {
@@ -218,12 +254,29 @@ public class SetupActivity extends Activity {
         if (in.getBooleanExtra("auto_arm", false)) {
             armNow();
         }
+        // Smoke: schedule next interval fire in N ms without changing stored 30±15 prefs.
+        if (in.hasExtra("next_in_ms")) {
+            long delay = in.getLongExtra("next_in_ms", 0);
+            if (delay > 0) {
+                long at = System.currentTimeMillis() + delay;
+                AlarmScheduler.scheduleInterval(this, at);
+                prefs.setNextAlarmAt(at);
+                android.util.Log.i(AlarmScheduler.TAG, "dev next_in_ms=" + delay + " at=" + at);
+            }
+        }
         refreshScheduleLabels();
     }
 
     @Override protected void onResume() {
         super.onResume();
         refreshStatus();
+        countdownHandler.removeCallbacks(countdownTick);
+        countdownHandler.post(countdownTick);
+    }
+
+    @Override protected void onPause() {
+        countdownHandler.removeCallbacks(countdownTick);
+        super.onPause();
     }
 
     private void armNow() {
@@ -268,6 +321,8 @@ public class SetupActivity extends Activity {
     private void refreshStatus() {
         AppPrefs p = new AppPrefs(this);
         refreshDayStats();
+        refreshCountdown();
+        refreshWidgetButton();
         if (minutesJar != null) {
             minutesJar.setText("Minutes jar: " + p.getMinutesBalance());
         }
@@ -281,11 +336,32 @@ public class SetupActivity extends Activity {
         sb.append(" · tier ").append(p.getActiveTier());
         sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (Wi‑Fi)" : "off");
         sb.append("\nMath entry: ").append(p.getMathEntryMode());
-        if (p.nextAlarmAt() > 0) {
-            sb.append("\nNext alarm at: ").append(p.nextAlarmAt());
-        }
+        sb.append("\nHome widget: ").append(ScoreWidgetProvider.isPinned(this) ? "pinned" : "not pinned");
         ScheduleAuth.appendStatus(sb, this);
         status.setText(sb.toString());
+    }
+
+    private void refreshCountdown() {
+        if (nextQuiz == null) return;
+        AppPrefs p = new AppPrefs(this);
+        if (!p.isArmed() || p.nextAlarmAt() <= 0L) {
+            nextQuiz.setText(R.string.setup_next_quiz_unarmed);
+            return;
+        }
+        long mins = Scheduler.minutesUntil(p.nextAlarmAt(), System.currentTimeMillis());
+        if (mins <= 0L) {
+            nextQuiz.setText(R.string.setup_next_quiz_due);
+        } else {
+            nextQuiz.setText(getString(R.string.setup_next_quiz_armed, mins));
+        }
+    }
+
+    private void refreshWidgetButton() {
+        if (addWidget == null) return;
+        boolean pinned = ScoreWidgetProvider.isPinned(this);
+        addWidget.setEnabled(!pinned);
+        addWidget.setText(pinned ? R.string.setup_widget_pinned : R.string.setup_add_widget);
+        addWidget.setAlpha(pinned ? 0.55f : 1f);
     }
 
     private void refreshDayStats() {

@@ -140,6 +140,17 @@ public final class Scheduler {
         return mins + " min";
     }
 
+    /**
+     * Whole minutes until {@code nextAtMs}, rounded up.
+     * Returns {@code -1} when unset, {@code 0} when due or past.
+     */
+    public static long minutesUntil(long nextAtMs, long nowMs) {
+        if (nextAtMs <= 0L) return -1L;
+        long rem = nextAtMs - nowMs;
+        if (rem <= 0L) return 0L;
+        return (rem + 59_999L) / 60_000L;
+    }
+
     public static String formatWindow(long intervalMs, long jitterMs) {
         Scheduler s = new Scheduler(TimeZone.getDefault(), intervalMs, jitterMs, null);
         return formatMinutes(s.windowMinMs()) + " – " + formatMinutes(s.windowMaxMs());

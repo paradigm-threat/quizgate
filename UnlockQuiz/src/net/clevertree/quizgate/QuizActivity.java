@@ -184,11 +184,18 @@ public class QuizActivity extends Activity {
 
         String trigger = getIntent() != null ? getIntent().getStringExtra(EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
+        QuizLaunch.cancelNotification(this);
         // Resume-only intents (legacy StatsActivity Back) must not start a new round
         if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_RESUME_ONLY, false)) {
             playMode = true;
             restorePreviousApp = false;
             return;
+        }
+        if (!TRIGGER_PLAY.equals(trigger)) {
+            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                    clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_LAUNCH_OK,
+                    trigger, "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                    prefs.getResumePackage() != null, "path=activity_visible"));
         }
         playMode = TRIGGER_PLAY.equals(trigger);
         if (playMode) {

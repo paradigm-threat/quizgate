@@ -24,7 +24,15 @@
     <string name="widget_score_ready">Ready!</string>
     <string name="widget_score_line">%1$d / %2$d</string>
     <string name="widget_score_label">today</string>
+    <string name="widget_picker_label">Today\'s score</string>
     <string name="widget_description">Today\'s QuizGate score — tap to play</string>
+    <string name="setup_add_widget">Add home score widget</string>
+    <string name="setup_widget_pinned">Score widget is on the home screen</string>
+    <string name="setup_widget_pin_prompt">Confirm the system prompt to place the widget</string>
+    <string name="setup_widget_pin_unsupported">Long-press the home screen → Widgets → QuizGate → Today\'s score</string>
+    <string name="setup_next_quiz_armed">Next quiz in ~%1$d min</string>
+    <string name="setup_next_quiz_due">Next quiz due now</string>
+    <string name="setup_next_quiz_unarmed">Arm scheduling to see the next quiz countdown</string>
     <string name="setup_title">QuizGate</string>
     <string name="setup_body">Soft quiz on your schedule plus each morning.\n\nTap Arm to grant permissions and schedule.\nUsage access lets QuizGate pause distractions and return to the app that was just in use.</string>
     <string name="setup_arm">Arm scheduling</string>

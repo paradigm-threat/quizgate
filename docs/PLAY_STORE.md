@@ -77,7 +77,7 @@ Upload order suggestion for screenshots:
 6. `07_stats_history.jpg` — multi-day scores  
 7. `02_onboarding_photos.jpg`  
 
-Captured on SM-X210 (Galaxy Tab A9+) after `pm clear` + seeded demo stats (no personal names/packages). Recapture helper: `SERIAL=<id> ./scripts/capture_play_screenshots.sh`. Score widget not pinned on the demo device — no `08_score_widget.jpg` yet.
+Captured on SM-X210 (Galaxy Tab A9+) after `pm clear` + seeded demo stats (no personal names/packages). Recapture helper: `SERIAL=<id> ./scripts/capture_play_screenshots.sh`. Score widget is **not** auto-pinned — use Setup → **Add home score widget** (or Widgets picker → QuizGate → Today's score), then recapture `08_score_widget.jpg`. See [`WIDGET.md`](WIDGET.md).
 
 > These frames are landscape tablet. For **phone** form-factor slots, capture a phone in portrait (1080×1920+) if Play asks for phone-specific screenshots. Tablet screenshots can fill the **7-inch / 10-inch tablet** slots.
 

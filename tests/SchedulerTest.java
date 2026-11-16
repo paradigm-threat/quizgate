@@ -62,6 +62,12 @@ public class SchedulerTest {
                 Scheduler.formatWindow(Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS),
                 "format window");
 
+        Assert.eq(-1L, Scheduler.minutesUntil(0L, t10), "unset next");
+        Assert.eq(0L, Scheduler.minutesUntil(t10, t10), "due now");
+        Assert.eq(0L, Scheduler.minutesUntil(t10 - 1, t10), "past due");
+        Assert.eq(12L, Scheduler.minutesUntil(t10 + 12L * 60L * 1000L, t10), "exact 12m");
+        Assert.eq(1L, Scheduler.minutesUntil(t10 + 1L, t10), "round up 1ms");
+
         System.out.println("SchedulerTest OK");
     }
 

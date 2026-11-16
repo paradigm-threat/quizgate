@@ -36,6 +36,7 @@ public final class ScheduleAuth {
         NOTIFICATIONS,
         BATTERY,
         FULL_SCREEN_INTENT,
+        OVERLAY,
         USAGE_STATS
     }
 
@@ -45,15 +46,18 @@ public final class ScheduleAuth {
         public final boolean batteryUnrestricted;
         public final boolean notifications;
         public final boolean fullScreenIntent;
+        public final boolean overlay;
         public final boolean usageStats;
 
         Snapshot(long ts, boolean exactAlarm, boolean batteryUnrestricted,
-                 boolean notifications, boolean fullScreenIntent, boolean usageStats) {
+                 boolean notifications, boolean fullScreenIntent, boolean overlay,
+                 boolean usageStats) {
             this.ts = ts;
             this.exactAlarm = exactAlarm;
             this.batteryUnrestricted = batteryUnrestricted;
             this.notifications = notifications;
             this.fullScreenIntent = fullScreenIntent;
+            this.overlay = overlay;
             this.usageStats = usageStats;
         }
 
@@ -62,6 +66,7 @@ public final class ScheduleAuth {
                     + " batt=" + bit(batteryUnrestricted)
                     + " notif=" + bit(notifications)
                     + " fsi=" + bit(fullScreenIntent)
+                    + " overlay=" + bit(overlay)
                     + " usage=" + bit(usageStats);
         }
 
@@ -70,6 +75,7 @@ public final class ScheduleAuth {
             if (!notifications) return Gap.NOTIFICATIONS;
             if (!batteryUnrestricted) return Gap.BATTERY;
             if (!fullScreenIntent) return Gap.FULL_SCREEN_INTENT;
+            if (!overlay) return Gap.OVERLAY;
             if (!usageStats) return Gap.USAGE_STATS;
             return Gap.NONE;
         }
@@ -109,8 +115,12 @@ public final class ScheduleAuth {
             NotificationManager nm = ctx.getSystemService(NotificationManager.class);
             fsi = nm != null && nm.canUseFullScreenIntent();
         }
+        boolean overlay = true;
+        if (Build.VERSION.SDK_INT >= 23) {
+            overlay = Settings.canDrawOverlays(ctx);
+        }
         boolean usage = ForegroundApp.hasUsageAccess(ctx);
-        return new Snapshot(ts, exact, batt, notif, fsi, usage);
+        return new Snapshot(ts, exact, batt, notif, fsi, overlay, usage);
     }
 
     public static void log(Context ctx, String kind, String trigger, long nextAlarmAt,
@@ -170,6 +180,10 @@ public final class ScheduleAuth {
                 toast(activity, "Allow full-screen intents for the quiz overlay");
                 openFullScreenIntentSettings(activity);
                 break;
+            case OVERLAY:
+                toast(activity, "Allow Appear on top so quizzes can open over other apps");
+                openOverlaySettings(activity);
+                break;
             case USAGE_STATS:
                 toast(activity, "Turn on Usage access — unlock returns to the last app");
                 ForegroundApp.openUsageAccessSettings(activity);
@@ -193,6 +207,9 @@ public final class ScheduleAuth {
         }
         if (Build.VERSION.SDK_INT >= 34) {
             sb.append("\nFull-screen intent: ").append(s.fullScreenIntent ? "yes" : "NO — tap Arm");
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
+            sb.append("\nAppear on top: ").append(s.overlay ? "yes" : "NO — tap Arm");
         }
         sb.append("\nUsage access (return to last app): ")
                 .append(s.usageStats ? "yes" : "NO — tap Arm");
@@ -250,6 +267,18 @@ public final class ScheduleAuth {
         if (Build.VERSION.SDK_INT < 34) return;
         try {
             Intent i = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                    Uri.parse("package:" + ctx.getPackageName()));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
+        } catch (Exception e) {
+            openAppNotificationSettings(ctx);
+        }
+    }
+
+    private static void openOverlaySettings(Context ctx) {
+        if (Build.VERSION.SDK_INT < 23) return;
+        try {
+            Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:" + ctx.getPackageName()));
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             ctx.startActivity(i);

@@ -193,6 +193,17 @@
             android:text="Minutes jar: 0"/>
 
         <TextView
+            android:id="@+id/setup_next_quiz"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/setup_next_quiz_unarmed"
+            android:textColor="@color/symbolic"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
@@ -375,9 +386,19 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginTop="12dp"
-            android:layout_marginBottom="16dp"
             android:text="@string/setup_force"
             android:textSize="20sp"
+            android:backgroundTint="@color/symbolic"
+            android:textColor="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/btn_add_widget"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/setup_add_widget"
+            android:textSize="17sp"
             android:backgroundTint="@color/symbolic"
             android:textColor="#FFFFFF"/>
     </LinearLayout>

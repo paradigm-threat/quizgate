@@ -3,13 +3,17 @@ package net.clevertree.quizgate;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.util.Log;
 
 import net.clevertree.quizgate.core.DiagnosticsStore;
 
 import java.util.TimeZone;
 
+/**
+ * Fallback / debug broadcast path. Primary schedule uses {@link AlarmGateActivity}
+ * via {@code setAlarmClock}. Broadcasts used for ADB debug fire and exact-alarm
+ * fallback; both end in {@link QuizLaunch} (overlay BAL exemption + FSI).
+ */
 public class AlarmReceiver extends BroadcastReceiver {
     public static final String ACTION_INTERVAL = "net.clevertree.quizgate.ACTION_INTERVAL";
     public static final String ACTION_MORNING = "net.clevertree.quizgate.ACTION_MORNING";
@@ -23,7 +27,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         else trigger = "interval";
         long now = System.currentTimeMillis();
         AppPrefs prefs = new AppPrefs(context);
-        Log.i(AlarmScheduler.TAG, "alarm fired trigger=" + trigger + " action=" + action);
+        Log.i(AlarmScheduler.TAG, "alarm broadcast trigger=" + trigger + " action=" + action);
+
         if (ACTION_MORNING.equals(action)) {
             net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
             if (!sched.needsMorningGate(now, prefs.lastClearedDay())) {
@@ -40,7 +45,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_FIRED, trigger,
                 "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                null, ""));
+                null, "path=broadcast"));
         ForegroundApp.captureNow(context);
         try {
             new MediaGate().pauseForQuiz(context);
@@ -48,23 +53,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             Log.e(AlarmScheduler.TAG, "pre-quiz media pause", e);
             Diag.nonFatal(context, "media_pause", e);
         }
-        try {
-            Intent quiz = new Intent(context, QuizActivity.class);
-            quiz.putExtra(QuizActivity.EXTRA_TRIGGER, trigger);
-            quiz.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                    | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-            context.startActivity(quiz);
-            Log.i(AlarmScheduler.TAG, "started QuizActivity from receiver");
-        } catch (Exception e) {
-            Log.e(AlarmScheduler.TAG, "direct start failed, trying FGS", e);
-            Intent svc = new Intent(context, QuizTriggerService.class);
-            svc.putExtra(QuizActivity.EXTRA_TRIGGER, trigger);
-            if (Build.VERSION.SDK_INT >= 26) {
-                context.startForegroundService(svc);
-            } else {
-                context.startService(svc);
-            }
-        }
+        QuizLaunch.fromAlarm(context, trigger);
     }
 }
