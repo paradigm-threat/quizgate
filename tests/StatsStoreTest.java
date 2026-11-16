@@ -50,6 +50,23 @@ public class StatsStoreTest {
         Assert.eq(1, day.skipped, "day skipped");
         Assert.eq(StatsStore.Level.GOOD, day.level(), "day level ~50%");
 
+        // Historic days survive beyond "today" — seed an older day and list all
+        long older = now - 3L * 24L * 60L * 60L * 1000L;
+        store.appendEvent(new StatsEvent(older, "old", "shown", "m01", "", 0));
+        store.appendEvent(new StatsEvent(older + 1, "old", "correct", "m01", "2", 0));
+        java.util.List<StatsStore.DayEntry> hist = store.allDayStats(utc);
+        Assert.isTrue(hist.size() >= 2, "historic days >= 2");
+        Assert.eq(StatsStore.dayKey(now, utc), hist.get(0).dayKey, "newest day first");
+        boolean foundOld = false;
+        for (StatsStore.DayEntry e : hist) {
+            if (e.dayKey.equals(StatsStore.dayKey(older, utc))) {
+                foundOld = true;
+                Assert.eq(1, e.stats.answeredRight, "old day right");
+                Assert.eq(1, e.stats.questionsAsked, "old day asked");
+            }
+        }
+        Assert.isTrue(foundOld, "older day retained");
+
         System.out.println("StatsStoreTest OK dir=" + dir.getAbsolutePath());
     }
 }

@@ -13,6 +13,7 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
         AlarmScheduler.armAll(context);
+        ScoreWidgetProvider.refreshAll(context);
         Log.i(AlarmScheduler.TAG, "boot: rescheduled");
     }
 }

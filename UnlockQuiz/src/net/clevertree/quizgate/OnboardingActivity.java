@@ -42,7 +42,8 @@ public class OnboardingActivity extends Activity {
         super.onCreate(savedInstanceState);
         prefs = new AppPrefs(this);
         if (prefs.isOnboardingDone()) {
-            goSetup();
+            // Opening the app icon → practice quiz (not Setup)
+            goPlayQuiz();
             return;
         }
         setContentView(R.layout.activity_onboarding);
@@ -185,6 +186,7 @@ public class OnboardingActivity extends Activity {
             prefs.setJitterMs(draftJitterMs);
         }
         prefs.setOnboardingDone(true);
+        // First-run: parents arm on Setup; later launches open play quiz
         goSetup();
     }
 
@@ -194,6 +196,20 @@ public class OnboardingActivity extends Activity {
         // Preserve ADB extras (auto_arm, interval_ms, jitter_ms, …)
         if (getIntent() != null && getIntent().getExtras() != null) {
             i.putExtras(getIntent());
+        }
+        startActivity(i);
+        finish();
+    }
+
+    private void goPlayQuiz() {
+        Intent i = new Intent(this, QuizActivity.class);
+        i.putExtra(QuizActivity.EXTRA_TRIGGER, QuizActivity.TRIGGER_PLAY);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+        if (getIntent() != null && getIntent().getExtras() != null) {
+            i.putExtras(getIntent());
+            // Ensure play trigger wins over any stale extras
+            i.putExtra(QuizActivity.EXTRA_TRIGGER, QuizActivity.TRIGGER_PLAY);
         }
         startActivity(i);
         finish();

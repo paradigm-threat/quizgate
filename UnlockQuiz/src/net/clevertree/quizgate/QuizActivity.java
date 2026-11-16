@@ -1,6 +1,7 @@
 package net.clevertree.quizgate;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -43,6 +44,10 @@ import java.util.UUID;
 
 public class QuizActivity extends Activity {
     public static final String EXTRA_TRIGGER = "trigger";
+    /** Bring existing quiz to front without starting a new round (stats Back). */
+    public static final String EXTRA_RESUME_ONLY = "resume_only";
+    /** Kid opened QuizGate from the launcher — practice mode, not a soft lock. */
+    public static final String TRIGGER_PLAY = "play";
     private static final int ERROR_COUNTDOWN_SEC = 3;
     private static final int FAIL_COUNTDOWN_SEC = 6;
     private static final long SUCCESS_HOLD_MS = 2000;
@@ -62,12 +67,17 @@ public class QuizActivity extends Activity {
     private final SystemClock clock = new SystemClock();
     private final Random random = new Random();
     private final MediaGate mediaGate = new MediaGate();
-    /** When false (Home leave), do not yank the child back into the previous app. */
+    /** When false (Home leave / play mode), do not yank the child back into the previous app. */
     private boolean restorePreviousApp = true;
+    private boolean playMode;
+    /** True while historic stats is open — skip Home soft-bypass on leave. */
+    private boolean browsingStats;
 
     private QuizSession session;
     private CurriculumPack activePack;
     private StatsStore stats;
+    private Catalog catalog;
+    private QuestionPicker picker;
     private boolean finishing;
     private boolean inTransition;
     private boolean mediaResumePending;
@@ -98,6 +108,10 @@ public class QuizActivity extends Activity {
     private TextView transitionTitle;
     private TextView transitionRetryLabel;
     private TextView transitionCountdown;
+    private ImageView transitionGateIcon;
+    private TextView transitionPlayPrompt;
+    private View transitionPlayActions;
+    private FrameLayout statsOverlay;
     private AppPrefs prefs;
     private DigitAnswer digitAnswer = new DigitAnswer();
     private String symbolicTemplate = "";
@@ -155,9 +169,27 @@ public class QuizActivity extends Activity {
         transitionTitle = findViewById(R.id.transition_title);
         transitionRetryLabel = findViewById(R.id.transition_retry_label);
         transitionCountdown = findViewById(R.id.transition_countdown);
+        transitionGateIcon = findViewById(R.id.transition_gate_icon);
+        transitionPlayPrompt = findViewById(R.id.transition_play_prompt);
+        transitionPlayActions = findViewById(R.id.transition_play_actions);
+        findViewById(R.id.btn_ask_another).setOnClickListener(v -> askAnotherQuestion());
+        findViewById(R.id.btn_quit_play).setOnClickListener(v -> quitPlay());
+        findViewById(R.id.btn_play_parents).setOnClickListener(v -> openParentsSetup());
+        findViewById(R.id.btn_view_stats).setOnClickListener(v -> openStatsHistory());
+        statsOverlay = findViewById(R.id.stats_overlay);
 
         String trigger = getIntent() != null ? getIntent().getStringExtra(EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
+        // Resume-only intents (legacy StatsActivity Back) must not start a new round
+        if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_RESUME_ONLY, false)) {
+            playMode = true;
+            restorePreviousApp = false;
+            return;
+        }
+        playMode = TRIGGER_PLAY.equals(trigger);
+        if (playMode) {
+            restorePreviousApp = false;
+        }
         if (getIntent() != null && getIntent().hasExtra("interval_ms")) {
             long ms = getIntent().getLongExtra("interval_ms", 0);
             if (ms > 0) prefs.setIntervalMs(ms);
@@ -171,17 +203,52 @@ public class QuizActivity extends Activity {
         }
 
         stats = new StatsStore(new File(getFilesDir(), "stats"));
-        CurriculumPack pack = CurriculumStore.getActive(this);
-        Catalog catalog = CatalogLoader.get(this);
-        QuestionPicker picker = new QuestionPicker(catalog, random);
+        activePack = CurriculumStore.getActive(this);
+        catalog = CatalogLoader.get(this);
+        picker = new QuestionPicker(catalog, random);
         if (getIntent() != null && getIntent().hasExtra("force_qid")) {
             picker.preferFirst(getIntent().getStringExtra("force_qid"));
         }
+        startRound(trigger);
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent == null) return;
+        // StatsActivity Back — restore this instance without restarting a round
+        if (intent.getBooleanExtra(EXTRA_RESUME_ONLY, false)) {
+            browsingStats = false;
+            return;
+        }
+        String trigger = intent.getStringExtra(EXTRA_TRIGGER);
+        if (trigger == null) trigger = TRIGGER_PLAY;
+        playMode = TRIGGER_PLAY.equals(trigger);
+        if (playMode) restorePreviousApp = false;
+        if (finishing || inTransition) return;
+        if (session != null && !session.isEnded()) {
+            // Soft-replace open play request while mid-question — ignore
+            if (!playMode) return;
+        }
+        if (TRIGGER_PLAY.equals(trigger) && (session == null || session.isEnded())) {
+            startRound(TRIGGER_PLAY);
+        }
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (browsingStats) browsingStats = false;
+    }
+
+    private void startRound(String trigger) {
         // ADB / e2e forces single-question rounds for deterministic smoke tests
-        int roundSize = (trigger != null && trigger.startsWith("adb_")) ? 1 : pack.roundSize;
+        int roundSize = (trigger != null && trigger.startsWith("adb_")) ? 1 : activePack.roundSize;
+        // Practice from the launcher: one question at a time so success can offer "another"
+        if (TRIGGER_PLAY.equals(trigger)) roundSize = 1;
         session = new QuizSession(UUID.randomUUID().toString(), trigger, clock.nowMillis(), picker,
-                roundSize, pack.maxWrong, pack.consolingUnlock);
-        activePack = pack;
+                roundSize, activePack.maxWrong, activePack.consolingUnlock);
+        finishing = false;
+        inTransition = false;
         currentAnswered = false;
         logEvent("shown", session.getCurrent().id, "", 0);
         bindQuestion(session.getCurrent());
@@ -208,6 +275,8 @@ public class QuizActivity extends Activity {
 
     @Override protected void onUserLeaveHint() {
         super.onUserLeaveHint();
+        // Navigating to historic stats is not a Home leave
+        if (browsingStats) return;
         // Home / Recents: soft bypass — stay where the child went (usually Home)
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
             restorePreviousApp = false;
@@ -216,9 +285,13 @@ public class QuizActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
-        // Back: soft bypass, then return to the app they were in
+        if (statsOverlay != null && statsOverlay.getVisibility() == View.VISIBLE) {
+            hideStatsOverlay();
+            return;
+        }
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
-            restorePreviousApp = true;
+            // Play mode: just leave. Lock mode: soft bypass + restore previous app.
+            restorePreviousApp = !playMode;
             finishWithBypass();
         } else if (!inTransition) {
             super.onBackPressed();
@@ -471,6 +544,10 @@ public class QuizActivity extends Activity {
         transitionTitle.setText(R.string.fail_title);
         preparePhotoBackground(false);
         fadeInTransition(() -> {
+            if (playMode) {
+                showPlayChoiceChrome(R.string.play_fail_prompt);
+                return;
+            }
             startFailPulse();
             startCountdown(FAIL_COUNTDOWN_SEC, R.string.retry_in, true, () ->
                     fadeOutTransition(this::finishSession));
@@ -487,6 +564,18 @@ public class QuizActivity extends Activity {
             startPhotoFlash();
             burstConfetti();
             startBalloonPulse(transitionMessage, BALLOON_SUCCESS_INFLATED, 2);
+            if (playMode) {
+                showPlayChoiceChrome(R.string.play_success_prompt);
+                // Finite party, then idle so taps/dumps aren't blocked by looping anims
+                if (successEndTick != null) handler.removeCallbacks(successEndTick);
+                successEndTick = () -> {
+                    successEndTick = null;
+                    stopPhotoFlash();
+                    stopBalloonPulse();
+                };
+                handler.postDelayed(successEndTick, SUCCESS_HOLD_MS);
+                return;
+            }
             if (successEndTick != null) handler.removeCallbacks(successEndTick);
             successEndTick = () -> {
                 successEndTick = null;
@@ -496,6 +585,109 @@ public class QuizActivity extends Activity {
             };
             handler.postDelayed(successEndTick, SUCCESS_HOLD_MS);
         });
+    }
+
+    private void showPlayChoiceChrome(int promptRes) {
+        if (transitionGateIcon != null) transitionGateIcon.setVisibility(View.VISIBLE);
+        if (transitionPlayPrompt != null) {
+            transitionPlayPrompt.setText(promptRes);
+            transitionPlayPrompt.setVisibility(View.VISIBLE);
+        }
+        if (transitionPlayActions != null) transitionPlayActions.setVisibility(View.VISIBLE);
+        transitionRetryLabel.setVisibility(View.GONE);
+        transitionCountdown.setVisibility(View.GONE);
+        transitionTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40);
+    }
+
+    private void hidePlayChoiceChrome() {
+        if (transitionGateIcon != null) transitionGateIcon.setVisibility(View.GONE);
+        if (transitionPlayPrompt != null) transitionPlayPrompt.setVisibility(View.GONE);
+        if (transitionPlayActions != null) transitionPlayActions.setVisibility(View.GONE);
+    }
+
+    private void askAnotherQuestion() {
+        if (!playMode || finishing) return;
+        stopPhotoFlash();
+        stopBalloonPulse();
+        stopFailPulse();
+        if (successEndTick != null) {
+            handler.removeCallbacks(successEndTick);
+            successEndTick = null;
+        }
+        try {
+            if (session != null && session.isEnded()) {
+                stats.appendSession(session);
+            } else if (session != null && !session.isEnded()) {
+                // Shouldn't happen on success path, but be safe
+                session.bypass(clock.nowMillis());
+                stats.appendSession(session);
+            }
+        } catch (Exception e) {
+            Log.e(AlarmScheduler.TAG, "ask another persist", e);
+        }
+        ScoreWidgetProvider.refreshAll(this);
+        hidePlayChoiceChrome();
+        fadeOutTransition(() -> {
+            inTransition = false;
+            startRound(TRIGGER_PLAY);
+        });
+    }
+
+    private void quitPlay() {
+        if (!playMode) return;
+        restorePreviousApp = false;
+        stopPhotoFlash();
+        stopBalloonPulse();
+        fadeOutTransition(this::finishSession);
+    }
+
+    private void openParentsSetup() {
+        Intent i = new Intent(this, SetupActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(i);
+        restorePreviousApp = false;
+        if (session != null && !session.isEnded()) {
+            finishWithBypass();
+        } else {
+            finishSession();
+        }
+    }
+
+    private void openStatsHistory() {
+        if (!playMode) return;
+        showStatsOverlay();
+    }
+
+    private void showStatsOverlay() {
+        if (statsOverlay == null) return;
+        browsingStats = true;
+        statsOverlay.removeAllViews();
+        View page = getLayoutInflater().inflate(R.layout.activity_stats, statsOverlay, false);
+        statsOverlay.addView(page);
+        page.findViewById(R.id.stats_back).setOnClickListener(v -> hideStatsOverlay());
+        TextView empty = page.findViewById(R.id.stats_empty);
+        LinearLayout list = page.findViewById(R.id.stats_day_list);
+        List<StatsStore.DayEntry> days;
+        try {
+            days = stats.allDayStats(TimeZone.getDefault());
+        } catch (Exception e) {
+            days = Collections.emptyList();
+        }
+        if (days.isEmpty()) {
+            empty.setVisibility(View.VISIBLE);
+        } else {
+            empty.setVisibility(View.GONE);
+            String todayKey = StatsStore.dayKey(clock.nowMillis(), TimeZone.getDefault());
+            StatsHistoryViews.populateDayList(this, list, days, todayKey);
+        }
+        statsOverlay.setVisibility(View.VISIBLE);
+    }
+
+    private void hideStatsOverlay() {
+        if (statsOverlay == null) return;
+        statsOverlay.setVisibility(View.GONE);
+        statsOverlay.removeAllViews();
+        browsingStats = false;
     }
 
     private void startBalloonPulse(View target, float inflateTo, int cycles) {
@@ -570,6 +762,7 @@ public class QuizActivity extends Activity {
     }
 
     private void applyErrorStyle() {
+        hidePlayChoiceChrome();
         transitionMessage.setBackgroundResource(R.drawable.transition_text_plate);
         transitionScrim.setBackgroundColor(Color.parseColor("#B3000000"));
         transitionTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
@@ -583,6 +776,7 @@ public class QuizActivity extends Activity {
     }
 
     private void applySuccessStyle() {
+        hidePlayChoiceChrome();
         transitionMessage.setBackgroundResource(R.drawable.success_text_plate);
         transitionScrim.setBackgroundColor(color(R.color.success_scrim));
         transitionTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 56);
@@ -893,11 +1087,14 @@ public class QuizActivity extends Activity {
             successEndTick = null;
         }
         try {
-            stats.appendSession(session);
+            if (session != null) stats.appendSession(session);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats session", e);
         }
-        AlarmScheduler.scheduleAfterSessionEnd(this);
+        ScoreWidgetProvider.refreshAll(this);
+        if (!playMode) {
+            AlarmScheduler.scheduleAfterSessionEnd(this);
+        }
         // Bring YouTube / game / whatever back before we disappear
         if (restorePreviousApp) {
             try {
@@ -919,6 +1116,7 @@ public class QuizActivity extends Activity {
         }
         if ("shown".equals(type) || "correct".equals(type) || "wrong".equals(type) || "skipped".equals(type)) {
             refreshQuizDayStats();
+            ScoreWidgetProvider.refreshAll(this);
         }
     }
 

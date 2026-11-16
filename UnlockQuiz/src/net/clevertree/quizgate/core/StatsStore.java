@@ -81,14 +81,72 @@ public final class StatsStore {
                 long ts = extractLong(line, "ts");
                 if (ts <= 0) continue;
                 if (!today.equals(dayKey(ts, zone))) continue;
-                String type = extract(line, "type");
-                if ("shown".equals(type)) d.questionsAsked++;
-                else if ("correct".equals(type)) d.answeredRight++;
-                else if ("wrong".equals(type)) d.answeredWrong++;
-                else if ("skipped".equals(type)) d.skipped++;
+                applyEvent(d, extract(line, "type"));
             }
         }
         return d;
+    }
+
+    /**
+     * Historic per-day stats from the events log (newest first).
+     * Events persist on disk across days — this is the durable history.
+     */
+    public List<DayEntry> allDayStats(TimeZone zone) throws IOException {
+        Map<String, DayStats> byDay = new HashMap<>();
+        List<String> order = new ArrayList<>();
+        if (eventsFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    long ts = extractLong(line, "ts");
+                    if (ts <= 0) continue;
+                    String key = dayKey(ts, zone);
+                    DayStats d = byDay.get(key);
+                    if (d == null) {
+                        d = new DayStats();
+                        byDay.put(key, d);
+                        order.add(key);
+                    }
+                    applyEvent(d, extract(line, "type"));
+                }
+            }
+        }
+        // Newest calendar day first
+        order.sort((a, b) -> compareDayKeys(b, a));
+        List<DayEntry> out = new ArrayList<>();
+        for (String key : order) {
+            out.add(new DayEntry(key, byDay.get(key)));
+        }
+        return out;
+    }
+
+    private static void applyEvent(DayStats d, String type) {
+        if ("shown".equals(type)) d.questionsAsked++;
+        else if ("correct".equals(type)) d.answeredRight++;
+        else if ("wrong".equals(type)) d.answeredWrong++;
+        else if ("skipped".equals(type)) d.skipped++;
+    }
+
+    /** Compare {@code YYYY-M-D} keys chronologically. */
+    static int compareDayKeys(String a, String b) {
+        String[] pa = a.split("-");
+        String[] pb = b.split("-");
+        for (int i = 0; i < 3; i++) {
+            int ia = Integer.parseInt(pa[i]);
+            int ib = Integer.parseInt(pb[i]);
+            if (ia != ib) return Integer.compare(ia, ib);
+        }
+        return 0;
+    }
+
+    public static final class DayEntry {
+        public final String dayKey;
+        public final DayStats stats;
+
+        public DayEntry(String dayKey, DayStats stats) {
+            this.dayKey = dayKey;
+            this.stats = stats;
+        }
     }
 
     public static String dayKey(long whenMs, TimeZone zone) {

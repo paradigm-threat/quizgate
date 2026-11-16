@@ -9,6 +9,22 @@
     <string name="wrong_title">Not quite!</string>
     <string name="fail_title">Oh well, better luck next time!</string>
     <string name="success_title">Great job!</string>
+    <string name="play_success_prompt">Want another question, or quit?</string>
+    <string name="play_ask_another">Ask me another</string>
+    <string name="play_quit">Quit</string>
+    <string name="play_parents">Parents</string>
+    <string name="play_fail_prompt">Want to try another, or quit?</string>
+    <string name="play_view_stats">View stats</string>
+    <string name="stats_history_title">Your scores</string>
+    <string name="stats_history_subtitle">Every quiz day, color by how it went</string>
+    <string name="stats_back">Back</string>
+    <string name="stats_empty">No quiz days yet — answer a question to start!</string>
+    <string name="stats_day_line">%1$s — %2$d right / %3$d asked</string>
+    <string name="stats_day_today">Today</string>
+    <string name="widget_score_ready">Ready!</string>
+    <string name="widget_score_line">%1$d / %2$d</string>
+    <string name="widget_score_label">today</string>
+    <string name="widget_description">Today\'s QuizGate score — tap to play</string>
     <string name="setup_title">QuizGate</string>
     <string name="setup_body">Soft quiz on your schedule plus each morning.\n\nTap Arm to grant permissions and schedule.\nUsage access lets QuizGate pause distractions and return to the app she was just using.</string>
     <string name="setup_arm">Arm scheduling</string>
@@ -48,5 +64,5 @@
     <string name="onboard_jitter_label">Randomness ±</string>
     <string name="onboard_window_label">Next quiz between</string>
     <string name="onboard_done_title">You\'re ready</string>
-    <string name="onboard_done_body">Arm scheduling on the next screen. Force a test quiz anytime.</string>
+    <string name="onboard_done_body">Arm scheduling on the next screen. After that, opening QuizGate starts a practice question. Parents stay available from the success screen.</string>
 </resources>
