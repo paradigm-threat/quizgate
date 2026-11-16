@@ -65,17 +65,21 @@ Paste from [`store/play/LISTING_COPY.txt`](../store/play/LISTING_COPY.txt):
 | App icon | `icon_512.png` | 512×512 PNG |
 | Feature graphic | `feature_graphic_1024x500.jpg` (or `.png`) | 1024×500, **no alpha** |
 | Optional richer feature | `feature_graphic_promo_1024x500.jpg` | same size |
-| Phone / tablet screenshots | `screenshots/*.jpg` | ≥2 required; we captured 5 tablet frames (1920×1200) |
+| Phone / tablet screenshots | `screenshots/*.jpg` | ≥2 required; 7 tablet frames (1920×1200), generic demo data |
 
 Upload order suggestion for screenshots:
 
 1. `05_quiz_math.jpg` — hero of the product  
-2. `01_onboarding_welcome.jpg`  
-3. `03_onboarding_schedule.jpg`  
-4. `04_setup.jpg`  
-5. `02_onboarding_photos.jpg`  
+2. `06_success_sheet.jpg` — play-mode success / ask-another  
+3. `01_onboarding_welcome.jpg`  
+4. `03_onboarding_schedule.jpg`  
+5. `04_setup.jpg`  
+6. `07_stats_history.jpg` — multi-day scores  
+7. `02_onboarding_photos.jpg`  
 
-> These frames are from the current tablet (landscape). For **phone** form-factor slots, capture a phone in portrait (1080×1920+) if Play asks for phone-specific screenshots. Tablet screenshots can fill the **7-inch / 10-inch tablet** slots.
+Captured on SM-X210 (Galaxy Tab A9+) after `pm clear` + seeded demo stats (no personal names/packages). Recapture helper: `SERIAL=<id> ./scripts/capture_play_screenshots.sh`. Score widget not pinned on the demo device — no `08_score_widget.jpg` yet.
+
+> These frames are landscape tablet. For **phone** form-factor slots, capture a phone in portrait (1080×1920+) if Play asks for phone-specific screenshots. Tablet screenshots can fill the **7-inch / 10-inch tablet** slots.
 
 Also set:
 
@@ -119,7 +123,7 @@ Help: https://support.google.com/googleplay/android-developer/answer/9845334
 | `targetSdk` 34 | Current manifest target |
 | Privacy URL live | Yes |
 | Icon 512 + feature 1024×500 | Yes (`store/play/upload/`) |
-| Screenshots (≥2) | Yes (tablet); add phone portraits before phone-primary launch |
+| Screenshots (≥2) | Yes — 7 tablet frames incl. success + stats; add phone portraits before phone-primary launch |
 | In-app privacy link | Confirm Setup / about points at privacy URL before review |
 
 Until AAB exists: finish the **listing + App content** now; use CI APK for sideload QA; build the release bundle as the next engineering task.
@@ -142,6 +146,8 @@ store/play/
       03_onboarding_schedule.jpg
       04_setup.jpg
       05_quiz_math.jpg
+      06_success_sheet.jpg
+      07_stats_history.jpg
 
 design/android_icon_kit/A_gate_question/   ← source masters (Gate mark = production default)
 ```
