@@ -1,0 +1,63 @@
+# Mirror of GitHub Actions CI for clevertree/quizgate.
+# Device e2e (scripts/e2e_phone.sh) stays manual — needs a physical SERIAL.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+stages:
+  - test
+  - build
+
+variables:
+  ANDROID_SDK_ROOT: "$CI_PROJECT_DIR/.android-sdk"
+  ANDROID_HOME: "$CI_PROJECT_DIR/.android-sdk"
+
+.regression_script: &regression_script
+  - java -version
+  - chmod +x scripts/*.sh
+  - ./scripts/run_regression.sh
+
+regression:
+  stage: test
+  image: eclipse-temurin:17-jdk
+  script:
+    - *regression_script
+  artifacts:
+    when: on_failure
+    paths:
+      - build/test-classes/
+    expire_in: 3 days
+
+android-apk:
+  stage: build
+  image: eclipse-temurin:17-jdk
+  needs: [regression]
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq wget unzip curl python3 > /dev/null
+    - mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+    - |
+      cd /tmp
+      wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+      unzip -q cmdtools.zip
+      rm -rf "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+      mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+      mv cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+    - export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+    - yes | sdkmanager --licenses >/dev/null || true
+    - sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+  script:
+    - export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/34.0.0:$PATH"
+    - chmod +x scripts/*.sh
+    - ./scripts/build_apk.sh
+  artifacts:
+    name: "QuizGate-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - build/apk/QuizGate.apk
+    expire_in: 14 days
+  cache:
+    key: android-sdk-34
+    paths:
+      - .android-sdk/

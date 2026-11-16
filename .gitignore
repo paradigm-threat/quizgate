@@ -1,5 +1,7 @@
 # Build outputs
 /build/
+curricula/review.json
+.android-sdk/
 
 # Never commit personal media
 /photos/

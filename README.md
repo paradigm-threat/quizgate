@@ -19,13 +19,16 @@ Photos are loaded from the device gallery at runtime (MediaStore). No personal p
 ## Build
 
 ```bash
-./scripts/run_unit_tests.sh
+./scripts/run_regression.sh   # packs + SI heuristics + unit tests
 ./scripts/build_apk.sh
 ```
 
-GitHub Actions on `main` / PRs runs unit tests, builds the Android APK artifact, and compiles the **iOS stub** under `ios/QuizGateStub/` (empty branded shell for CI only — **not** an App Store / Screen Time product).
+**CI/CD**
+- **GitHub Actions** (primary): `regression` → `android-apk` (uploads `QuizGate.apk`) + `ios-stub` on `main` / PRs
+- **GitLab CI** (mirror): same regression + APK artifact on `main` / MRs
+- Device e2e (`SERIAL=<id> ./scripts/e2e_phone.sh`) stays **manual**
 
-Device e2e (`./scripts/e2e_phone.sh`) stays **manual** (needs `SERIAL`).
+The **iOS stub** under `ios/QuizGateStub/` is an empty branded shell for CI only — **not** an App Store / Screen Time product.
 
 ## Marketing site
 
