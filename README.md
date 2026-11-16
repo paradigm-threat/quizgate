@@ -10,6 +10,9 @@ Package: `net.clevertree.quizgate`
 - Privacy: https://quizgate.clevertree.net/privacy  
 - GitHub (CI primary): https://github.com/paradigm-threat/quizgate  
 - GitLab (mirror): https://gitlab.com/clevertree/quizgate  
+- Vercel team: **clevertrees-projects** · project **quizgate** · root directory `site` · production branch `main` · domain `quizgate.clevertree.net`
+
+**Team note — GitHub ↔ Vercel:** the CleverTree Vercel team can deploy GitHub organization repositories. Push to `main` on GitHub once the project is linked under [Vercel → quizgate → Git](https://vercel.com/clevertrees-projects/quizgate/settings/git) (repo `paradigm-threat/quizgate`, root `site`). GitLab remains a mirror only; site deploys come from GitHub.
 
 Photos are loaded from the device gallery at runtime (MediaStore). No personal photos are bundled in the APK or repo.
 
