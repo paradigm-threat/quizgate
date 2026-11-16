@@ -211,8 +211,8 @@ write_generic_prefs() {
     <string name="active_tier">all</string>
     <boolean name="sync_enabled" value="true" />
     <int name="minutes_balance" value="15" />
-    <long name="interval_ms" value="3600000" />
-    <long name="jitter_ms" value="1800000" />
+    <long name="interval_ms" value="1800000" />
+    <long name="jitter_ms" value="900000" />
     <long name="next_alarm_at" value="0" />
 </map>
 EOF
@@ -258,8 +258,8 @@ mark_onboarding_done() {
     <string name="active_tier">all</string>
     <boolean name="sync_enabled" value="true" />
     <int name="minutes_balance" value="15" />
-    <long name="interval_ms" value="3600000" />
-    <long name="jitter_ms" value="1800000" />
+    <long name="interval_ms" value="1800000" />
+    <long name="jitter_ms" value="900000" />
     <long name="next_alarm_at" value="0" />
 </map>
 EOF

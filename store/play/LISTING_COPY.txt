@@ -18,7 +18,7 @@ FULL DESCRIPTION (max 4000 characters)
 --------------------------------------------------------------------------------
 QuizGate helps kids earn tablet time by answering short math quizzes.
 
-Correct answers bank minutes. Soft reminders ask for a quick round on your schedule (default about once an hour, with a little randomness) plus a morning check-in. Parents stay in control — forever free, with no ads and no in-app purchases.
+Correct answers bank minutes. Soft reminders ask for a quick round on your schedule (default about every half hour, with a little randomness) plus a morning check-in. Parents stay in control — forever free, with no ads and no in-app purchases.
 
 How it works
 • Soft gate: a short quiz before the next stretch of screen time

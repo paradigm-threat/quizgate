@@ -1,6 +1,6 @@
 # QuizGate
 
-Clevertree soft quiz gate for young kids: every hour + morning gate, math digit pad, local/bundled photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+Clevertree soft quiz gate for young kids: every half hour (±15m) + morning gate, math digit pad, local/bundled photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
@@ -72,7 +72,7 @@ Fire quiz via alarm receiver (no MacroDroid):
 adb shell am broadcast -a net.clevertree.quizgate.ACTION_DEBUG_FIRE -n net.clevertree.quizgate/.AlarmReceiver
 ```
 
-On OPPO/ColorOS: open the app once, accept **battery optimization exemption**, notifications, and **photos** permission so exact hourly alarms and gallery transitions work.
+On OPPO/ColorOS: open the app once, accept **battery optimization exemption**, notifications, and **photos** permission so exact interval alarms and gallery transitions work.
 
 Dump stats (debuggable / run-as):
 

@@ -32,33 +32,33 @@ public class SchedulerTest {
         Assert.isTrue(s.needsMorningGate(t10, "2026-11-14"), "needs morning other day");
         Assert.isTrue(!s.needsMorningGate(t10, s.dayKey(t10)), "cleared today");
 
-        // Default 60 ± 30 → window 30–90 min
-        Assert.eq(Scheduler.DEFAULT_INTERVAL_MS, 60L * 60L * 1000L, "default interval 60m");
-        Assert.eq(Scheduler.DEFAULT_JITTER_MS, 30L * 60L * 1000L, "default jitter 30m");
+        // Default 30 ± 15 → window 15–45 min
+        Assert.eq(Scheduler.DEFAULT_INTERVAL_MS, 30L * 60L * 1000L, "default interval 30m");
+        Assert.eq(Scheduler.DEFAULT_JITTER_MS, 15L * 60L * 1000L, "default jitter 15m");
         Scheduler def = new Scheduler(tz, Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS);
-        Assert.eq(30L * 60L * 1000L, def.windowMinMs(), "window min 30m");
-        Assert.eq(90L * 60L * 1000L, def.windowMaxMs(), "window max 90m");
+        Assert.eq(15L * 60L * 1000L, def.windowMinMs(), "window min 15m");
+        Assert.eq(45L * 60L * 1000L, def.windowMaxMs(), "window max 45m");
 
         Random fixed = new Random(7L);
         Scheduler jittered = new Scheduler(tz, Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS, fixed);
         for (int i = 0; i < 40; i++) {
             long delay = jittered.sampleDelayMs();
-            Assert.isTrue(delay >= 30L * 60L * 1000L && delay <= 90L * 60L * 1000L,
-                    "sample in [30,90] got=" + delay);
+            Assert.isTrue(delay >= 15L * 60L * 1000L && delay <= 45L * 60L * 1000L,
+                    "sample in [15,45] got=" + delay);
         }
 
         // Daytime next stays inside the jitter window
-        Scheduler seeded = new Scheduler(tz, 60L * 60L * 1000L, 30L * 60L * 1000L, new Random(1L));
+        Scheduler seeded = new Scheduler(tz, 30L * 60L * 1000L, 15L * 60L * 1000L, new Random(1L));
         long next = seeded.nextAfterUnlock(t10);
         long delay = next - t10;
-        Assert.isTrue(delay >= 30L * 60L * 1000L && delay <= 90L * 60L * 1000L,
+        Assert.isTrue(delay >= 15L * 60L * 1000L && delay <= 45L * 60L * 1000L,
                 "daytime next in window delay=" + delay);
 
         // Zero jitter stays exact
         Scheduler exact = new Scheduler(tz, 45L * 60L * 1000L, 0L, new Random(99L));
         Assert.eq(45L * 60L * 1000L, exact.sampleDelayMs(), "zero jitter exact");
 
-        Assert.eq("30 min – 90 min",
+        Assert.eq("15 min – 45 min",
                 Scheduler.formatWindow(Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS),
                 "format window");
 

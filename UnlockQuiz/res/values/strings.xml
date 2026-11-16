@@ -59,7 +59,7 @@
     <string name="onboard_use_gallery">Use my photos</string>
     <string name="onboard_use_defaults">Use default pictures</string>
     <string name="onboard_schedule_title">Quiz schedule</string>
-    <string name="onboard_schedule_body">How often should QuizGate ask a question?\nDefault is about once an hour, with up to 30 minutes of randomness — so it can fire anywhere from 30 minutes to 1 hour 30 minutes.</string>
+    <string name="onboard_schedule_body">How often should QuizGate ask a question?\nDefault is about every half hour, with up to 15 minutes of randomness — so it can fire anywhere from 15 minutes to 45 minutes.</string>
     <string name="onboard_interval_label">About every</string>
     <string name="onboard_jitter_label">Randomness ±</string>
     <string name="onboard_window_label">Next quiz between</string>
