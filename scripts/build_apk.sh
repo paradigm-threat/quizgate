@@ -33,7 +33,7 @@ KS="$ROOT/debug.keystore"
 if [[ ! -f "$KS" ]]; then
   keytool -genkeypair -v -keystore "$KS" -storepass android -keypass android \
     -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
-    -dname "CN=QuizGate,O=CleverTree,C=US"
+    -dname "CN=QuizGate,O=Clevertree,C=US"
 fi
 "$BT/zipalign" -f 4 "$OUT/unsigned.apk" "$OUT/aligned.apk"
 "$BT/apksigner" sign --ks "$KS" --ks-pass pass:android --key-pass pass:android \

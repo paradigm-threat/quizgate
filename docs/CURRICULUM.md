@@ -16,7 +16,7 @@ North star: [Pickles](https://pickles.to/). Android peer we do not copy as ident
 
 ## Naming — SI
 
-We say **SI** (Super Intelligence, i.e. AI) for the software that files, summarizes, and curates — same CleverTree Chat convention. SI curates curriculum packs in batch; parents keep final decisions. Not an open-internet tutor in the child’s profile.
+We say **SI** (Super Intelligence, i.e. AI) for the software that files, summarizes, and curates — same Clevertree Chat convention. SI curates curriculum packs in batch; parents keep final decisions. Not an open-internet tutor in the child’s profile.
 
 ## Pack format (`.qgpack`)
 
