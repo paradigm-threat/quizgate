@@ -1,0 +1,7 @@
+gate: favicon ICO 16/32/48; transparent PNG alpha; PWA icons; SVG; wordmarks - OK
+lock: favicon ICO 16/32/48; transparent PNG alpha; PWA icons; SVG; wordmarks - OK
+open: favicon ICO 16/32/48; transparent PNG alpha; PWA icons; SVG; wordmarks - OK
+All main export validation checks passed.
+
+Additional checks: all SVG parses, CSS/JS load paths present, all manifests valid, JavaScript syntax passed node --check, favicon multi-size ICO and alpha validated.
+Browser runtime screenshot not available: Chromium navigation to localhost and file URLs is blocked by this environment.

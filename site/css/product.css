@@ -1,0 +1,170 @@
+:root {
+  --font-display: "Fraunces", "Nunito", Georgia, serif;
+  --font-body: "Nunito", "Trebuchet MS", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+.nav-brand span,
+.hero h1,
+h2,
+.question,
+.pledge-card h2 {
+  font-family: var(--font-display);
+}
+
+.hero h1 {
+  font-size: clamp(52px, 9vw, 96px);
+  margin: 18px 0 14px;
+  max-width: none;
+}
+
+.hero .lead {
+  max-width: 640px;
+}
+
+.hero-art {
+  margin-top: 40px;
+  border-radius: 0;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+}
+
+.hero-art img {
+  border-radius: 0;
+  min-height: min(58vh, 560px);
+  object-fit: cover;
+}
+
+.story {
+  padding: 0 0 72px;
+}
+
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.story-grid.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.story-card {
+  padding: 24px;
+}
+
+.story-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.story-card p {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.pledge {
+  padding: 0 0 72px;
+}
+
+.pledge-card {
+  padding: clamp(28px, 4vw, 42px);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 55%),
+    var(--surface);
+}
+
+.pledge-card .lead,
+.pledge-card > p {
+  color: var(--muted);
+  max-width: 720px;
+  margin-top: 12px;
+}
+
+.pledge-note {
+  margin-top: 18px !important;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--text) !important;
+}
+
+.legal {
+  padding: 28px 0 80px;
+  max-width: 760px;
+}
+
+.legal h1 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 52px);
+  letter-spacing: -0.05em;
+  margin: 8px 0 8px;
+}
+
+.legal h2 {
+  margin-top: 32px;
+  font-size: 22px;
+}
+
+.legal p,
+.legal li {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.legal ul {
+  padding-left: 1.2em;
+}
+
+.legal a {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .story-grid,
+  .story-grid.two {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero h1 {
+    animation: rise 0.7s ease-out both;
+  }
+  .hero .lead {
+    animation: rise 0.7s ease-out 0.08s both;
+  }
+  .hero .actions {
+    animation: rise 0.7s ease-out 0.16s both;
+  }
+  .hero-art {
+    animation: fade-in 0.9s ease-out 0.2s both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -32,7 +32,7 @@ public class QuizTriggerService extends Service {
         }
         Notification n = b.setContentTitle(getString(R.string.notif_title))
                 .setContentText(getString(R.string.notif_text))
-                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setSmallIcon(R.drawable.ic_stat_quizgate)
                 .setContentIntent(pi)
                 .setFullScreenIntent(pi, true)
                 .setCategory(Notification.CATEGORY_ALARM)

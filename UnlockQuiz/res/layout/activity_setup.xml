@@ -12,6 +12,14 @@
         android:padding="28dp"
         android:gravity="center_horizontal">
 
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginTop="8dp"
+            android:src="@drawable/quizgate_splash_icon"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"/>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -84,7 +92,7 @@
                         android:layout_height="wrap_content"
                         android:text="0"
                         android:textColor="@color/header"
-                        android:textSize="40sp"
+                        android:textSize="36sp"
                         android:textStyle="bold"/>
 
                     <TextView
@@ -92,7 +100,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/stats_asked_label"
                         android:textColor="@color/header"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:gravity="center"/>
                 </LinearLayout>
 
@@ -109,7 +117,7 @@
                         android:layout_height="wrap_content"
                         android:text="0"
                         android:textColor="@color/stats_mood_great"
-                        android:textSize="40sp"
+                        android:textSize="36sp"
                         android:textStyle="bold"/>
 
                     <TextView
@@ -117,7 +125,57 @@
                         android:layout_height="wrap_content"
                         android:text="@string/stats_right_label"
                         android:textColor="@color/header"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
+                        android:gravity="center"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/stats_wrong_num"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/stats_mood_trying"
+                        android:textSize="36sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/stats_wrong_label"
+                        android:textColor="@color/header"
+                        android:textSize="13sp"
+                        android:gravity="center"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/stats_skipped_num"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/header"
+                        android:textSize="36sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/stats_skipped_label"
+                        android:textColor="@color/header"
+                        android:textSize="13sp"
                         android:gravity="center"/>
                 </LinearLayout>
             </LinearLayout>

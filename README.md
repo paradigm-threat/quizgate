@@ -1,8 +1,13 @@
 # QuizGate
 
-CleverTree soft quiz gate for young kids: every hour + morning gate, math digit pad + colors, local device photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen. No MacroDroid. Free — no ads, no IAP, no subscription.
+CleverTree soft quiz gate for young kids: every hour + morning gate, math digit pad + colors, local device photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 Package: `net.clevertree.quizgate`
+
+- Site: https://quizgate.clevertree.net  
+- Privacy: https://quizgate.clevertree.net/privacy  
+- GitHub (CI primary): https://github.com/paradigm-threat/quizgate  
+- GitLab (mirror): https://gitlab.com/clevertree/quizgate  
 
 Photos are loaded from the device gallery at runtime (MediaStore). No personal photos are bundled in the APK or repo.
 
@@ -12,6 +17,20 @@ Photos are loaded from the device gallery at runtime (MediaStore). No personal p
 ./scripts/run_unit_tests.sh
 ./scripts/build_apk.sh
 ```
+
+GitHub Actions on `main` / PRs runs unit tests, builds the Android APK artifact, and compiles the **iOS stub** under `ios/QuizGateStub/` (empty branded shell for CI only — **not** an App Store / Screen Time product).
+
+Device e2e (`./scripts/e2e_phone.sh`) stays **manual** (needs `SERIAL`).
+
+## Marketing site
+
+Static site in `site/` (seeded from the Website Favicon Themes Kit). Local preview:
+
+```bash
+python3 -m http.server 8000 --directory site
+```
+
+Store publish notes + competitor table: [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md).
 
 ## Install / test
 
@@ -56,6 +75,6 @@ adb shell run-as net.clevertree.quizgate cat files/stats/events.jsonl
 - Math: spoken + `2 + 5 = _` (digit pad by default)
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
-- Leave without answering → bypass (no reopen), logged
+- Leave without answering → bypass (no reopen), logged as skipped
 - YouTube / music soft-pauses when the quiz opens and tries to resume after unlock
 - Success / error transitions use random images from the device gallery when permitted

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Run unit tests
+        run: ./scripts/run_unit_tests.sh
+
+  android-apk:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install platform and build-tools
+        run: |
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+          yes | sdkmanager --licenses >/dev/null || true
+      - name: Build APK
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
+          ./scripts/build_apk.sh
+      - name: Upload QuizGate.apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuizGate.apk
+          path: build/apk/QuizGate.apk
+
+  ios-stub:
+    name: iOS stub
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build QuizGateStub
+        working-directory: ios/QuizGateStub
+        run: |
+          xcodebuild \
+            -project QuizGateStub.xcodeproj \
+            -scheme QuizGateStub \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build

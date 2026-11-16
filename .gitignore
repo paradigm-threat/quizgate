@@ -9,6 +9,15 @@
 *.webp
 !UnlockQuiz/res/**/*.png
 !UnlockQuiz/res/**/*.webp
+!site/**/*.png
+!site/**/*.jpg
+!site/**/*.jpeg
+!site/**/*.webp
+!site/**/*.ico
+!design/web_icon_kit/**/*.png
+!design/web_icon_kit/**/*.webp
+!design/web_icon_kit/**/*.ico
+!ios/**/*.png
 
 # Local / IDE
 *.iml
@@ -16,6 +25,8 @@
 .vscode/
 *.swp
 .DS_Store
+node_modules/
+.next/
 
 # Local env / secrets (keep debug.keystore for sideload reinstalls)
 .env

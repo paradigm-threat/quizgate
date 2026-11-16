@@ -1,16 +1,13 @@
 package net.clevertree.quizgate;
 
 import android.app.Activity;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -36,7 +33,6 @@ import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,6 +88,7 @@ public class QuizActivity extends Activity {
     private View transitionScrim;
     private View transitionMessage;
     private FrameLayout confettiLayer;
+    private ImageView quizBg;
     private ImageView photoOverlay;
     private ImageView photoOverlayB;
     private TextView transitionTitle;
@@ -104,10 +101,15 @@ public class QuizActivity extends Activity {
     private Runnable pulseAnim;
     private Runnable photoFlashTick;
     private boolean photoFlashUseB;
+    private List<Uri> devicePhotos = new ArrayList<>();
     private List<Uri> successPhotos = new ArrayList<>();
     private int successPhotoIndex;
+    /** False until the current question gets a correct/wrong tap. */
+    private boolean currentAnswered;
 
     private final MapColors colors = new MapColors();
+    private TextView quizStatsWrong;
+    private TextView quizStatsSkipped;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,12 +134,17 @@ public class QuizActivity extends Activity {
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);
+        quizStatsWrong = findViewById(R.id.quiz_stats_wrong);
+        quizStatsSkipped = findViewById(R.id.quiz_stats_skipped);
+        quizBg = findViewById(R.id.quiz_bg);
         transitionOverlay = findViewById(R.id.transition_overlay);
         transitionScrim = findViewById(R.id.transition_scrim);
         transitionMessage = findViewById(R.id.transition_message);
         confettiLayer = findViewById(R.id.confetti_layer);
         photoOverlay = findViewById(R.id.photo_overlay);
         photoOverlayB = findViewById(R.id.photo_overlay_b);
+        devicePhotos = PhotoLibrary.listAll(this);
+        applyQuizBackground();
         transitionTitle = findViewById(R.id.transition_title);
         transitionRetryLabel = findViewById(R.id.transition_retry_label);
         transitionCountdown = findViewById(R.id.transition_countdown);
@@ -159,6 +166,7 @@ public class QuizActivity extends Activity {
             picker.preferFirst(getIntent().getStringExtra("force_qid"));
         }
         session = new QuizSession(UUID.randomUUID().toString(), trigger, clock.nowMillis(), picker);
+        currentAnswered = false;
         logEvent("shown", session.getCurrent().id, "", 0);
         bindQuestion(session.getCurrent());
     }
@@ -228,6 +236,7 @@ public class QuizActivity extends Activity {
         quizPanel.setVisibility(View.VISIBLE);
         quizPanel.setAlpha(1f);
         hideTransitionOverlayImmediate();
+        currentAnswered = false;
         refreshQuizDayStats();
         startBalloonPulse(questionBalloon, BALLOON_INFLATED, 3);
     }
@@ -240,8 +249,16 @@ public class QuizActivity extends Activity {
         } catch (Exception e) {
             day = new StatsStore.DayStats();
         }
-        quizStatsAsked.setText(day.questionsAsked + " questions");
+        if (quizStatsAsked != null) {
+            quizStatsAsked.setText(day.questionsAsked + " asked");
+        }
         quizStatsRight.setText(day.answeredRight + " right");
+        if (quizStatsWrong != null) {
+            quizStatsWrong.setText(day.answeredWrong + " wrong");
+        }
+        if (quizStatsSkipped != null) {
+            quizStatsSkipped.setText(day.skipped + " skipped");
+        }
         switch (day.level()) {
             case GREAT:
                 quizStatsBar.setBackgroundResource(R.drawable.stats_card_great);
@@ -385,6 +402,7 @@ public class QuizActivity extends Activity {
         if (session.isEnded() || finishing || inTransition) return;
         Question q = session.getCurrent();
         QuizSession.AnswerResult result = session.answer(choice, clock.nowMillis());
+        currentAnswered = true;
         if (result == QuizSession.AnswerResult.CORRECT_UNLOCK) {
             logEvent("correct", q.id, choice, session.getMissStreak());
             showSuccessThenFinish();
@@ -546,12 +564,24 @@ public class QuizActivity extends Activity {
         return getResources().getColor(resId, getTheme());
     }
 
+    private void applyQuizBackground() {
+        Uri photo = pickPhoto();
+        Bitmap bmp = photo != null ? PhotoLibrary.decodeSampled(this, photo, 1600, 1000) : null;
+        if (bmp != null) {
+            quizBg.setImageBitmap(bmp);
+            Log.i(AlarmScheduler.TAG, "quiz backdrop loaded from local gallery");
+        } else {
+            quizBg.setImageDrawable(null);
+            Log.w(AlarmScheduler.TAG, "quiz backdrop empty — no readable local photos");
+        }
+    }
+
     private void preparePhotoBackground(boolean forSuccess) {
         photoOverlayB.setVisibility(View.GONE);
         photoOverlayB.setAlpha(0f);
         photoFlashUseB = false;
         Uri photo = pickPhoto();
-        Bitmap bmp = photo != null ? decodeSampled(photo, 1280, 800) : null;
+        Bitmap bmp = photo != null ? PhotoLibrary.decodeSampled(this, photo, 1280, 800) : null;
         if (bmp != null) {
             photoOverlay.setImageBitmap(bmp);
             photoOverlay.setBackground(null);
@@ -573,9 +603,10 @@ public class QuizActivity extends Activity {
         transitionCountdown.setScaleX(1f);
         transitionCountdown.setScaleY(1f);
         if (forSuccess) {
-            successPhotos = listDevicePhotos();
+            successPhotos = new ArrayList<>(devicePhotos.isEmpty() ? PhotoLibrary.listAll(this) : devicePhotos);
             Collections.shuffle(successPhotos, random);
             successPhotoIndex = 0;
+            Log.i(AlarmScheduler.TAG, "success slideshow photos=" + successPhotos.size());
         }
     }
 
@@ -682,7 +713,7 @@ public class QuizActivity extends Activity {
                 if (!inTransition || successPhotos.isEmpty()) return;
                 Uri next = successPhotos.get(successPhotoIndex % successPhotos.size());
                 successPhotoIndex++;
-                Bitmap bmp = decodeSampled(next, 960, 640);
+                Bitmap bmp = PhotoLibrary.decodeSampled(QuizActivity.this, next, 960, 640);
                 if (bmp != null) {
                     ImageView incoming = photoFlashUseB ? photoOverlay : photoOverlayB;
                     ImageView outgoing = photoFlashUseB ? photoOverlayB : photoOverlay;
@@ -808,8 +839,13 @@ public class QuizActivity extends Activity {
 
     private void finishWithBypass() {
         if (finishing) return;
+        String qid = session.getCurrent() != null ? session.getCurrent().id : "";
+        if (!currentAnswered && !qid.isEmpty()) {
+            logEvent("skipped", qid, "", session.getMissStreak());
+            currentAnswered = true; // avoid double-count
+        }
         session.bypass(clock.nowMillis());
-        logEvent("bypass", session.getCurrent() != null ? session.getCurrent().id : "", "", session.getMissStreak());
+        logEvent("bypass", qid, "", session.getMissStreak());
         finishSession();
     }
 
@@ -838,60 +874,17 @@ public class QuizActivity extends Activity {
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats event", e);
         }
-        if ("shown".equals(type) || "correct".equals(type) || "wrong".equals(type)) {
+        if ("shown".equals(type) || "correct".equals(type) || "wrong".equals(type) || "skipped".equals(type)) {
             refreshQuizDayStats();
         }
     }
 
     private Uri pickPhoto() {
-        List<Uri> found = listDevicePhotos();
-        if (found.isEmpty()) return null;
-        return found.get(random.nextInt(found.size()));
-    }
-
-    /** Local device gallery images only — nothing shipped in the APK/repo. */
-    private List<Uri> listDevicePhotos() {
-        List<Uri> found = new ArrayList<>();
-        String[] projection = {MediaStore.Images.Media._ID};
-        try (Cursor c = getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                MediaStore.Images.Media.DATE_ADDED + " DESC")) {
-            if (c == null) return found;
-            int idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
-            while (c.moveToNext() && found.size() < 200) {
-                long id = c.getLong(idCol);
-                found.add(Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, Long.toString(id)));
-            }
-        } catch (Exception e) {
-            Log.w(AlarmScheduler.TAG, "listDevicePhotos", e);
+        if (devicePhotos.isEmpty()) {
+            devicePhotos = PhotoLibrary.listAll(this);
         }
-        return found;
-    }
-
-    private Bitmap decodeSampled(Uri uri, int reqW, int reqH) {
-        BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inJustDecodeBounds = true;
-        try (InputStream in = getContentResolver().openInputStream(uri)) {
-            if (in == null) return null;
-            BitmapFactory.decodeStream(in, null, opts);
-        } catch (Exception e) {
-            Log.w(AlarmScheduler.TAG, "decode bounds", e);
-            return null;
-        }
-        int sample = 1;
-        while (opts.outWidth / sample > reqW || opts.outHeight / sample > reqH) sample *= 2;
-        opts.inJustDecodeBounds = false;
-        opts.inSampleSize = sample;
-        try (InputStream in = getContentResolver().openInputStream(uri)) {
-            if (in == null) return null;
-            return BitmapFactory.decodeStream(in, null, opts);
-        } catch (Exception e) {
-            Log.w(AlarmScheduler.TAG, "decode photo", e);
-            return null;
-        }
+        if (devicePhotos.isEmpty()) return null;
+        return devicePhotos.get(random.nextInt(devicePhotos.size()));
     }
 
     private int dp(int v) {

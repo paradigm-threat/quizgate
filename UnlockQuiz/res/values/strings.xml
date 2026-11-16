@@ -14,8 +14,10 @@
     <string name="setup_arm">Arm scheduling</string>
     <string name="setup_force">Test quiz now</string>
     <string name="stats_today_title">Today</string>
-    <string name="stats_asked_label">questions</string>
-    <string name="stats_right_label">right answers</string>
+    <string name="stats_asked_label">asked</string>
+    <string name="stats_right_label">right</string>
+    <string name="stats_wrong_label">wrong</string>
+    <string name="stats_skipped_label">skipped</string>
     <string name="stats_mood_ready">Ready to play!</string>
     <string name="stats_mood_great">Amazing day!</string>
     <string name="stats_mood_good">Nice work!</string>

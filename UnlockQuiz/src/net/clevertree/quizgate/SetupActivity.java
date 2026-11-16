@@ -28,6 +28,8 @@ public class SetupActivity extends Activity {
     private TextView statsMood;
     private TextView statsAskedNum;
     private TextView statsRightNum;
+    private TextView statsWrongNum;
+    private TextView statsSkippedNum;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +39,8 @@ public class SetupActivity extends Activity {
         statsMood = findViewById(R.id.stats_mood);
         statsAskedNum = findViewById(R.id.stats_asked_num);
         statsRightNum = findViewById(R.id.stats_right_num);
+        statsWrongNum = findViewById(R.id.stats_wrong_num);
+        statsSkippedNum = findViewById(R.id.stats_skipped_num);
         Button arm = findViewById(R.id.btn_arm);
         Button force = findViewById(R.id.btn_force);
         arm.setOnClickListener(v -> {
@@ -171,6 +175,8 @@ public class SetupActivity extends Activity {
         }
         statsAskedNum.setText(String.valueOf(day.questionsAsked));
         statsRightNum.setText(String.valueOf(day.answeredRight));
+        if (statsWrongNum != null) statsWrongNum.setText(String.valueOf(day.answeredWrong));
+        if (statsSkippedNum != null) statsSkippedNum.setText(String.valueOf(day.skipped));
         switch (day.level()) {
             case GREAT:
                 statsCard.setBackgroundResource(R.drawable.stats_card_great);

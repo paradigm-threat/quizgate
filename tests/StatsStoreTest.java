@@ -41,10 +41,13 @@ public class StatsStoreTest {
         store.appendEvent(new StatsEvent(now + 1, "d1", "wrong", "m01", "9", 1));
         store.appendEvent(new StatsEvent(now + 2, "d1", "shown", "m02", "", 1));
         store.appendEvent(new StatsEvent(now + 3, "d1", "correct", "m02", "3", 0));
+        store.appendEvent(new StatsEvent(now + 4, "d1", "shown", "m03", "", 0));
+        store.appendEvent(new StatsEvent(now + 5, "d1", "skipped", "m03", "", 0));
         StatsStore.DayStats day = store.dayStats(now, utc);
-        Assert.eq(2, day.questionsAsked, "day asked");
+        Assert.eq(3, day.questionsAsked, "day asked");
         Assert.eq(1, day.answeredRight, "day right");
         Assert.eq(1, day.answeredWrong, "day wrong");
+        Assert.eq(1, day.skipped, "day skipped");
         Assert.eq(StatsStore.Level.GOOD, day.level(), "day level ~50%");
 
         System.out.println("StatsStoreTest OK dir=" + dir.getAbsolutePath());

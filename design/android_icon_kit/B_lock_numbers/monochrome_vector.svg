@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><path d="M414 466 V357 C414 293 455 254 512 254 C569 254 610 293 610 357 V466" fill="none" stroke="white" stroke-width="70" stroke-linecap="round"/>
+<rect x="327" y="430" width="370" height="285" rx="68" fill="white"/>
+<path d="M489 542 A26 26 0 1 1 535 542 L533 610 H491 Z" fill="#000000" fill-opacity="0"/>
+<rect x="282" y="675" width="132" height="116" rx="25" fill="white"/><rect x="446" y="684" width="132" height="107" rx="25" fill="white"/><rect x="610" y="675" width="132" height="116" rx="25" fill="white"/>
+<!-- small transparent dividers define the three arithmetic blocks -->
+<path d="M446 715 V768 M610 715 V768" stroke="none"/></svg>

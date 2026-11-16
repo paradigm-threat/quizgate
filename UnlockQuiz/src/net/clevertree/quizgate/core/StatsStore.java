@@ -85,6 +85,7 @@ public final class StatsStore {
                 if ("shown".equals(type)) d.questionsAsked++;
                 else if ("correct".equals(type)) d.answeredRight++;
                 else if ("wrong".equals(type)) d.answeredWrong++;
+                else if ("skipped".equals(type)) d.skipped++;
             }
         }
         return d;
@@ -112,6 +113,8 @@ public final class StatsStore {
         public int questionsAsked;
         public int answeredRight;
         public int answeredWrong;
+        /** Shown but left unanswered (Home/back/kill before correct or wrong). */
+        public int skipped;
 
         public int answeredTotal() {
             return answeredRight + answeredWrong;

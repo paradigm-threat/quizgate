@@ -1,0 +1,32 @@
+{
+  "A_gate_question": {
+    "design": "Gate + question mark",
+    "master": "master_1024.png",
+    "adaptive_foreground": "foreground_1024_transparent.png",
+    "adaptive_background": "background_1024.png",
+    "adaptive_monochrome": "monochrome_1024_white_transparent.png",
+    "android_resource_folder": "android_res/",
+    "wide_folder": "wide/",
+    "transparent_folder": "transparent/"
+  },
+  "B_lock_numbers": {
+    "design": "Soft lock + numbers",
+    "master": "master_1024.png",
+    "adaptive_foreground": "foreground_1024_transparent.png",
+    "adaptive_background": "background_1024.png",
+    "adaptive_monochrome": "monochrome_1024_white_transparent.png",
+    "android_resource_folder": "android_res/",
+    "wide_folder": "wide/",
+    "transparent_folder": "transparent/"
+  },
+  "C_open_gate_success": {
+    "design": "Open gate + star/check",
+    "master": "master_1024.png",
+    "adaptive_foreground": "foreground_1024_transparent.png",
+    "adaptive_background": "background_1024.png",
+    "adaptive_monochrome": "monochrome_1024_white_transparent.png",
+    "android_resource_folder": "android_res/",
+    "wide_folder": "wide/",
+    "transparent_folder": "transparent/"
+  }
+}

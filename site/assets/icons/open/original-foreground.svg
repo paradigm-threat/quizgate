@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="0.9" y2="1"><stop offset="0" stop-color="#FFE078"/><stop offset="0.40" stop-color="#FFC83C"/><stop offset="1" stop-color="#F6AB28"/></linearGradient>
+ <linearGradient id="salmon" x1="0" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FF9380"/><stop offset="1" stop-color="#F65C50"/></linearGradient>
+ <linearGradient id="blueTile" x1="0" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#51C7FB"/><stop offset="1" stop-color="#087BCB"/></linearGradient>
+ <linearGradient id="skyTile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#48C4F0"/><stop offset="1" stop-color="#0788D2"/></linearGradient>
+ <linearGradient id="whiteTile" x1="0" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9F2FF"/></linearGradient>
+ <linearGradient id="gateInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDB66"/><stop offset="1" stop-color="#F1AA1F"/></linearGradient>
+</defs>
+
+<!-- arched frame behind already-open swinging doors -->
+<path d="M326 720 V460 C326 361 411 291 512 291 C613 291 698 361 698 460 V720" fill="none" stroke="#EBA024" stroke-width="62" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M326 720 V460 C326 361 411 291 512 291 C613 291 698 361 698 460 V720" fill="none" stroke="url(#gold)" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- angled door wings move outward: opening means earned freedom -->
+<path d="M321 446 L237 418 Q225 417 225 433 L225 742 Q225 758 244 750 L351 698 L351 465 Q351 450 321 446Z" fill="#E9A025"/>
+<path d="M314 456 L245 432 L245 734 L333 691 L333 468 Z" fill="url(#gold)"/>
+<path d="M288 490 L288 679" stroke="#FFF0A2" stroke-width="17" opacity=".65" stroke-linecap="round"/>
+<path d="M703 446 L787 418 Q799 417 799 433 L799 742 Q799 758 780 750 L673 698 L673 465 Q673 450 703 446Z" fill="#E9A025"/>
+<path d="M710 456 L779 432 L779 734 L691 691 L691 468 Z" fill="url(#gold)"/>
+<path d="M736 490 L736 679" stroke="#FFF0A2" stroke-width="17" opacity=".65" stroke-linecap="round"/>
+<!-- friendly reward star -->
+<path d="M512 427 L541 480 L601 491 L561 535 L570 595 L512 567 L454 595 L463 535 L423 491 L483 480 Z" fill="#E89720" stroke="#E79C22" stroke-width="15" stroke-linejoin="round"/>
+<path d="M512 427 L541 480 L601 491 L561 535 L570 595 L512 567 L454 595 L463 535 L423 491 L483 480 Z" fill="url(#gold)" stroke="#F6BA31" stroke-width="8" stroke-linejoin="round"/>
+<path d="M474 523 L499 546 L552 492" stroke="white" fill="none" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- soft success rays -->
+<path d="M512 195 V226 M430 213 L446 237 M594 213 L578 237" stroke="#FFDA51" stroke-width="22" stroke-linecap="round"/>
+</svg>
