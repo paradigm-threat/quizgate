@@ -8,31 +8,39 @@ https://quizgate.clevertree.net/privacy
 
 ---
 
-## Competitors (re-check)
+## Competitors
 
-Cannot validate “only one totally free app.” Several live products match the
-quiz/math-to-earn-screen-time concept with **no ads and no IAP**:
+### North star (same narrative — different platform)
 
 | App | Platform | Monetization | Notes |
 |-----|----------|--------------|--------|
-| **Solve2Open** | Android (Play) | Free, no ads, no IAP | Add/sub unlock of selected apps; local; Accessibility; Families Policy |
-| **PlugBrain** | Android (Play + F-Droid) | Free forever, OSS, no ads/IAP | Math gate for distraction apps (adult focus); offline |
-| **Pickles** | iOS | Free, no ads, no accounts | Kids K–5 math earns minutes; Screen Time APIs |
-| **Think2Unlock** | iOS | Free, no ads, no account required | Math/vocab gates; optional parent cloud dashboard |
+| **[Pickles](https://pickles.to/)** | **iOS only** | Free · no ads · no accounts · no tracking | Math earns minutes; locks via Apple Screen Time / FamilyControls; K–5 curriculum. Explicitly **no Android** today (locking would be a separate project). **This is the product QuizGate wants to compete with** — same values, Android focus. |
+
+### Android peers (lesser / different product shape)
+
+| App | Platform | Monetization | Notes |
+|-----|----------|--------------|--------|
+| **[Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise)** | Android (Play) | Claims free / no ads; Play still shows **In-app purchases**; data-safety lists personal + financial types | Parental-control suite: app blocker, daily limits, web filter + optional math-to-earn minutes. Heavier than Pickles-class “just education.” **Primary Android store competitor to displace on narrative.** |
+| **Solve2Open** | Android (Play) | Free, no ads, no IAP | Simple add/sub unlock of selected apps; Accessibility; Families Policy |
+| **PlugBrain** | Android (Play + F-Droid) | Free forever, OSS, no ads/IAP | Math gate for distraction apps (**adult** focus); offline |
 | **Scrolliosis** | Android (GitHub) | Free OSS | Custom knowledge vault questions |
+
+### Other iOS (same space, not the north star)
+
+| App | Platform | Monetization | Notes |
+|-----|----------|--------------|--------|
+| **Think2Unlock** | iOS | Free, no ads, no account required | Math/vocab gates; optional parent cloud dashboard |
 
 **Paid / subscription** (same idea, not free): LockdIn, Math Applocker, TutorLock,
 Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/IAP.
 
 ### QuizGate positioning
 
-- Not “the only free app” — instead: **CleverTree forever-free** (no ads, no IAP,
-  no paywall — company policy for all products)
-- Differentiates on **reward-based time + progressive curriculum + anonymous AI
-  batch curation** (roadmap), soft hourly/morning gate, math+colors now, no
-  personal data/photos in product cloud
-- Solve2Open remains the closest **simple** free Android peer; Pickles/Think2Unlock
-  own free iOS kids space; PlugBrain is free but adult-focus
+- **Compete with Pickles on values** (education earns time; no kids accounts; no tracking; no fees) — **on Android**, where Pickles is absent
+- **Not** a Screenwise-style control suite (web filter, device-admin lockdown, IAP-adjacent Play listing) as the product identity
+- CleverTree **forever-free** policy (no ads, no IAP, no paywall — all products)
+- Roadmap differentiators: progressive curriculum + anonymous AI batch curation; soft gate now, harder lock later if Android APIs allow
+- Soft hourly/morning quiz today (math + colors); gallery backdrops stay on-device
 
 ---
 
@@ -83,7 +91,8 @@ can be recruited; longer if waiting out the 14-day closed test on a new personal
   Apple’s **Family Controls distribution entitlement** (manual approval) before
   TestFlight/App Store
 - Soft “interval quiz” without shielding other apps is easier to ship but weaker vs
-  Pickles/Think2Unlock
+  Pickles — and **Android remains the priority** because Pickles already owns the
+  clean iOS narrative
 
 ### Store checklist
 
@@ -95,7 +104,7 @@ can be recruited; longer if waiting out the 14-day closed test on a new personal
 - Declare no ads / no IAP; forever-free messaging in listing
 
 **Effort estimate:** multi-week to multi-month (new app + entitlement review + Screen
-Time UX), not a same-sprint task as Android Play.
+Time UX). Defer until Android product matches Pickles-class values in market.
 
 ---
 
