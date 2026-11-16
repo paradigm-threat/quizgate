@@ -15,28 +15,23 @@ variables:
   ANDROID_SDK_ROOT: "$CI_PROJECT_DIR/.android-sdk"
   ANDROID_HOME: "$CI_PROJECT_DIR/.android-sdk"
 
-.regression_script: &regression_script
-  - java -version
-  - chmod +x scripts/*.sh
-  - ./scripts/run_regression.sh
-
 regression:
   stage: test
   image: eclipse-temurin:17-jdk
+  before_script:
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 > /dev/null
+    - java -version
+    - python3 --version
+    - chmod +x scripts/*.sh
   script:
-    - *regression_script
-  artifacts:
-    when: on_failure
-    paths:
-      - build/test-classes/
-    expire_in: 3 days
+    - ./scripts/run_regression.sh
 
 android-apk:
   stage: build
   image: eclipse-temurin:17-jdk
   needs: [regression]
   before_script:
-    - apt-get update -qq && apt-get install -y -qq wget unzip curl python3 > /dev/null
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq wget unzip curl python3 > /dev/null
     - mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
     - |
       cd /tmp
