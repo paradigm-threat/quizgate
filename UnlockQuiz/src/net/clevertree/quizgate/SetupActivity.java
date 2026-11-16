@@ -2,17 +2,21 @@ package net.clevertree.quizgate;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,8 +50,11 @@ public class SetupActivity extends Activity {
     private TextView jitterValue;
     private TextView windowValue;
     private Button addWidget;
+    private LinearLayout reqList;
+    private View reqCard;
     private final List<CurriculumPack> packList = new ArrayList<>();
     private boolean suppressSpinner;
+    private boolean skipAuthWarn;
     private final Handler countdownHandler = new Handler(Looper.getMainLooper());
     private final Runnable countdownTick = new Runnable() {
         @Override public void run() {
@@ -77,6 +84,8 @@ public class SetupActivity extends Activity {
         Button arm = findViewById(R.id.btn_arm);
         Button force = findViewById(R.id.btn_force);
         addWidget = findViewById(R.id.btn_add_widget);
+        reqList = findViewById(R.id.setup_req_list);
+        reqCard = findViewById(R.id.setup_req_card);
         Button syncNow = findViewById(R.id.btn_sync_now);
 
         AppPrefs prefs = new AppPrefs(this);
@@ -252,7 +261,9 @@ public class SetupActivity extends Activity {
             prefs.setMathEntryMode(in.getStringExtra("math_entry"));
         }
         if (in.getBooleanExtra("auto_arm", false)) {
+            skipAuthWarn = true;
             armNow();
+            skipAuthWarn = false;
         }
         // Smoke: schedule next interval fire in N ms without changing stored 30±15 prefs.
         if (in.hasExtra("next_in_ms")) {
@@ -281,7 +292,44 @@ public class SetupActivity extends Activity {
 
     private void armNow() {
         AlarmScheduler.armAll(this);
-        // One authorization prompt per Arm (exact → notif → battery → FSI → usage)
+        refreshStatus();
+        ScheduleAuth.Snapshot snap = ScheduleAuth.snapshot(this);
+        if (!skipAuthWarn && snap.hasRequiredGap()) {
+            showAuthSoftWarn();
+            return;
+        }
+        finishArmSuccess();
+    }
+
+    /** Soft warning only — never hard-blocks Arm / schedule. */
+    private void showAuthSoftWarn() {
+        String missing = ScheduleAuth.missingRequiredSummary(this);
+        if (missing.isEmpty()) {
+            finishArmSuccess();
+            return;
+        }
+        String message = getString(R.string.setup_auth_warn_body, missing);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.setup_auth_warn_title)
+                .setMessage(message)
+                .setNegativeButton(R.string.setup_auth_warn_back, (d, w) -> {
+                    // Stay on checklist and open Settings for the first missing item.
+                    if (reqCard != null) reqCard.requestFocus();
+                    ScheduleAuth.promptNextGap(this);
+                    refreshStatus();
+                })
+                .setPositiveButton(R.string.setup_auth_warn_proceed, (d, w) -> {
+                    // Proceed anyway — do not force remaining validation.
+                    Toast.makeText(this, "Armed", Toast.LENGTH_SHORT).show();
+                    maybeRequestPhotos();
+                    refreshStatus();
+                })
+                .setCancelable(true)
+                .show();
+    }
+
+    private void finishArmSuccess() {
+        // One authorization prompt for any remaining optional gap (e.g. usage).
         ScheduleAuth.promptNextGap(this);
         maybeRequestPhotos();
         Toast.makeText(this, "Armed", Toast.LENGTH_SHORT).show();
@@ -291,7 +339,8 @@ public class SetupActivity extends Activity {
     /** Optional gallery backdrop — not schedule-critical; never stacks with auth Settings. */
     private void maybeRequestPhotos() {
         ScheduleAuth.Snapshot s = ScheduleAuth.snapshot(this);
-        if (s.firstGap() != ScheduleAuth.Gap.NONE) return;
+        // Don't stack photo prompt over required Settings screens.
+        if (s.hasRequiredGap()) return;
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.READ_MEDIA_IMAGES}, 2);
@@ -323,6 +372,7 @@ public class SetupActivity extends Activity {
         refreshDayStats();
         refreshCountdown();
         refreshWidgetButton();
+        refreshRequirements();
         if (minutesJar != null) {
             minutesJar.setText("Minutes jar: " + p.getMinutesBalance());
         }
@@ -336,9 +386,101 @@ public class SetupActivity extends Activity {
         sb.append(" · tier ").append(p.getActiveTier());
         sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (Wi‑Fi)" : "off");
         sb.append("\nMath entry: ").append(p.getMathEntryMode());
-        sb.append("\nHome widget: ").append(ScoreWidgetProvider.isPinned(this) ? "pinned" : "not pinned");
-        ScheduleAuth.appendStatus(sb, this);
         status.setText(sb.toString());
+    }
+
+    private void refreshRequirements() {
+        if (reqList == null) return;
+        reqList.removeAllViews();
+        int pad = dp(12);
+        int gap = dp(8);
+        for (ScheduleAuth.CheckItem item : ScheduleAuth.checklist(this)) {
+            reqList.addView(buildReqRow(item.titleRes, item.detailRes, item.required, item.met,
+                    item.met ? null : () -> ScheduleAuth.openGap(this, item.gap)),
+                    rowParams(gap));
+        }
+        boolean widgetPinned = ScoreWidgetProvider.isPinned(this);
+        reqList.addView(buildReqRow(R.string.setup_req_widget_title, R.string.setup_req_widget_detail,
+                false, widgetPinned, widgetPinned ? null : this::requestHomeWidget),
+                rowParams(gap));
+        reqList.setPadding(0, 0, 0, pad / 2);
+    }
+
+    private LinearLayout.LayoutParams rowParams(int gap) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = gap;
+        return lp;
+    }
+
+    private View buildReqRow(int titleRes, int detailRes, boolean required, boolean met,
+                             Runnable onTap) {
+        int pad = dp(12);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(pad, pad, pad, pad);
+        row.setBackgroundResource(R.drawable.setup_req_row);
+        if (onTap != null) {
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setOnClickListener(v -> onTap.run());
+        }
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView mark = new TextView(this);
+        mark.setText(met ? "✓" : "!");
+        mark.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        mark.setTextColor(getResources().getColor(
+                met ? R.color.stats_mood_great : R.color.stats_mood_trying, getTheme()));
+        mark.setPadding(0, 0, dp(10), 0);
+        top.addView(mark);
+
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        textCol.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView title = new TextView(this);
+        title.setText(titleRes);
+        title.setTextColor(getResources().getColor(R.color.header, getTheme()));
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        textCol.addView(title);
+
+        TextView badge = new TextView(this);
+        badge.setText(required ? R.string.setup_req_badge_required : R.string.setup_req_badge_optional);
+        badge.setTextColor(getResources().getColor(R.color.symbolic, getTheme()));
+        badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        textCol.addView(badge);
+
+        top.addView(textCol);
+
+        TextView statusTv = new TextView(this);
+        statusTv.setText(met ? R.string.setup_req_status_ready : R.string.setup_req_status_needed);
+        statusTv.setTextColor(getResources().getColor(
+                met ? R.color.stats_mood_great : R.color.stats_mood_trying, getTheme()));
+        statusTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        statusTv.setTypeface(statusTv.getTypeface(), android.graphics.Typeface.BOLD);
+        top.addView(statusTv);
+
+        row.addView(top);
+
+        TextView detail = new TextView(this);
+        detail.setText(detailRes);
+        detail.setTextColor(getResources().getColor(R.color.header, getTheme()));
+        detail.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        detail.setPadding(dp(30), dp(4), 0, 0);
+        row.addView(detail);
+        return row;
+    }
+
+    private int dp(int value) {
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics()));
     }
 
     private void refreshCountdown() {

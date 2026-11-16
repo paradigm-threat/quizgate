@@ -23,8 +23,8 @@ import java.util.TimeZone;
 
 /**
  * OS authorizations that keep the quiz schedule firing: exact alarms, battery
- * exemption, notifications (FGS fallback), full-screen intent, usage stats.
- * Checks + optional single Settings prompt (no dialog spam).
+ * exemption, notifications (FGS fallback), full-screen intent, appear-on-top,
+ * usage stats. Checks + optional single Settings prompt (no dialog spam).
  */
 public final class ScheduleAuth {
     private static final String TAG = AlarmScheduler.TAG;
@@ -71,16 +71,44 @@ public final class ScheduleAuth {
         }
 
         public Gap firstGap() {
+            Gap required = firstRequiredGap();
+            if (required != Gap.NONE) return required;
+            if (!usageStats) return Gap.USAGE_STATS;
+            return Gap.NONE;
+        }
+
+        /** Schedule-critical gaps only (excludes optional usage access). */
+        public Gap firstRequiredGap() {
             if (!exactAlarm) return Gap.EXACT_ALARM;
             if (!notifications) return Gap.NOTIFICATIONS;
             if (!batteryUnrestricted) return Gap.BATTERY;
             if (!fullScreenIntent) return Gap.FULL_SCREEN_INTENT;
             if (!overlay) return Gap.OVERLAY;
-            if (!usageStats) return Gap.USAGE_STATS;
             return Gap.NONE;
         }
 
+        public boolean hasRequiredGap() {
+            return firstRequiredGap() != Gap.NONE;
+        }
+
         private static int bit(boolean v) { return v ? 1 : 0; }
+    }
+
+    /** One row in the Setup requirements checklist. */
+    public static final class CheckItem {
+        public final Gap gap;
+        public final boolean required;
+        public final boolean met;
+        public final int titleRes;
+        public final int detailRes;
+
+        CheckItem(Gap gap, boolean required, boolean met, int titleRes, int detailRes) {
+            this.gap = gap;
+            this.required = required;
+            this.met = met;
+            this.titleRes = titleRes;
+            this.detailRes = detailRes;
+        }
     }
 
     private ScheduleAuth() {}
@@ -197,22 +225,123 @@ public final class ScheduleAuth {
     public static void appendStatus(StringBuilder sb, Context ctx) {
         Snapshot s = snapshot(ctx);
         if (Build.VERSION.SDK_INT >= 31) {
-            sb.append("\nExact alarms: ").append(s.exactAlarm ? "yes" : "NO — tap Arm");
+            sb.append("\nExact alarms: ").append(s.exactAlarm ? "yes" : "NO — tap row");
         }
         if (Build.VERSION.SDK_INT >= 23) {
-            sb.append("\nBattery unrestricted: ").append(s.batteryUnrestricted ? "yes" : "NO — tap Arm");
+            sb.append("\nBattery unrestricted: ").append(s.batteryUnrestricted ? "yes" : "NO — tap row");
         }
         if (Build.VERSION.SDK_INT >= 33) {
-            sb.append("\nNotifications: ").append(s.notifications ? "yes" : "NO — tap Arm");
+            sb.append("\nNotifications: ").append(s.notifications ? "yes" : "NO — tap row");
         }
         if (Build.VERSION.SDK_INT >= 34) {
-            sb.append("\nFull-screen intent: ").append(s.fullScreenIntent ? "yes" : "NO — tap Arm");
+            sb.append("\nFull-screen intent: ").append(s.fullScreenIntent ? "yes" : "NO — tap row");
         }
         if (Build.VERSION.SDK_INT >= 23) {
-            sb.append("\nAppear on top: ").append(s.overlay ? "yes" : "NO — tap Arm");
+            sb.append("\nAppear on top: ").append(s.overlay ? "yes" : "NO — tap row");
         }
         sb.append("\nUsage access (return to last app): ")
-                .append(s.usageStats ? "yes" : "NO — tap Arm");
+                .append(s.usageStats ? "yes" : "NO — tap row");
+    }
+
+    /**
+     * Live checklist for Setup: required schedule/auth items first, then optional
+     * usage access. Home widget is appended by Setup (not a Gap).
+     */
+    public static java.util.List<CheckItem> checklist(Context ctx) {
+        Snapshot s = snapshot(ctx);
+        java.util.ArrayList<CheckItem> items = new java.util.ArrayList<>();
+        if (Build.VERSION.SDK_INT >= 31) {
+            items.add(new CheckItem(Gap.EXACT_ALARM, true, s.exactAlarm,
+                    R.string.setup_req_exact_title, R.string.setup_req_exact_detail));
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            items.add(new CheckItem(Gap.NOTIFICATIONS, true, s.notifications,
+                    R.string.setup_req_notif_title, R.string.setup_req_notif_detail));
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
+            items.add(new CheckItem(Gap.BATTERY, true, s.batteryUnrestricted,
+                    R.string.setup_req_battery_title, R.string.setup_req_battery_detail));
+        }
+        if (Build.VERSION.SDK_INT >= 34) {
+            items.add(new CheckItem(Gap.FULL_SCREEN_INTENT, true, s.fullScreenIntent,
+                    R.string.setup_req_fsi_title, R.string.setup_req_fsi_detail));
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
+            items.add(new CheckItem(Gap.OVERLAY, true, s.overlay,
+                    R.string.setup_req_overlay_title, R.string.setup_req_overlay_detail));
+        }
+        items.add(new CheckItem(Gap.USAGE_STATS, false, s.usageStats,
+                R.string.setup_req_usage_title, R.string.setup_req_usage_detail));
+        return items;
+    }
+
+    /** Parent-friendly bullet list of unmet required items (empty if all set). */
+    public static String missingRequiredSummary(Context ctx) {
+        StringBuilder sb = new StringBuilder();
+        for (CheckItem item : checklist(ctx)) {
+            if (!item.required || item.met) continue;
+            if (sb.length() > 0) sb.append('\n');
+            sb.append("• ").append(ctx.getString(item.titleRes));
+        }
+        return sb.toString();
+    }
+
+    /** Open Settings / permission UI for a specific gap (or next gap if NONE). */
+    public static Gap openGap(Activity activity, Gap gap) {
+        if (gap == null || gap == Gap.NONE) return promptNextGap(activity);
+        Snapshot s = snapshot(activity);
+        switch (gap) {
+            case EXACT_ALARM:
+                if (s.exactAlarm) return Gap.NONE;
+                break;
+            case NOTIFICATIONS:
+                if (s.notifications) return Gap.NONE;
+                break;
+            case BATTERY:
+                if (s.batteryUnrestricted) return Gap.NONE;
+                break;
+            case FULL_SCREEN_INTENT:
+                if (s.fullScreenIntent) return Gap.NONE;
+                break;
+            case OVERLAY:
+                if (s.overlay) return Gap.NONE;
+                break;
+            case USAGE_STATS:
+                if (s.usageStats) return Gap.NONE;
+                break;
+            default:
+                return Gap.NONE;
+        }
+        AppPrefs prefs = new AppPrefs(activity);
+        prefs.setLastAuthPrompt(gap.name(), s.ts);
+        switch (gap) {
+            case EXACT_ALARM:
+                toast(activity, activity.getString(R.string.setup_req_exact_toast));
+                openExactAlarmSettings(activity);
+                break;
+            case NOTIFICATIONS:
+                requestNotifications(activity);
+                break;
+            case BATTERY:
+                toast(activity, activity.getString(R.string.setup_req_battery_toast));
+                openBatterySettings(activity);
+                break;
+            case FULL_SCREEN_INTENT:
+                toast(activity, activity.getString(R.string.setup_req_fsi_toast));
+                openFullScreenIntentSettings(activity);
+                break;
+            case OVERLAY:
+                toast(activity, activity.getString(R.string.setup_req_overlay_toast));
+                openOverlaySettings(activity);
+                break;
+            case USAGE_STATS:
+                toast(activity, activity.getString(R.string.setup_req_usage_toast));
+                ForegroundApp.openUsageAccessSettings(activity);
+                break;
+            default:
+                break;
+        }
+        return gap;
     }
 
     private static void requestNotifications(Activity activity) {

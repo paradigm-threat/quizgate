@@ -10,9 +10,9 @@ import net.clevertree.quizgate.core.DiagnosticsStore;
 import java.util.TimeZone;
 
 /**
- * Fallback / debug broadcast path. Primary schedule uses {@link AlarmGateActivity}
- * via {@code setAlarmClock}. Broadcasts used for ADB debug fire and exact-alarm
- * fallback; both end in {@link QuizLaunch} (overlay BAL exemption + FSI).
+ * AlarmManager target (setAlarmClock broadcast). Hands off to {@link QuizLaunch}
+ * which uses Appear-on-top for BAL-safe QuizActivity starts, plus FSI notification.
+ * {@link AlarmGateActivity} remains available as an alternate trampoline.
  */
 public class AlarmReceiver extends BroadcastReceiver {
     public static final String ACTION_INTERVAL = "net.clevertree.quizgate.ACTION_INTERVAL";
