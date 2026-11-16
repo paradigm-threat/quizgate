@@ -11,40 +11,74 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.Scheduler;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TimeZone;
 
 public class SetupActivity extends Activity {
     private TextView status;
+    private TextView minutesJar;
     private View statsCard;
     private TextView statsMood;
     private TextView statsAskedNum;
     private TextView statsRightNum;
     private TextView statsWrongNum;
     private TextView statsSkippedNum;
+    private CheckBox syncEnabled;
+    private Spinner curriculumSpinner;
+    private Spinner tierSpinner;
+    private final List<CurriculumPack> packList = new ArrayList<>();
+    private boolean suppressSpinner;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setup);
         status = findViewById(R.id.setup_status);
+        minutesJar = findViewById(R.id.minutes_jar);
         statsCard = findViewById(R.id.stats_card);
         statsMood = findViewById(R.id.stats_mood);
         statsAskedNum = findViewById(R.id.stats_asked_num);
         statsRightNum = findViewById(R.id.stats_right_num);
         statsWrongNum = findViewById(R.id.stats_wrong_num);
         statsSkippedNum = findViewById(R.id.stats_skipped_num);
+        syncEnabled = findViewById(R.id.sync_enabled);
+        curriculumSpinner = findViewById(R.id.curriculum_spinner);
+        tierSpinner = findViewById(R.id.tier_spinner);
         Button arm = findViewById(R.id.btn_arm);
         Button force = findViewById(R.id.btn_force);
+        Button syncNow = findViewById(R.id.btn_sync_now);
+
+        AppPrefs prefs = new AppPrefs(this);
+        syncEnabled.setChecked(prefs.isSyncEnabled());
+        syncEnabled.setOnCheckedChangeListener((b, checked) -> {
+            prefs.setSyncEnabled(checked);
+            if (checked) CurriculumIndexClient.syncIfEnabled(this);
+        });
+        syncNow.setOnClickListener(v -> {
+            if (!prefs.isSyncEnabled()) {
+                Toast.makeText(this, "Enable auto-sync first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Toast.makeText(this, "Syncing curricula…", Toast.LENGTH_SHORT).show();
+            CurriculumIndexClient.syncIfEnabled(this);
+            curriculumSpinner.postDelayed(this::bindCurriculumSpinners, 2500);
+        });
+
         arm.setOnClickListener(v -> {
-            // Product default: 1 hour (ADB may override via intent extras first)
             new AppPrefs(this).setIntervalMs(Scheduler.DEFAULT_INTERVAL_MS);
             armNow();
         });
@@ -53,8 +87,67 @@ public class SetupActivity extends Activity {
             i.putExtra(QuizActivity.EXTRA_TRIGGER, "adb_force");
             startActivity(i);
         });
+        bindCurriculumSpinners();
         applyDevExtras(getIntent());
         refreshStatus();
+        CurriculumIndexClient.syncIfEnabled(this);
+    }
+
+    private void bindCurriculumSpinners() {
+        AppPrefs prefs = new AppPrefs(this);
+        packList.clear();
+        packList.addAll(CurriculumStore.listInstalledAndBundled(this));
+        List<String> labels = new ArrayList<>();
+        int selected = 0;
+        for (int i = 0; i < packList.size(); i++) {
+            CurriculumPack p = packList.get(i);
+            labels.add(p.title + " (ages " + p.ageMin + "–" + p.ageMax + ")");
+            if (p.id.equals(prefs.getActiveCurriculumId())) selected = i;
+        }
+        if (labels.isEmpty()) labels.add("basic-math");
+        suppressSpinner = true;
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, labels);
+        curriculumSpinner.setAdapter(adapter);
+        curriculumSpinner.setSelection(Math.min(selected, Math.max(0, labels.size() - 1)));
+        curriculumSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (suppressSpinner || position < 0 || position >= packList.size()) return;
+                prefs.setActiveCurriculumId(packList.get(position).id);
+                bindTierSpinner(packList.get(position));
+                refreshStatus();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        if (!packList.isEmpty()) bindTierSpinner(packList.get(Math.min(selected, packList.size() - 1)));
+        suppressSpinner = false;
+    }
+
+    private void bindTierSpinner(CurriculumPack pack) {
+        AppPrefs prefs = new AppPrefs(this);
+        List<String> tiers = new ArrayList<>();
+        tiers.add("all");
+        for (CurriculumPack.Tier t : pack.tiers) {
+            tiers.add(t.id + " — " + t.label);
+        }
+        int selected = 0;
+        String active = prefs.getActiveTier();
+        for (int i = 0; i < tiers.size(); i++) {
+            String id = i == 0 ? "all" : pack.tiers.get(i - 1).id;
+            if (id.equals(active)) selected = i;
+        }
+        suppressSpinner = true;
+        tierSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, tiers));
+        tierSpinner.setSelection(selected);
+        tierSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (suppressSpinner) return;
+                String tierId = position == 0 ? "all" : pack.tiers.get(position - 1).id;
+                prefs.setActiveTier(tierId);
+                refreshStatus();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        suppressSpinner = false;
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -71,7 +164,6 @@ public class SetupActivity extends Activity {
             long ms = in.getLongExtra("interval_ms", 0);
             if (ms > 0) prefs.setIntervalMs(ms);
         } else {
-            // Migrate old 2h installs to 1h product default
             long cur = prefs.getIntervalMs();
             if (cur == 2L * 60L * 60L * 1000L) {
                 prefs.setIntervalMs(Scheduler.DEFAULT_INTERVAL_MS);
@@ -91,7 +183,6 @@ public class SetupActivity extends Activity {
     }
 
     private void armNow() {
-        // Schedule first so ADB auto_arm works even if a permission sheet opens after.
         AlarmScheduler.armAll(this);
         requestPerms();
         requestBattery();
@@ -144,10 +235,16 @@ public class SetupActivity extends Activity {
     private void refreshStatus() {
         AppPrefs p = new AppPrefs(this);
         refreshDayStats();
+        if (minutesJar != null) {
+            minutesJar.setText("Minutes jar: " + p.getMinutesBalance());
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(p.isArmed() ? "Armed" : "Not armed");
         long mins = Math.max(1, p.getIntervalMs() / 60000L);
         sb.append("\nEvery ").append(mins).append(" min + morning");
+        sb.append("\nCurriculum: ").append(p.getActiveCurriculumId());
+        sb.append(" · tier ").append(p.getActiveTier());
+        sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (Wi‑Fi)" : "off");
         sb.append("\nMath entry: ").append(p.getMathEntryMode());
         if (p.nextAlarmAt() > 0) {
             sb.append("\nNext alarm at: ").append(p.nextAlarmAt());

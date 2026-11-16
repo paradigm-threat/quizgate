@@ -1,0 +1,14 @@
+{
+  "reviews": [
+    {
+      "packId": "basic-math",
+      "itemCount": 25,
+      "duplicateSpoken": [],
+      "veryShortSpokenIds": [],
+      "notes": [
+        "SI curates and organizes only \u2014 parents keep preference.",
+        "Heuristic review; replace with model batch when available."
+      ]
+    }
+  ]
+}

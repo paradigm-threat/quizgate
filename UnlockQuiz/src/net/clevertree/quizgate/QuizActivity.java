@@ -24,6 +24,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import net.clevertree.quizgate.core.Catalog;
+import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.DigitAnswer;
 import net.clevertree.quizgate.core.Question;
 import net.clevertree.quizgate.core.QuestionPicker;
@@ -63,6 +64,7 @@ public class QuizActivity extends Activity {
     private final MediaGate mediaGate = new MediaGate();
 
     private QuizSession session;
+    private CurriculumPack activePack;
     private StatsStore stats;
     private boolean finishing;
     private boolean inTransition;
@@ -160,12 +162,17 @@ public class QuizActivity extends Activity {
         }
 
         stats = new StatsStore(new File(getFilesDir(), "stats"));
+        CurriculumPack pack = CurriculumStore.getActive(this);
         Catalog catalog = CatalogLoader.get(this);
         QuestionPicker picker = new QuestionPicker(catalog, random);
         if (getIntent() != null && getIntent().hasExtra("force_qid")) {
             picker.preferFirst(getIntent().getStringExtra("force_qid"));
         }
-        session = new QuizSession(UUID.randomUUID().toString(), trigger, clock.nowMillis(), picker);
+        // ADB / e2e forces single-question rounds for deterministic smoke tests
+        int roundSize = (trigger != null && trigger.startsWith("adb_")) ? 1 : pack.roundSize;
+        session = new QuizSession(UUID.randomUUID().toString(), trigger, clock.nowMillis(), picker,
+                roundSize, pack.maxWrong, pack.consolingUnlock);
+        activePack = pack;
         currentAnswered = false;
         logEvent("shown", session.getCurrent().id, "", 0);
         bindQuestion(session.getCurrent());
@@ -403,9 +410,24 @@ public class QuizActivity extends Activity {
         Question q = session.getCurrent();
         QuizSession.AnswerResult result = session.answer(choice, clock.nowMillis());
         currentAnswered = true;
-        if (result == QuizSession.AnswerResult.CORRECT_UNLOCK) {
+        if (result == QuizSession.AnswerResult.CORRECT_UNLOCK
+                || result == QuizSession.AnswerResult.CORRECT_ROUND_DONE) {
             logEvent("correct", q.id, choice, session.getMissStreak());
+            int earn = activePack == null ? 0
+                    : session.getCorrectInRound() * activePack.earnMinutesPerCorrect;
+            if (earn > 0) prefs.addMinutes(earn);
             showSuccessThenFinish();
+            return;
+        }
+        if (result == QuizSession.AnswerResult.CORRECT_CONTINUE) {
+            logEvent("correct", q.id, choice, session.getMissStreak());
+            inTransition = true;
+            handler.postDelayed(() -> {
+                inTransition = false;
+                currentAnswered = false;
+                bindQuestion(session.getCurrent());
+                logEvent("shown", session.getCurrent().id, "", session.getMissStreak());
+            }, 350);
             return;
         }
         logEvent("wrong", q.id, choice, session.getMissStreak());

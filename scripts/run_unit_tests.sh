@@ -23,4 +23,6 @@ echo "== StatsStoreTest =="
 java -cp "$OUT" StatsStoreTest "$JSON"
 echo "== DigitAnswerTest =="
 java -cp "$OUT" DigitAnswerTest
+echo "== CurriculumParserTest =="
+java -cp "$OUT" CurriculumParserTest "$ROOT/UnlockQuiz/assets/curricula/basic-math"
 echo "ALL UNIT TESTS PASSED"

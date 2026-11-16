@@ -55,4 +55,58 @@ public final class AppPrefs {
     public boolean useDigitPadForMath() {
         return !"multiple_choice".equals(getMathEntryMode());
     }
+
+    public boolean isSyncEnabled() {
+        return sp.getBoolean("sync_enabled", true);
+    }
+
+    public void setSyncEnabled(boolean v) {
+        sp.edit().putBoolean("sync_enabled", v).apply();
+    }
+
+    public String getActiveCurriculumId() {
+        return sp.getString("active_curriculum_id", "basic-math");
+    }
+
+    public void setActiveCurriculumId(String id) {
+        sp.edit().putString("active_curriculum_id", id == null ? "basic-math" : id).apply();
+        CurriculumStore.clearCache();
+    }
+
+    public String getActiveTier() {
+        return sp.getString("active_tier", "all");
+    }
+
+    public void setActiveTier(String tier) {
+        sp.edit().putString("active_tier", tier == null ? "all" : tier).apply();
+        CurriculumStore.clearCache();
+    }
+
+    public String getCurriculumIndexUrl() {
+        return sp.getString("curriculum_index_url", CurriculumIndexClient.DEFAULT_INDEX_URL);
+    }
+
+    public int getMinutesBalance() {
+        return sp.getInt("minutes_balance", 0);
+    }
+
+    public void setMinutesBalance(int minutes) {
+        sp.edit().putInt("minutes_balance", Math.max(0, minutes)).apply();
+    }
+
+    public void addMinutes(int delta) {
+        if (delta <= 0) return;
+        setMinutesBalance(getMinutesBalance() + delta);
+    }
+
+    /** Consume banked minutes for the next free stretch; returns delay ms to use. */
+    public long consumeMinutesForNextInterval(long fallbackIntervalMs) {
+        int bal = getMinutesBalance();
+        if (bal <= 0) return fallbackIntervalMs;
+        setMinutesBalance(0);
+        long fromJar = bal * 60_000L;
+        // Cap at 3 hours so a huge jar does not skip mornings entirely
+        long cap = 3L * 60L * 60L * 1000L;
+        return Math.min(fromJar, cap);
+    }
 }

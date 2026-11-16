@@ -16,6 +16,10 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - name: Validate curriculum packs
+        run: python3 curricula/scripts/validate_packs.py
+      - name: SI batch review (heuristic)
+        run: python3 curricula/scripts/si_batch_review.py
       - name: Run unit tests
         run: ./scripts/run_unit_tests.sh
 

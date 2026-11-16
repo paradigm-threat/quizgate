@@ -1,0 +1,20 @@
+{
+  "updatedAt": "2026-03-16T00:00:00Z",
+  "curricula": [
+    {
+      "id": "basic-math",
+      "title": "Basic Math",
+      "ageMin": 4,
+      "ageMax": 7,
+      "difficultyRank": 10,
+      "locale": "en",
+      "version": 1,
+      "minAppVersion": 1,
+      "description": "Addition under 10 and color recognition \u2014 bundled starter curriculum.",
+      "contentSha256": "6ce5f9a244fa7bceb9b0e21000af2d3ba500f3d97ef79ecfd5c2e2f89ef57695",
+      "sizeBytes": 10363,
+      "packUrl": "https://quizgate.clevertree.net/curricula/packs/basic-math-v1.qgpack",
+      "bundled": true
+    }
+  ]
+}

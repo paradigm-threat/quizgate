@@ -39,8 +39,8 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
 - **Compete with Pickles on values** (education earns time; no kids accounts; no tracking; no fees) — **on Android**, where Pickles is absent
 - **Not** a Screenwise-style control suite (web filter, device-admin lockdown, IAP-adjacent Play listing) as the product identity
 - CleverTree **forever-free** policy (no ads, no IAP, no paywall — all products)
-- Roadmap differentiators: progressive curriculum + anonymous AI batch curation; soft gate now, harder lock later if Android APIs allow
-- Soft hourly/morning quiz today (math + colors); gallery backdrops stay on-device
+- Roadmap differentiators: progressive curriculum packs + anonymous **SI** (Super Intelligence, i.e. AI) batch curation; soft gate now, harder lock later if Android APIs allow
+- Soft hourly/morning quiz today (math + colors); gallery backdrops stay on-device; optional curriculum sync
 
 ---
 

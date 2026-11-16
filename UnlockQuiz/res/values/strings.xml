@@ -13,6 +13,11 @@
     <string name="setup_body">Self-triggering quiz every hour and each morning.\n\nTap Arm to grant permissions and schedule.</string>
     <string name="setup_arm">Arm scheduling</string>
     <string name="setup_force">Test quiz now</string>
+    <string name="setup_minutes_label">Minutes jar</string>
+    <string name="setup_sync_label">Auto-sync curricula (Wi‑Fi only)</string>
+    <string name="setup_curriculum_label">Curriculum</string>
+    <string name="setup_tier_label">Tier / age band</string>
+    <string name="setup_sync_now">Sync now</string>
     <string name="stats_today_title">Today</string>
     <string name="stats_asked_label">asked</string>
     <string name="stats_right_label">right</string>

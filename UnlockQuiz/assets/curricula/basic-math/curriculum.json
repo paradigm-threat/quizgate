@@ -1,0 +1,570 @@
+{
+  "id": "basic-math",
+  "title": "Basic Math",
+  "tiers": [
+    {
+      "id": "K",
+      "label": "Kindergarten",
+      "ageMin": 4,
+      "ageMax": 6
+    },
+    {
+      "id": "1",
+      "label": "Early grade 1",
+      "ageMin": 6,
+      "ageMax": 7
+    }
+  ],
+  "roundSize": 3,
+  "earnMinutesPerCorrect": 2,
+  "wrongBehavior": "next",
+  "consolingUnlock": true,
+  "maxWrong": 3,
+  "items": [
+    {
+      "id": "bm.k.m01",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is one plus one?",
+      "symbolic": "1 + 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "2",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m01"
+    },
+    {
+      "id": "bm.k.m02",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is one plus two?",
+      "symbolic": "1 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m02"
+    },
+    {
+      "id": "bm.k.m03",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two plus two?",
+      "symbolic": "2 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m03"
+    },
+    {
+      "id": "bm.k.m04",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two plus three?",
+      "symbolic": "2 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "5",
+        "6"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m04"
+    },
+    {
+      "id": "bm.k.m05",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three plus three?",
+      "symbolic": "3 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m05"
+    },
+    {
+      "id": "bm.k.m06",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is one plus four?",
+      "symbolic": "1 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "5",
+        "6"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m06"
+    },
+    {
+      "id": "bm.k.m07",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is four plus two?",
+      "symbolic": "4 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m07"
+    },
+    {
+      "id": "bm.1.m08",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three plus four?",
+      "symbolic": "3 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "7",
+        "8"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m08"
+    },
+    {
+      "id": "bm.1.m09",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five plus two?",
+      "symbolic": "5 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "7",
+        "8"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m09"
+    },
+    {
+      "id": "bm.1.m10",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is four plus four?",
+      "symbolic": "4 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m10"
+    },
+    {
+      "id": "bm.1.m11",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five plus three?",
+      "symbolic": "5 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m11"
+    },
+    {
+      "id": "bm.1.m12",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is six plus two?",
+      "symbolic": "6 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m12"
+    },
+    {
+      "id": "bm.1.m13",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five plus four?",
+      "symbolic": "5 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "9",
+        "10"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m13"
+    },
+    {
+      "id": "bm.1.m14",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is seven plus two?",
+      "symbolic": "7 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "9",
+        "10"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m14"
+    },
+    {
+      "id": "bm.1.m15",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is six plus three?",
+      "symbolic": "6 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "9",
+        "10"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m15"
+    },
+    {
+      "id": "bm.k.m16",
+      "tier": "K",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is one plus zero?",
+      "symbolic": "1 + 0 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "1",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m16"
+    },
+    {
+      "id": "bm.1.m17",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two plus five?",
+      "symbolic": "2 + 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "7",
+        "8"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m17"
+    },
+    {
+      "id": "bm.1.m18",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three plus five?",
+      "symbolic": "3 + 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m18"
+    },
+    {
+      "id": "bm.1.m19",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is four plus five?",
+      "symbolic": "4 + 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "9",
+        "10"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m19"
+    },
+    {
+      "id": "bm.1.m20",
+      "tier": "1",
+      "skills": [
+        "add_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five plus five?",
+      "symbolic": "5 + 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "9",
+        "10",
+        "8"
+      ],
+      "correct": "10",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "legacyId": "m20"
+    },
+    {
+      "id": "bm.k.col01",
+      "tier": "K",
+      "skills": [
+        "colors"
+      ],
+      "type": "color",
+      "spoken": "Which one is red?",
+      "symbolic": "",
+      "promptMedia": null,
+      "choices": [
+        "red",
+        "blue",
+        "green"
+      ],
+      "correct": "red",
+      "entry": [
+        "choice"
+      ],
+      "legacyId": "col01"
+    },
+    {
+      "id": "bm.k.col02",
+      "tier": "K",
+      "skills": [
+        "colors"
+      ],
+      "type": "color",
+      "spoken": "Which one is blue?",
+      "symbolic": "",
+      "promptMedia": null,
+      "choices": [
+        "yellow",
+        "blue",
+        "orange"
+      ],
+      "correct": "blue",
+      "entry": [
+        "choice"
+      ],
+      "legacyId": "col02"
+    },
+    {
+      "id": "bm.k.col03",
+      "tier": "K",
+      "skills": [
+        "colors"
+      ],
+      "type": "color",
+      "spoken": "Which one is yellow?",
+      "symbolic": "",
+      "promptMedia": null,
+      "choices": [
+        "yellow",
+        "purple",
+        "brown"
+      ],
+      "correct": "yellow",
+      "entry": [
+        "choice"
+      ],
+      "legacyId": "col03"
+    },
+    {
+      "id": "bm.k.col04",
+      "tier": "K",
+      "skills": [
+        "colors"
+      ],
+      "type": "color",
+      "spoken": "Which one is green?",
+      "symbolic": "",
+      "promptMedia": null,
+      "choices": [
+        "red",
+        "green",
+        "pink"
+      ],
+      "correct": "green",
+      "entry": [
+        "choice"
+      ],
+      "legacyId": "col04"
+    },
+    {
+      "id": "bm.k.col05",
+      "tier": "K",
+      "skills": [
+        "colors"
+      ],
+      "type": "color",
+      "spoken": "Which one is orange?",
+      "symbolic": "",
+      "promptMedia": null,
+      "choices": [
+        "orange",
+        "blue",
+        "black"
+      ],
+      "correct": "orange",
+      "entry": [
+        "choice"
+      ],
+      "legacyId": "col05"
+    }
+  ]
+}

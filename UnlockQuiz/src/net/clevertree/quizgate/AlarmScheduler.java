@@ -39,14 +39,16 @@ public final class AlarmScheduler {
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         long now = new SystemClock().nowMillis();
-        Scheduler sched = scheduler(ctx);
+        // Minutes jar: banked minutes become the next soft-gate delay when present
+        long interval = prefs.consumeMinutesForNextInterval(prefs.getIntervalMs());
+        Scheduler sched = new Scheduler(TimeZone.getDefault(), interval);
         prefs.setLastClearedDay(sched.dayKey(now));
         long next = sched.nextAfterUnlock(now);
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
-        // Keep morning alarm refreshed
-        scheduleMorning(ctx, sched.nextMorningAlarm(now));
-        Log.i(TAG, "rescheduled after session next=" + next);
+        // Keep morning alarm refreshed (uses product default interval for morning helper)
+        scheduleMorning(ctx, scheduler(ctx).nextMorningAlarm(now));
+        Log.i(TAG, "rescheduled after session next=" + next + " intervalUsed=" + interval);
     }
 
     public static void scheduleInterval(Context ctx, long atMs) {
