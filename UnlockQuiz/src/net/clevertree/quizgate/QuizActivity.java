@@ -157,6 +157,10 @@ public class QuizActivity extends Activity {
             long ms = getIntent().getLongExtra("interval_ms", 0);
             if (ms > 0) prefs.setIntervalMs(ms);
         }
+        if (getIntent() != null && getIntent().hasExtra("jitter_ms")) {
+            long ms = getIntent().getLongExtra("jitter_ms", -1);
+            if (ms >= 0) prefs.setJitterMs(ms);
+        }
         if (getIntent() != null && getIntent().hasExtra("math_entry")) {
             prefs.setMathEntryMode(getIntent().getStringExtra("math_entry"));
         }

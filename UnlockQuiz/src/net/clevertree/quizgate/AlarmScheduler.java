@@ -21,7 +21,7 @@ public final class AlarmScheduler {
 
     public static Scheduler scheduler(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
-        return new Scheduler(TimeZone.getDefault(), prefs.getIntervalMs());
+        return new Scheduler(TimeZone.getDefault(), prefs.getIntervalMs(), prefs.getJitterMs());
     }
 
     public static void armAll(Context ctx) {
@@ -33,22 +33,34 @@ public final class AlarmScheduler {
         long next = sched.nextAfterUnlock(now);
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
-        Log.i(TAG, "armed morning+interval nextInterval=" + next);
+        Log.i(TAG, "armed morning+interval nextInterval=" + next
+                + " window=" + Scheduler.formatWindow(prefs.getIntervalMs(), prefs.getJitterMs()));
     }
 
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         long now = new SystemClock().nowMillis();
-        // Minutes jar: banked minutes become the next soft-gate delay when present
-        long interval = prefs.consumeMinutesForNextInterval(prefs.getIntervalMs());
-        Scheduler sched = new Scheduler(TimeZone.getDefault(), interval);
-        prefs.setLastClearedDay(sched.dayKey(now));
+        Scheduler base = scheduler(ctx);
+        prefs.setLastClearedDay(base.dayKey(now));
+
+        // Minutes jar: banked minutes become the next soft-gate delay (exact — no jitter)
+        long delay;
+        long jitterUsed;
+        if (prefs.getMinutesBalance() > 0) {
+            delay = prefs.consumeMinutesForNextInterval(prefs.getIntervalMs());
+            jitterUsed = 0L;
+        } else {
+            delay = prefs.getIntervalMs();
+            jitterUsed = prefs.getJitterMs();
+        }
+        Scheduler sched = new Scheduler(TimeZone.getDefault(), delay, jitterUsed);
         long next = sched.nextAfterUnlock(now);
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
-        // Keep morning alarm refreshed (uses product default interval for morning helper)
-        scheduleMorning(ctx, scheduler(ctx).nextMorningAlarm(now));
-        Log.i(TAG, "rescheduled after session next=" + next + " intervalUsed=" + interval);
+        scheduleMorning(ctx, base.nextMorningAlarm(now));
+        Log.i(TAG, "rescheduled after session next=" + next
+                + " delayBase=" + delay + " jitter=" + jitterUsed
+                + " sampledWindow=" + Scheduler.formatWindow(delay, jitterUsed));
     }
 
     public static void scheduleInterval(Context ctx, long atMs) {

@@ -79,6 +79,115 @@
                 android:textSize="17sp"/>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/onboard_schedule_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/onboard_interval_label"
+                android:textColor="@color/header"
+                android:textSize="14sp"
+                android:textStyle="bold"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_interval_minus"
+                    android:layout_width="64dp"
+                    android:layout_height="52dp"
+                    android:backgroundTint="@color/symbolic"
+                    android:text="−"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"/>
+
+                <TextView
+                    android:id="@+id/onboard_interval_value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textColor="@color/header"
+                    android:textSize="22sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btn_interval_plus"
+                    android:layout_width="64dp"
+                    android:layout_height="52dp"
+                    android:backgroundTint="@color/symbolic"
+                    android:text="+"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center"
+                android:text="@string/onboard_jitter_label"
+                android:textColor="@color/header"
+                android:textSize="14sp"
+                android:textStyle="bold"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_jitter_minus"
+                    android:layout_width="64dp"
+                    android:layout_height="52dp"
+                    android:backgroundTint="@color/symbolic"
+                    android:text="−"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"/>
+
+                <TextView
+                    android:id="@+id/onboard_jitter_value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textColor="@color/header"
+                    android:textSize="22sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btn_jitter_plus"
+                    android:layout_width="64dp"
+                    android:layout_height="52dp"
+                    android:backgroundTint="@color/symbolic"
+                    android:text="+"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/onboard_window_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:textColor="@color/symbolic"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
         <Button
             android:id="@+id/btn_onboard_next"
             android:layout_width="match_parent"

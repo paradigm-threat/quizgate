@@ -28,11 +28,22 @@ public final class AppPrefs {
     }
 
     public long getIntervalMs() {
-        return sp.getLong("interval_ms", net.clevertree.quizgate.core.Scheduler.DEFAULT_INTERVAL_MS);
+        return net.clevertree.quizgate.core.Scheduler.clampInterval(
+                sp.getLong("interval_ms", net.clevertree.quizgate.core.Scheduler.DEFAULT_INTERVAL_MS));
     }
 
     public void setIntervalMs(long ms) {
-        sp.edit().putLong("interval_ms", ms).apply();
+        sp.edit().putLong("interval_ms", net.clevertree.quizgate.core.Scheduler.clampInterval(ms)).apply();
+    }
+
+    /** Randomness around {@link #getIntervalMs()} — default 30 minutes (±). */
+    public long getJitterMs() {
+        return net.clevertree.quizgate.core.Scheduler.clampJitter(
+                sp.getLong("jitter_ms", net.clevertree.quizgate.core.Scheduler.DEFAULT_JITTER_MS));
+    }
+
+    public void setJitterMs(long ms) {
+        sp.edit().putLong("jitter_ms", net.clevertree.quizgate.core.Scheduler.clampJitter(ms)).apply();
     }
 
     public long nextAlarmAt() {

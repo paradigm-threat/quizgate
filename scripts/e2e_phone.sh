@@ -56,7 +56,7 @@ echo "Device: $("${ADB[@]}" get-serialno)"
 
 "${ADB[@]}" shell am force-stop "$PKG"
 "${ADB[@]}" shell am start -n "$PKG/.SetupActivity" \
-  --el interval_ms 120000 --ez auto_arm true --es math_entry digit_pad
+  --el interval_ms 120000 --el jitter_ms 0 --ez auto_arm true --es math_entry digit_pad
 sleep 1.5
 
 echo "== Header =="

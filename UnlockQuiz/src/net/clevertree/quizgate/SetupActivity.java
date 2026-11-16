@@ -41,6 +41,9 @@ public class SetupActivity extends Activity {
     private CheckBox syncEnabled;
     private Spinner curriculumSpinner;
     private Spinner tierSpinner;
+    private TextView intervalValue;
+    private TextView jitterValue;
+    private TextView windowValue;
     private final List<CurriculumPack> packList = new ArrayList<>();
     private boolean suppressSpinner;
 
@@ -58,6 +61,9 @@ public class SetupActivity extends Activity {
         syncEnabled = findViewById(R.id.sync_enabled);
         curriculumSpinner = findViewById(R.id.curriculum_spinner);
         tierSpinner = findViewById(R.id.tier_spinner);
+        intervalValue = findViewById(R.id.setup_interval_value);
+        jitterValue = findViewById(R.id.setup_jitter_value);
+        windowValue = findViewById(R.id.setup_window_value);
         Button arm = findViewById(R.id.btn_arm);
         Button force = findViewById(R.id.btn_force);
         Button syncNow = findViewById(R.id.btn_sync_now);
@@ -78,10 +84,12 @@ public class SetupActivity extends Activity {
             curriculumSpinner.postDelayed(this::bindCurriculumSpinners, 2500);
         });
 
-        arm.setOnClickListener(v -> {
-            new AppPrefs(this).setIntervalMs(Scheduler.DEFAULT_INTERVAL_MS);
-            armNow();
-        });
+        findViewById(R.id.btn_setup_interval_minus).setOnClickListener(v -> bumpInterval(-1));
+        findViewById(R.id.btn_setup_interval_plus).setOnClickListener(v -> bumpInterval(1));
+        findViewById(R.id.btn_setup_jitter_minus).setOnClickListener(v -> bumpJitter(-1));
+        findViewById(R.id.btn_setup_jitter_plus).setOnClickListener(v -> bumpJitter(1));
+
+        arm.setOnClickListener(v -> armNow());
         force.setOnClickListener(v -> {
             Intent i = new Intent(this, QuizActivity.class);
             i.putExtra(QuizActivity.EXTRA_TRIGGER, "adb_force");
@@ -89,8 +97,43 @@ public class SetupActivity extends Activity {
         });
         bindCurriculumSpinners();
         applyDevExtras(getIntent());
+        refreshScheduleLabels();
         refreshStatus();
         CurriculumIndexClient.syncIfEnabled(this);
+    }
+
+    private void bumpInterval(int steps) {
+        AppPrefs prefs = new AppPrefs(this);
+        prefs.setIntervalMs(Scheduler.bump(prefs.getIntervalMs(), steps));
+        onScheduleChanged();
+    }
+
+    private void bumpJitter(int steps) {
+        AppPrefs prefs = new AppPrefs(this);
+        prefs.setJitterMs(Scheduler.bump(prefs.getJitterMs(), steps));
+        onScheduleChanged();
+    }
+
+    private void onScheduleChanged() {
+        refreshScheduleLabels();
+        AppPrefs prefs = new AppPrefs(this);
+        if (prefs.isArmed()) {
+            AlarmScheduler.armAll(this);
+            Toast.makeText(this, "Schedule updated", Toast.LENGTH_SHORT).show();
+        }
+        refreshStatus();
+    }
+
+    private void refreshScheduleLabels() {
+        AppPrefs prefs = new AppPrefs(this);
+        long interval = prefs.getIntervalMs();
+        long jitter = prefs.getJitterMs();
+        if (intervalValue != null) intervalValue.setText(Scheduler.formatMinutes(interval));
+        if (jitterValue != null) jitterValue.setText(Scheduler.formatMinutes(jitter));
+        if (windowValue != null) {
+            windowValue.setText(getString(R.string.setup_window_label) + ": "
+                    + Scheduler.formatWindow(interval, jitter));
+        }
     }
 
     private void bindCurriculumSpinners() {
@@ -169,12 +212,17 @@ public class SetupActivity extends Activity {
                 prefs.setIntervalMs(Scheduler.DEFAULT_INTERVAL_MS);
             }
         }
+        if (in.hasExtra("jitter_ms")) {
+            long ms = in.getLongExtra("jitter_ms", -1);
+            if (ms >= 0) prefs.setJitterMs(ms);
+        }
         if (in.hasExtra("math_entry")) {
             prefs.setMathEntryMode(in.getStringExtra("math_entry"));
         }
         if (in.getBooleanExtra("auto_arm", false)) {
             armNow();
         }
+        refreshScheduleLabels();
     }
 
     @Override protected void onResume() {
@@ -240,8 +288,10 @@ public class SetupActivity extends Activity {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(p.isArmed() ? "Armed" : "Not armed");
-        long mins = Math.max(1, p.getIntervalMs() / 60000L);
-        sb.append("\nEvery ").append(mins).append(" min + morning");
+        sb.append("\nSchedule: ~").append(Scheduler.formatMinutes(p.getIntervalMs()));
+        sb.append(" ±").append(Scheduler.formatMinutes(p.getJitterMs()));
+        sb.append(" (").append(Scheduler.formatWindow(p.getIntervalMs(), p.getJitterMs())).append(")");
+        sb.append("\n+ morning gate");
         sb.append("\nCurriculum: ").append(p.getActiveCurriculumId());
         sb.append(" · tier ").append(p.getActiveTier());
         sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (Wi‑Fi)" : "off");
