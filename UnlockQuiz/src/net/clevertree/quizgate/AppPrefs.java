@@ -109,4 +109,24 @@ public final class AppPrefs {
         long cap = 3L * 60L * 60L * 1000L;
         return Math.min(fromJar, cap);
     }
+
+    public boolean isOnboardingDone() {
+        return sp.getBoolean("onboarding_done", false);
+    }
+
+    public void setOnboardingDone(boolean v) {
+        sp.edit().putBoolean("onboarding_done", v).apply();
+    }
+
+    /** {@link PhotoLibrary#SOURCE_GALLERY} or {@link PhotoLibrary#SOURCE_BUNDLED}. */
+    public String getPhotoSource() {
+        return sp.getString("photo_source", PhotoLibrary.SOURCE_BUNDLED);
+    }
+
+    public void setPhotoSource(String source) {
+        if (!PhotoLibrary.SOURCE_GALLERY.equals(source) && !PhotoLibrary.SOURCE_BUNDLED.equals(source)) {
+            source = PhotoLibrary.SOURCE_BUNDLED;
+        }
+        sp.edit().putString("photo_source", source).apply();
+    }
 }

@@ -39,10 +39,14 @@ Store publish notes + competitor table: [`docs/STORE_PUBLISH.md`](docs/STORE_PUB
 
 ## Install / test
 
+First launch opens skippable onboarding (gallery photos vs bundled ocean/space/plane/nature/animals backdrops). Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
+
 ```bash
 SERIAL=<device> ./scripts/e2e_phone.sh
 # or
 adb -s <device> install -r build/apk/QuizGate.apk
+adb -s <device> shell am start -n net.clevertree.quizgate/.OnboardingActivity
+# Setup directly (skips intro if already done):
 adb -s <device> shell am start -n net.clevertree.quizgate/.SetupActivity
 ```
 

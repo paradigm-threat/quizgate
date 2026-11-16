@@ -30,4 +30,14 @@
     <string name="notif_channel">Unlock quiz</string>
     <string name="notif_title">QuizGate time check</string>
     <string name="notif_text">Time for a quick question</string>
+    <string name="onboard_skip">Skip</string>
+    <string name="onboard_continue">Continue</string>
+    <string name="onboard_welcome_title">Welcome to QuizGate</string>
+    <string name="onboard_welcome_body">Correct answers earn screen time.\nForever free — no ads, no purchases.\n\nA closed-loop SI curates curricula; you keep every final decision.</string>
+    <string name="onboard_photos_title">Quiz pictures</string>
+    <string name="onboard_photos_body">Use photos from this tablet as quiz backdrops, or kid-friendly defaults (ocean, space, planes, nature, animals). You can skip and change later.</string>
+    <string name="onboard_use_gallery">Use my photos</string>
+    <string name="onboard_use_defaults">Use default pictures</string>
+    <string name="onboard_done_title">You\'re ready</string>
+    <string name="onboard_done_body">Arm scheduling on the next screen. Force a test quiz anytime.</string>
 </resources>

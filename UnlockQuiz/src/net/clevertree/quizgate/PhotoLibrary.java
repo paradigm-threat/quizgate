@@ -18,14 +18,39 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Loads local device gallery images (MediaStore + Pictures/DCIM fallback). Nothing shipped in the APK. */
+/**
+ * Device gallery images (MediaStore) and bundled backdrop catalog.
+ * Prefer {@link #listForQuiz(Context, boolean)} which respects photo_source prefs.
+ */
 public final class PhotoLibrary {
     private static final String TAG = AlarmScheduler.TAG;
     private static final int MAX_PHOTOS = 500;
 
     private PhotoLibrary() {}
 
+    public static final String SOURCE_GALLERY = "gallery";
+    public static final String SOURCE_BUNDLED = "bundled";
+
+    /** Photos for quiz backdrop / transition, honoring AppPrefs photo_source. */
+    public static List<Uri> listForQuiz(Context ctx, boolean forSuccess) {
+        AppPrefs prefs = new AppPrefs(ctx);
+        if (SOURCE_GALLERY.equals(prefs.getPhotoSource())) {
+            List<Uri> gallery = listGallery(ctx);
+            if (!gallery.isEmpty()) return gallery;
+            Log.i(TAG, "gallery empty — falling back to bundled catalog");
+        }
+        List<Uri> mood = forSuccess ? BackdropCatalog.listSuccess(ctx) : BackdropCatalog.listFail(ctx);
+        if (!mood.isEmpty()) return mood;
+        List<Uri> other = forSuccess ? BackdropCatalog.listFail(ctx) : BackdropCatalog.listSuccess(ctx);
+        if (!other.isEmpty()) return other;
+        return listGallery(ctx);
+    }
+
     public static List<Uri> listAll(Context ctx) {
+        return listForQuiz(ctx, true);
+    }
+
+    public static List<Uri> listGallery(Context ctx) {
         Set<String> seen = new LinkedHashSet<>();
         List<Uri> out = new ArrayList<>();
 
@@ -57,7 +82,6 @@ public final class PhotoLibrary {
             Log.w(TAG, "MediaStore photo query failed", e);
         }
 
-        // Fallback / supplement: walk common public dirs (covers folders MediaStore missed)
         File[] roots = {
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
@@ -121,6 +145,11 @@ public final class PhotoLibrary {
     }
 
     private static InputStream open(Context ctx, Uri uri) throws Exception {
+        if (BackdropCatalog.ASSET_SCHEME.equals(uri.getScheme())) {
+            String path = uri.getPath();
+            if (path != null && path.startsWith("/")) path = path.substring(1);
+            return ctx.getAssets().open(path);
+        }
         if ("file".equals(uri.getScheme())) {
             return new java.io.FileInputStream(uri.getPath());
         }

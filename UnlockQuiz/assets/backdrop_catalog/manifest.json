@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "themes": ["ocean", "space", "plane", "nature", "animals"],
+  "success": [
+    "success/ocean_landscape.png",
+    "success/ocean_portrait.png",
+    "success/space_landscape.png",
+    "success/space_portrait.png",
+    "success/plane_landscape.png",
+    "success/plane_portrait.png",
+    "success/nature_landscape.png",
+    "success/nature_portrait.png",
+    "success/animals_landscape.png",
+    "success/animals_portrait.png"
+  ],
+  "fail": [
+    "fail/ocean_landscape.png",
+    "fail/ocean_portrait.png",
+    "fail/space_landscape.png",
+    "fail/space_portrait.png",
+    "fail/plane_landscape.png",
+    "fail/plane_portrait.png",
+    "fail/nature_landscape.png",
+    "fail/nature_portrait.png",
+    "fail/animals_landscape.png",
+    "fail/animals_portrait.png"
+  ]
+}

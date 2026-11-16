@@ -9,6 +9,10 @@
 *.webp
 !UnlockQuiz/res/**/*.png
 !UnlockQuiz/res/**/*.webp
+!UnlockQuiz/assets/backdrop_catalog/**/*.png
+!UnlockQuiz/assets/backdrop_catalog/**/*.webp
+!UnlockQuiz/assets/backdrop_catalog/**/*.jpg
+!UnlockQuiz/assets/backdrop_catalog/**/*.jpeg
 !site/**/*.png
 !site/**/*.jpg
 !site/**/*.jpeg

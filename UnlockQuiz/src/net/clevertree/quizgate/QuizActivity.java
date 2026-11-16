@@ -145,7 +145,7 @@ public class QuizActivity extends Activity {
         confettiLayer = findViewById(R.id.confetti_layer);
         photoOverlay = findViewById(R.id.photo_overlay);
         photoOverlayB = findViewById(R.id.photo_overlay_b);
-        devicePhotos = PhotoLibrary.listAll(this);
+        devicePhotos = PhotoLibrary.listForQuiz(this, true);
         applyQuizBackground();
         transitionTitle = findViewById(R.id.transition_title);
         transitionRetryLabel = findViewById(R.id.transition_retry_label);
@@ -587,14 +587,14 @@ public class QuizActivity extends Activity {
     }
 
     private void applyQuizBackground() {
-        Uri photo = pickPhoto();
+        Uri photo = pickPhoto(true);
         Bitmap bmp = photo != null ? PhotoLibrary.decodeSampled(this, photo, 1600, 1000) : null;
         if (bmp != null) {
             quizBg.setImageBitmap(bmp);
-            Log.i(AlarmScheduler.TAG, "quiz backdrop loaded from local gallery");
+            Log.i(AlarmScheduler.TAG, "quiz backdrop loaded source=" + prefs.getPhotoSource());
         } else {
             quizBg.setImageDrawable(null);
-            Log.w(AlarmScheduler.TAG, "quiz backdrop empty — no readable local photos");
+            Log.w(AlarmScheduler.TAG, "quiz backdrop empty — no photos");
         }
     }
 
@@ -602,7 +602,7 @@ public class QuizActivity extends Activity {
         photoOverlayB.setVisibility(View.GONE);
         photoOverlayB.setAlpha(0f);
         photoFlashUseB = false;
-        Uri photo = pickPhoto();
+        Uri photo = pickPhoto(forSuccess);
         Bitmap bmp = photo != null ? PhotoLibrary.decodeSampled(this, photo, 1280, 800) : null;
         if (bmp != null) {
             photoOverlay.setImageBitmap(bmp);
@@ -625,7 +625,7 @@ public class QuizActivity extends Activity {
         transitionCountdown.setScaleX(1f);
         transitionCountdown.setScaleY(1f);
         if (forSuccess) {
-            successPhotos = new ArrayList<>(devicePhotos.isEmpty() ? PhotoLibrary.listAll(this) : devicePhotos);
+            successPhotos = new ArrayList<>(PhotoLibrary.listForQuiz(this, true));
             Collections.shuffle(successPhotos, random);
             successPhotoIndex = 0;
             Log.i(AlarmScheduler.TAG, "success slideshow photos=" + successPhotos.size());
@@ -901,12 +901,15 @@ public class QuizActivity extends Activity {
         }
     }
 
-    private Uri pickPhoto() {
-        if (devicePhotos.isEmpty()) {
-            devicePhotos = PhotoLibrary.listAll(this);
+    private Uri pickPhoto(boolean forSuccess) {
+        List<Uri> pool = PhotoLibrary.listForQuiz(this, forSuccess);
+        if (pool.isEmpty()) {
+            pool = devicePhotos;
+        } else {
+            devicePhotos = pool;
         }
-        if (devicePhotos.isEmpty()) return null;
-        return devicePhotos.get(random.nextInt(devicePhotos.size()));
+        if (pool.isEmpty()) return null;
+        return pool.get(random.nextInt(pool.size()));
     }
 
     private int dp(int v) {

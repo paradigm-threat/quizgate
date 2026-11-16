@@ -31,15 +31,20 @@
         android:requestLegacyExternalStorage="true">
 
         <activity
-            android:name=".SetupActivity"
+            android:name=".OnboardingActivity"
             android:exported="true"
-            android:launchMode="singleTop"
             android:theme="@style/Theme.UnlockQuiz">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".SetupActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.UnlockQuiz"/>
 
         <activity
             android:name=".QuizActivity"
