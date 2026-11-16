@@ -93,7 +93,7 @@ Also set:
 |---------|----------------|
 | Privacy policy | `https://quizgate.clevertree.net/privacy` |
 | Ads | **No** |
-| Data safety | See draft in `LISTING_COPY.txt` (photos on-device; local stats; optional HTTPS curriculum sync; no ads SDKs) |
+| Data safety | See draft in `LISTING_COPY.txt` (photos on-device; local stats; optional HTTPS curriculum sync; no ads SDKs). Local diagnostics schema + privacy rules: [`TELEMETRY.md`](TELEMETRY.md) (upload OFF until published). |
 | Target audience | Include children (e.g. 5–8); Families policy applies |
 | Content rating | Complete IARC questionnaire (all “no” violence/sex/language/etc. for this app) |
 | News / COVID / Financial / Health | Not applicable |

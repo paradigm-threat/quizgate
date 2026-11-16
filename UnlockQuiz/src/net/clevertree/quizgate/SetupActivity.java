@@ -2,14 +2,10 @@ package net.clevertree.quizgate;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PowerManager;
-import android.provider.Settings;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -232,27 +228,17 @@ public class SetupActivity extends Activity {
 
     private void armNow() {
         AlarmScheduler.armAll(this);
-        requestPerms();
-        requestBattery();
-        requestUsageAccess();
+        // One authorization prompt per Arm (exact → notif → battery → FSI → usage)
+        ScheduleAuth.promptNextGap(this);
+        maybeRequestPhotos();
         Toast.makeText(this, "Armed", Toast.LENGTH_SHORT).show();
         refreshStatus();
     }
 
-    private void requestUsageAccess() {
-        if (ForegroundApp.hasUsageAccess(this)) return;
-        Toast.makeText(this,
-                "Turn on Usage access for QuizGate — so unlock returns to the last app",
-                Toast.LENGTH_LONG).show();
-        ForegroundApp.openUsageAccessSettings(this);
-    }
-
-    private void requestPerms() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
-            }
-        }
+    /** Optional gallery backdrop — not schedule-critical; never stacks with auth Settings. */
+    private void maybeRequestPhotos() {
+        ScheduleAuth.Snapshot s = ScheduleAuth.snapshot(this);
+        if (s.firstGap() != ScheduleAuth.Gap.NONE) return;
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.READ_MEDIA_IMAGES}, 2);
@@ -262,31 +248,21 @@ public class SetupActivity extends Activity {
                 requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
             }
         }
-        if (Build.VERSION.SDK_INT >= 31) {
-            AlarmManager am = getSystemService(AlarmManager.class);
-            if (am != null && !am.canScheduleExactAlarms()) {
-                try {
-                    startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                            Uri.parse("package:" + getPackageName())));
-                } catch (Exception ignored) {}
-            }
-        }
     }
 
-    private void requestBattery() {
-        if (Build.VERSION.SDK_INT < 23) return;
-        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-            try {
-                Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                i.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(i);
-            } catch (Exception e) {
-                try {
-                    startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
-                } catch (Exception ignored) {}
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                                     int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1 && permissions != null) {
+            for (int i = 0; i < permissions.length; i++) {
+                if (Manifest.permission.POST_NOTIFICATIONS.equals(permissions[i])
+                        && (grantResults == null || i >= grantResults.length
+                        || grantResults[i] != PackageManager.PERMISSION_GRANTED)) {
+                    ScheduleAuth.markNotificationDenied(this);
+                }
             }
         }
+        refreshStatus();
     }
 
     private void refreshStatus() {
@@ -308,18 +284,7 @@ public class SetupActivity extends Activity {
         if (p.nextAlarmAt() > 0) {
             sb.append("\nNext alarm at: ").append(p.nextAlarmAt());
         }
-        if (Build.VERSION.SDK_INT >= 31) {
-            AlarmManager am = getSystemService(AlarmManager.class);
-            boolean exact = am != null && am.canScheduleExactAlarms();
-            sb.append("\nExact alarms: ").append(exact ? "yes" : "NO — tap Arm");
-        }
-        if (Build.VERSION.SDK_INT >= 23) {
-            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-            boolean ign = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
-            sb.append("\nBattery unrestricted: ").append(ign ? "yes" : "NO — tap Arm");
-        }
-        sb.append("\nUsage access (return to last app): ")
-                .append(ForegroundApp.hasUsageAccess(this) ? "yes" : "NO — tap Arm");
+        ScheduleAuth.appendStatus(sb, this);
         status.setText(sb.toString());
     }
 

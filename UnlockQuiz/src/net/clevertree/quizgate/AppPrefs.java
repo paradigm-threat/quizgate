@@ -153,4 +153,27 @@ public final class AppPrefs {
             sp.edit().putString("resume_package", pkg).apply();
         }
     }
+
+    /** Last ScheduleAuth gap prompted (name) — used to avoid Settings spam. */
+    public String getLastAuthPromptGap() {
+        return sp.getString("auth_prompt_gap", "");
+    }
+
+    public long getLastAuthPromptAt() {
+        return sp.getLong("auth_prompt_at", 0L);
+    }
+
+    public void setLastAuthPrompt(String gap, long atMs) {
+        sp.edit().putString("auth_prompt_gap", gap == null ? "" : gap)
+                .putLong("auth_prompt_at", atMs)
+                .apply();
+    }
+
+    public boolean wasNotificationDeniedOnce() {
+        return sp.getBoolean("notif_denied_once", false);
+    }
+
+    public void setNotificationDeniedOnce(boolean v) {
+        sp.edit().putBoolean("notif_denied_once", v).apply();
+    }
 }

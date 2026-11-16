@@ -1,0 +1,170 @@
+package net.clevertree.quizgate;
+
+import android.Manifest;
+import android.app.AlarmManager;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.util.Log;
+
+import net.clevertree.quizgate.core.BuildFingerprint;
+import net.clevertree.quizgate.core.DiagBreadcrumb;
+import net.clevertree.quizgate.core.DiagnosticsStore;
+import net.clevertree.quizgate.core.StatsStore;
+import net.clevertree.quizgate.core.TelemetryPayload;
+import net.clevertree.quizgate.core.TelemetryRedaction;
+import net.clevertree.quizgate.telemetry.TelemetryUploader;
+
+import java.io.File;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+ * App-facing diagnostics helper: local breadcrumbs, schedule events, crash summary.
+ * Never logs package names or PII. Upload is a no-op until the feature flag flips.
+ */
+public final class Diag {
+    private Diag() {}
+
+    public static File statsDir(Context ctx) {
+        return new File(ctx.getApplicationContext().getFilesDir(), "stats");
+    }
+
+    public static StatsStore stats(Context ctx) {
+        return new StatsStore(statsDir(ctx));
+    }
+
+    public static DiagnosticsStore diagnostics(Context ctx) {
+        return new DiagnosticsStore(statsDir(ctx));
+    }
+
+    public static void breadcrumb(Context ctx, DiagBreadcrumb b) {
+        try {
+            diagnostics(ctx).appendBreadcrumb(b);
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "breadcrumb failed", e);
+        }
+    }
+
+    public static void schedule(Context ctx, DiagnosticsStore.ScheduleEvent e) {
+        try {
+            diagnostics(ctx).appendScheduleEvent(e);
+        } catch (Exception e2) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "schedule event failed", e2);
+        }
+    }
+
+    public static void nonFatal(Context ctx, String kind, Throwable t) {
+        String msg = t == null ? "" : t.getMessage();
+        String frame = "";
+        if (t != null && t.getStackTrace() != null && t.getStackTrace().length > 0) {
+            StackTraceElement el = t.getStackTrace()[0];
+            frame = el.getClassName() + "#" + el.getMethodName() + ":" + el.getLineNumber();
+        }
+        try {
+            diagnostics(ctx).appendException(System.currentTimeMillis(), kind, msg, frame);
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "exception log failed", e);
+        }
+        Log.w(BuildFingerprint.DIAG_LOG_TAG, kind + ": " + TelemetryRedaction.safeMessage(msg));
+    }
+
+    public static void logcatSnapshot(Context ctx) {
+        try {
+            DiagnosticsStore d = diagnostics(ctx);
+            StatsStore s = stats(ctx);
+            int vc = versionCode(ctx);
+            String vn = versionName(ctx);
+            Log.i(BuildFingerprint.DIAG_LOG_TAG, BuildFingerprint.shortLine(vc, vn)
+                    + " statsBytes=" + s.approximateSizeBytes()
+                    + " " + d.summaryForLogcat());
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "snapshot failed", e);
+        }
+    }
+
+    /** Build payload + attempt upload (no-op while flag is false). */
+    public static void flushLocalOnly(Context ctx) {
+        try {
+            TelemetryPayload p = buildPayload(ctx);
+            TelemetryUploader.maybeUpload(p);
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "flush failed", e);
+        }
+    }
+
+    public static TelemetryPayload buildPayload(Context ctx) throws Exception {
+        Context app = ctx.getApplicationContext();
+        AppPrefs prefs = new AppPrefs(app);
+        StatsStore stats = stats(app);
+        DiagnosticsStore diag = diagnostics(app);
+        long now = System.currentTimeMillis();
+        TimeZone zone = TimeZone.getDefault();
+        boolean exact = true;
+        if (Build.VERSION.SDK_INT >= 31) {
+            AlarmManager am = (AlarmManager) app.getSystemService(Context.ALARM_SERVICE);
+            exact = am != null && am.canScheduleExactAlarms();
+        }
+        boolean notif = true;
+        if (Build.VERSION.SDK_INT >= 33) {
+            notif = app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED;
+        }
+        boolean photos;
+        if (Build.VERSION.SDK_INT >= 33) {
+            photos = app.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES)
+                    == PackageManager.PERMISSION_GRANTED;
+        } else {
+            photos = app.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED;
+        }
+        String resume = prefs.getResumePackage();
+        return TelemetryPayload.builder(now)
+                .gitSha(BuildFingerprint.gitSha())
+                .versionCode(versionCode(app))
+                .versionName(versionName(app))
+                .deviceModel(TelemetryRedaction.coarseModel(Build.MANUFACTURER, Build.MODEL))
+                .sdkInt(Build.VERSION.SDK_INT)
+                .release(Build.VERSION.RELEASE)
+                .locale(Locale.getDefault().toLanguageTag())
+                .tzId(zone.getID())
+                .curriculumId(prefs.getActiveCurriculumId())
+                .intervalMs(prefs.getIntervalMs())
+                .jitterMs(prefs.getJitterMs())
+                .nextAlarmAt(prefs.nextAlarmAt())
+                .armed(prefs.isArmed())
+                .usageStats(ForegroundApp.hasUsageAccess(app))
+                .exactAlarm(exact)
+                .notifications(notif)
+                .photos(photos)
+                .otherAppPresent(resume != null && !resume.isEmpty())
+                .today(stats.dayStats(now, zone))
+                .statsBytes(stats.approximateSizeBytes())
+                .diagBytes(diag.approximateSizeBytes())
+                .recentQuiz(stats.recentEventLines(DiagnosticsStore.RECENT_QUIZ_DEFAULT))
+                .recentSchedule(diag.recentSchedule(40))
+                .recentExceptions(diag.recentExceptions(20))
+                .build();
+    }
+
+    public static int versionCode(Context ctx) {
+        try {
+            PackageInfo pi = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+            if (Build.VERSION.SDK_INT >= 28) return (int) pi.getLongVersionCode();
+            //noinspection deprecation
+            return pi.versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public static String versionName(Context ctx) {
+        try {
+            PackageInfo pi = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+            return pi.versionName == null ? "" : pi.versionName;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+}

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.Scheduler;
 import net.clevertree.quizgate.core.SystemClock;
 
@@ -29,12 +30,30 @@ public final class AlarmScheduler {
         prefs.setArmed(true);
         long now = new SystemClock().nowMillis();
         Scheduler sched = scheduler(ctx);
-        scheduleMorning(ctx, sched.nextMorningAlarm(now));
+        long morningAt = sched.nextMorningAlarm(now);
+        scheduleMorning(ctx, morningAt);
         long next = sched.nextAfterUnlock(now);
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
+        ScheduleAuth.Snapshot auth = ScheduleAuth.snapshot(ctx);
+        String authNote = auth.compactNote() + (auth.exactAlarm ? "" : " mode=inexact");
+        try {
+            Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_ARM, "arm",
+                    "lock", next, prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, authNote));
+            Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_SCHEDULED, "interval",
+                    "lock", next, prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, authNote));
+        } catch (Throwable t) {
+            Log.w(TAG, "arm diag", t);
+        }
+        ScheduleAuth.log(ctx, DiagnosticsStore.KIND_PERM, "arm", next,
+                prefs.getIntervalMs(), prefs.getJitterMs());
         Log.i(TAG, "armed morning+interval nextInterval=" + next
-                + " window=" + Scheduler.formatWindow(prefs.getIntervalMs(), prefs.getJitterMs()));
+                + " window=" + Scheduler.formatWindow(prefs.getIntervalMs(), prefs.getJitterMs())
+                + " " + authNote);
     }
 
     public static void scheduleAfterSessionEnd(Context ctx) {
@@ -43,7 +62,6 @@ public final class AlarmScheduler {
         Scheduler base = scheduler(ctx);
         prefs.setLastClearedDay(base.dayKey(now));
 
-        // Minutes jar: banked minutes become the next soft-gate delay (exact — no jitter)
         long delay;
         long jitterUsed;
         if (prefs.getMinutesBalance() > 0) {
@@ -58,9 +76,21 @@ public final class AlarmScheduler {
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
         scheduleMorning(ctx, base.nextMorningAlarm(now));
+        ScheduleAuth.Snapshot auth = ScheduleAuth.snapshot(ctx);
+        String authNote = "after_session " + auth.compactNote()
+                + (auth.exactAlarm ? "" : " mode=inexact");
+        try {
+            Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_SCHEDULED, "interval",
+                    "lock", next, delay, jitterUsed, null, authNote));
+        } catch (Throwable t) {
+            Log.w(TAG, "session diag", t);
+        }
+        ScheduleAuth.log(ctx, DiagnosticsStore.KIND_PERM, "session_end", next, delay, jitterUsed);
         Log.i(TAG, "rescheduled after session next=" + next
                 + " delayBase=" + delay + " jitter=" + jitterUsed
-                + " sampledWindow=" + Scheduler.formatWindow(delay, jitterUsed));
+                + " sampledWindow=" + Scheduler.formatWindow(delay, jitterUsed)
+                + " " + auth.compactNote());
     }
 
     public static void scheduleInterval(Context ctx, long atMs) {
@@ -84,11 +114,19 @@ public final class AlarmScheduler {
                     Log.i(TAG, "exact alarm action=" + action + " at=" + atMs);
                 } else {
                     am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
-                    Log.w(TAG, "INEXACT fallback action=" + action + " at=" + atMs);
+                    Log.w(TAG, "INEXACT fallback action=" + action + " at=" + atMs
+                            + " — open exact-alarm settings");
                 }
             } else {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
                 Log.i(TAG, "exact alarm action=" + action + " at=" + atMs);
+            }
+        } catch (SecurityException se) {
+            Log.e(TAG, "setExact SecurityException — exact alarm revoked", se);
+            try {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pi);
+            } catch (Exception e2) {
+                am.set(AlarmManager.RTC_WAKEUP, atMs, pi);
             }
         } catch (Exception e) {
             Log.e(TAG, "setExact failed", e);

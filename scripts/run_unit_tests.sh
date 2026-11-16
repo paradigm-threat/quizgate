@@ -21,6 +21,12 @@ echo "== SchedulerTest =="
 java -cp "$OUT" SchedulerTest
 echo "== StatsStoreTest =="
 java -cp "$OUT" StatsStoreTest "$JSON"
+echo "== BoundedJsonlTest =="
+java -cp "$OUT" BoundedJsonlTest
+echo "== DiagnosticsStoreTest =="
+java -cp "$OUT" DiagnosticsStoreTest
+echo "== TelemetryRedactionTest =="
+java -cp "$OUT" TelemetryRedactionTest
 echo "== DigitAnswerTest =="
 java -cp "$OUT" DigitAnswerTest
 echo "== CurriculumParserTest =="
