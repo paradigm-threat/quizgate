@@ -23,6 +23,7 @@
   "items": [
     {
       "id": "bm.k.m01",
+      "legacyId": "m01",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -40,11 +41,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m01"
+      ]
     },
     {
       "id": "bm.k.m02",
+      "legacyId": "m02",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -62,11 +63,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m02"
+      ]
     },
     {
       "id": "bm.k.m03",
+      "legacyId": "m03",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -84,11 +85,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m03"
+      ]
     },
     {
       "id": "bm.k.m04",
+      "legacyId": "m04",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -106,11 +107,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m04"
+      ]
     },
     {
       "id": "bm.k.m05",
+      "legacyId": "m05",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -128,11 +129,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m05"
+      ]
     },
     {
       "id": "bm.k.m06",
+      "legacyId": "m06",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -150,11 +151,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m06"
+      ]
     },
     {
       "id": "bm.k.m07",
+      "legacyId": "m07",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -172,11 +173,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m07"
+      ]
     },
     {
       "id": "bm.1.m08",
+      "legacyId": "m08",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -194,11 +195,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m08"
+      ]
     },
     {
       "id": "bm.1.m09",
+      "legacyId": "m09",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -216,11 +217,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m09"
+      ]
     },
     {
       "id": "bm.1.m10",
+      "legacyId": "m10",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -238,11 +239,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m10"
+      ]
     },
     {
       "id": "bm.1.m11",
+      "legacyId": "m11",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -260,11 +261,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m11"
+      ]
     },
     {
       "id": "bm.1.m12",
+      "legacyId": "m12",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -282,11 +283,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m12"
+      ]
     },
     {
       "id": "bm.1.m13",
+      "legacyId": "m13",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -304,11 +305,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m13"
+      ]
     },
     {
       "id": "bm.1.m14",
+      "legacyId": "m14",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -326,11 +327,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m14"
+      ]
     },
     {
       "id": "bm.1.m15",
+      "legacyId": "m15",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -348,11 +349,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m15"
+      ]
     },
     {
       "id": "bm.k.m16",
+      "legacyId": "m16",
       "tier": "K",
       "skills": [
         "add_within_10"
@@ -370,11 +371,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m16"
+      ]
     },
     {
       "id": "bm.1.m17",
+      "legacyId": "m17",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -392,11 +393,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m17"
+      ]
     },
     {
       "id": "bm.1.m18",
+      "legacyId": "m18",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -414,11 +415,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m18"
+      ]
     },
     {
       "id": "bm.1.m19",
+      "legacyId": "m19",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -436,11 +437,11 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m19"
+      ]
     },
     {
       "id": "bm.1.m20",
+      "legacyId": "m20",
       "tier": "1",
       "skills": [
         "add_within_10"
@@ -458,113 +459,7 @@
       "entry": [
         "digit",
         "choice"
-      ],
-      "legacyId": "m20"
-    },
-    {
-      "id": "bm.k.col01",
-      "tier": "K",
-      "skills": [
-        "colors"
-      ],
-      "type": "color",
-      "spoken": "Which one is red?",
-      "symbolic": "",
-      "promptMedia": null,
-      "choices": [
-        "red",
-        "blue",
-        "green"
-      ],
-      "correct": "red",
-      "entry": [
-        "choice"
-      ],
-      "legacyId": "col01"
-    },
-    {
-      "id": "bm.k.col02",
-      "tier": "K",
-      "skills": [
-        "colors"
-      ],
-      "type": "color",
-      "spoken": "Which one is blue?",
-      "symbolic": "",
-      "promptMedia": null,
-      "choices": [
-        "yellow",
-        "blue",
-        "orange"
-      ],
-      "correct": "blue",
-      "entry": [
-        "choice"
-      ],
-      "legacyId": "col02"
-    },
-    {
-      "id": "bm.k.col03",
-      "tier": "K",
-      "skills": [
-        "colors"
-      ],
-      "type": "color",
-      "spoken": "Which one is yellow?",
-      "symbolic": "",
-      "promptMedia": null,
-      "choices": [
-        "yellow",
-        "purple",
-        "brown"
-      ],
-      "correct": "yellow",
-      "entry": [
-        "choice"
-      ],
-      "legacyId": "col03"
-    },
-    {
-      "id": "bm.k.col04",
-      "tier": "K",
-      "skills": [
-        "colors"
-      ],
-      "type": "color",
-      "spoken": "Which one is green?",
-      "symbolic": "",
-      "promptMedia": null,
-      "choices": [
-        "red",
-        "green",
-        "pink"
-      ],
-      "correct": "green",
-      "entry": [
-        "choice"
-      ],
-      "legacyId": "col04"
-    },
-    {
-      "id": "bm.k.col05",
-      "tier": "K",
-      "skills": [
-        "colors"
-      ],
-      "type": "color",
-      "spoken": "Which one is orange?",
-      "symbolic": "",
-      "promptMedia": null,
-      "choices": [
-        "orange",
-        "blue",
-        "black"
-      ],
-      "correct": "orange",
-      "entry": [
-        "choice"
-      ],
-      "legacyId": "col05"
+      ]
     }
   ]
 }

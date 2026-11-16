@@ -5,9 +5,9 @@
   "ageMax": 7,
   "difficultyRank": 10,
   "locale": "en",
-  "version": 1,
+  "version": 2,
   "minAppVersion": 1,
-  "description": "Addition under 10 and color recognition \u2014 bundled starter curriculum.",
-  "contentSha256": "6ce5f9a244fa7bceb9b0e21000af2d3ba500f3d97ef79ecfd5c2e2f89ef57695",
-  "sizeBytes": 10363
+  "description": "Addition under 10 \u2014 math only (no color questions).",
+  "contentSha256": "11578d805df934748b808ad7f5640f616a5bd15dbc5de7b269d83683ce6da049",
+  "sizeBytes": 8438
 }

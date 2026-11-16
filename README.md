@@ -1,6 +1,6 @@
 # QuizGate
 
-CleverTree soft quiz gate for young kids: every hour + morning gate, math digit pad + colors, local device photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+CleverTree soft quiz gate for young kids: every hour + morning gate, math digit pad, local/bundled photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
@@ -80,7 +80,7 @@ adb shell run-as net.clevertree.quizgate cat files/stats/events.jsonl
 ## Behavior
 
 - Header: “Please answer this question”
-- MVP catalog: addition-under-10 math + colors only (no counting, no animals)
+- MVP catalog: addition-under-10 math only (no colors, counting, or animals)
 - Math: spoken + `2 + 5 = _` (digit pad by default)
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock

@@ -114,29 +114,15 @@ echo "digit correct unlock OK"
 echo "== Consoling (3 wrongs) =="
 "${ADB[@]}" shell am force-stop "$PKG"
 "${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" \
-  --es trigger adb_consoling --es force_qid col01 --es math_entry digit_pad >/dev/null
+  --es trigger adb_consoling --es force_qid m01 --es math_entry digit_pad >/dev/null
 sleep 1.5
 tap_wrong() {
   dump_ui
-  # Digit pad: 0 is never a catalog correct answer → always wrong
+  # Digit pad: 0 is never a catalog correct answer for add-under-10 → always wrong
   if grep -qF 'text="OK"' "$UI_HOST"; then
     tap_text "0"; sleep 0.3; tap_text "OK"; return 0
   fi
-  # Color prompts: "Which one is red?" → avoid tapping the named color
-  local avoid=""
-  local spoken
-  spoken=$(sed 's/></>\n</g' "$UI_HOST" | grep -oE 'text="Which one is [^"]+"' | head -1 | sed 's/text="//;s/"$//')
-  if [[ "$spoken" =~ Which\ one\ is\ ([a-z]+)\? ]]; then
-    avoid="${BASH_REMATCH[1]}"
-  fi
-  local w
-  for w in blue green yellow orange purple brown pink black; do
-    if [[ -n "$avoid" && "$w" == "$avoid" ]]; then continue; fi
-    if grep -qF "text=\"$w\"" "$UI_HOST"; then
-      tap_text "$w"; return 0
-    fi
-  done
-  echo "consoling: no wrong choice found" >&2
+  echo "consoling: digit pad OK not found" >&2
   sed 's/></>\n</g' "$UI_HOST" | grep text= | head -40 >&2 || true
   return 1
 }

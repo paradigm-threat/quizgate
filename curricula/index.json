@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-16T00:00:00Z",
+  "updatedAt": "2026-03-16T12:00:00Z",
   "curricula": [
     {
       "id": "basic-math",
@@ -8,12 +8,12 @@
       "ageMax": 7,
       "difficultyRank": 10,
       "locale": "en",
-      "version": 1,
+      "version": 2,
       "minAppVersion": 1,
-      "description": "Addition under 10 and color recognition \u2014 bundled starter curriculum.",
-      "contentSha256": "6ce5f9a244fa7bceb9b0e21000af2d3ba500f3d97ef79ecfd5c2e2f89ef57695",
-      "sizeBytes": 10363,
-      "packUrl": "https://quizgate.clevertree.net/curricula/packs/basic-math-v1.qgpack",
+      "description": "Addition under 10 \u2014 math only (no color questions).",
+      "contentSha256": "11578d805df934748b808ad7f5640f616a5bd15dbc5de7b269d83683ce6da049",
+      "sizeBytes": 8438,
+      "packUrl": "https://quizgate.clevertree.net/curricula/packs/basic-math-v2.qgpack",
       "bundled": true
     }
   ]

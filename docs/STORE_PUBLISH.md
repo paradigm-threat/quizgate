@@ -40,7 +40,7 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
 - **Not** a Screenwise-style control suite (web filter, device-admin lockdown, IAP-adjacent Play listing) as the product identity
 - CleverTree **forever-free** policy (no ads, no IAP, no paywall — all products)
 - Roadmap differentiators: progressive curriculum packs + anonymous **SI** (Super Intelligence, i.e. AI) batch curation; soft gate now, harder lock later if Android APIs allow
-- Soft hourly/morning quiz today (math + colors); gallery backdrops stay on-device; optional curriculum sync
+- Soft hourly/morning quiz today (basic-math pack, math only); gallery/bundled backdrops on-device; optional curriculum sync
 
 ---
 

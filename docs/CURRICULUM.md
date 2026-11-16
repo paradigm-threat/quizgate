@@ -30,6 +30,8 @@ Index: `https://quizgate.clevertree.net/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
+**basic-math v2:** addition under 10 only — no color / “which one is red” items (those return in a later pack with chip-only UI, no text labels).
+
 ## Sync
 
 - Pref `sync_enabled` (default on, Wi‑Fi-only downloads)
