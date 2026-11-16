@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FFF6E8</color>
+    <color name="header">#1A3A4A</color>
+    <color name="accent">#E87A2E</color>
+    <color name="accent_dark">#C45E18</color>
+    <color name="success">#2E9B5A</color>
+    <color name="button">#FFFFFF</color>
+    <color name="button_stroke">#1A3A4A</color>
+    <color name="symbolic">#0D5C63</color>
+    <color name="consoling_bg">#FFE8C8</color>
+    <color name="transition_title">#FFFFFFFF</color>
+    <color name="transition_body">#FFFFF3E0</color>
+    <color name="transition_countdown">#FFFFD54F</color>
+    <color name="success_title">#FFFFFFFF</color>
+    <color name="success_body">#FFFFFDE7</color>
+    <color name="success_countdown">#FFFFF59D</color>
+    <color name="success_scrim">#992E9B5A</color>
+    <color name="stats_mood_ready">#5A7A8A</color>
+    <color name="stats_mood_great">#2E9B5A</color>
+    <color name="stats_mood_good">#D4920A</color>
+    <color name="stats_mood_trying">#D4785A</color>
+</resources>

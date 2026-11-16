@@ -1,0 +1,24 @@
+# Build outputs
+/build/
+
+# Never commit personal media
+/photos/
+*.jpg
+*.jpeg
+*.png
+*.webp
+!UnlockQuiz/res/**/*.png
+!UnlockQuiz/res/**/*.webp
+
+# Local / IDE
+*.iml
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local env / secrets (keep debug.keystore for sideload reinstalls)
+.env
+.env.*
+*.jks
+!debug.keystore

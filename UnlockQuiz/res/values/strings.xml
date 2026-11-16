@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QuizGate</string>
+    <string name="header">Please answer this question</string>
+    <string name="consoling_title">Oh well, better luck next time!</string>
+    <string name="consoling_sub">You can try again later.</string>
+    <string name="retry_in">Retry in</string>
+    <string name="done_in">Done in</string>
+    <string name="wrong_title">Not quite!</string>
+    <string name="fail_title">Oh well, better luck next time!</string>
+    <string name="success_title">Great job!</string>
+    <string name="setup_title">QuizGate</string>
+    <string name="setup_body">Self-triggering quiz every hour and each morning.\n\nTap Arm to grant permissions and schedule.</string>
+    <string name="setup_arm">Arm scheduling</string>
+    <string name="setup_force">Test quiz now</string>
+    <string name="stats_today_title">Today</string>
+    <string name="stats_asked_label">questions</string>
+    <string name="stats_right_label">right answers</string>
+    <string name="stats_mood_ready">Ready to play!</string>
+    <string name="stats_mood_great">Amazing day!</string>
+    <string name="stats_mood_good">Nice work!</string>
+    <string name="stats_mood_trying">Keep going!</string>
+    <string name="notif_channel">Unlock quiz</string>
+    <string name="notif_title">QuizGate time check</string>
+    <string name="notif_text">Time for a quick question</string>
+</resources>
