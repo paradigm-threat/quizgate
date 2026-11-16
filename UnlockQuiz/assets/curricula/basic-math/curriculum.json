@@ -460,6 +460,116 @@
         "digit",
         "choice"
       ]
+    },
+    {
+      "id": "bm.k.m21",
+      "legacyId": "m21",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two minus one?",
+      "symbolic": "2 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "1",
+      "entry": [
+        "digit",
+        "choice"
+      ]
+    },
+    {
+      "id": "bm.k.m22",
+      "legacyId": "m22",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three minus one?",
+      "symbolic": "3 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "2",
+      "entry": [
+        "digit",
+        "choice"
+      ]
+    },
+    {
+      "id": "bm.k.m23",
+      "legacyId": "m23",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is four minus two?",
+      "symbolic": "4 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "2",
+      "entry": [
+        "digit",
+        "choice"
+      ]
+    },
+    {
+      "id": "bm.1.m24",
+      "legacyId": "m24",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five minus two?",
+      "symbolic": "5 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ]
+    },
+    {
+      "id": "bm.1.m25",
+      "legacyId": "m25",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is seven minus three?",
+      "symbolic": "7 - 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ]
     }
   ]
 }
