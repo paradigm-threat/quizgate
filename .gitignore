@@ -20,6 +20,12 @@ curricula/review.json
 !site/**/*.jpeg
 !site/**/*.webp
 !site/**/*.ico
+!store/play/upload/**/*.png
+!store/play/upload/**/*.jpg
+!store/play/upload/**/*.jpeg
+!store/play/upload/screenshots/**/*.png
+!store/play/upload/screenshots/**/*.jpg
+
 !design/web_icon_kit/**/*.png
 !design/web_icon_kit/**/*.webp
 !design/web_icon_kit/**/*.ico

@@ -3,6 +3,9 @@
 QuizGate is **not** submitted to Google Play or the Apple App Store in the current pass.
 This document captures what it takes, plus an honest competitor snapshot.
 
+**Play Console walkthrough + listing copy + upload assets:**
+[`docs/PLAY_STORE.md`](PLAY_STORE.md) · [`store/play/`](../store/play/)
+
 Marketing / privacy URL (required by both stores later):
 https://quizgate.clevertree.net/privacy
 

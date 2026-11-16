@@ -38,6 +38,7 @@ Static site in `site/` (seeded from the Website Favicon Themes Kit). Local previ
 python3 -m http.server 8000 --directory site
 ```
 
+Play Store setup + listing copy: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`store/play/`](store/play/).  
 Store publish notes + competitor table: [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md).
 
 ## Install / test

@@ -1,0 +1,131 @@
+================================================================================
+QuizGate — Google Play listing copy (paste into Play Console)
+Package: net.clevertree.quizgate
+Brand: Clevertree
+================================================================================
+
+APP NAME (max 30 characters)
+--------------------------------------------------------------------------------
+QuizGate
+
+
+SHORT DESCRIPTION (max 80 characters)
+--------------------------------------------------------------------------------
+Earn screen time with quick math quizzes. Forever free. No ads. No purchases.
+
+
+FULL DESCRIPTION (max 4000 characters)
+--------------------------------------------------------------------------------
+QuizGate helps kids earn tablet time by answering short math quizzes.
+
+Correct answers bank minutes. Soft reminders ask for a quick round on your schedule (default about once an hour, with a little randomness) plus a morning check-in. Parents stay in control — forever free, with no ads and no in-app purchases.
+
+How it works
+• Soft gate: a short quiz before the next stretch of screen time
+• Minutes jar: finish a round to bank time; skip early and nothing is earned
+• Local stats: see today’s asked / right / wrong / skipped on the home screen
+• Photos: use your family’s gallery pictures as backdrops, or kid-friendly defaults
+• Optional curriculum sync: download signed packs over Wi‑Fi, or stay offline with the bundled basic-math pack
+
+Built for families
+• No child accounts required
+• No ads, no IAP, no subscriptions — Clevertree forever-free policy
+• Gallery photos and learning progress stay on the device
+• Closed-loop SI helps curate curriculum packs; parents decide what runs
+
+Permissions (why we ask)
+• Notifications & exact alarms — soft quiz reminders on your schedule
+• Photos — optional quiz backdrops from this device
+• Usage access (optional) — pause media during a quiz and return to the app your child was just using
+• Battery unrestricted — so reminders stay reliable on some devices
+
+QuizGate is open source. Privacy policy: https://quizgate.clevertree.net/privacy
+
+
+APP CATEGORY
+--------------------------------------------------------------------------------
+Primary: Education
+Tags (optional): Parental controls, Math, Kids
+
+
+CONTACT DETAILS
+--------------------------------------------------------------------------------
+Email:   support@clevertree.net
+Website: https://quizgate.clevertree.net
+Privacy: https://quizgate.clevertree.net/privacy
+
+
+CONTAINS ADS
+--------------------------------------------------------------------------------
+No
+
+
+IN-APP PRODUCTS / SUBSCRIPTIONS
+--------------------------------------------------------------------------------
+None
+
+
+DATA SAFETY (draft answers — confirm in Console against the live APK)
+--------------------------------------------------------------------------------
+Does your app collect or share any of the required user data types?
+  → Collect: Photos (only if the parent grants gallery access; used as on-device
+    quiz backdrops; not uploaded by the current app)
+  → Collect: App activity / app interactions (local quiz stats on device)
+  → App info and performance: crash logs — No (unless you add a crash SDK later)
+  → Device or other IDs — No intentional collection for advertising
+  → Approximate/precise location — No
+  → Personal info (name, email, phone) — No child account; no sign-in
+
+Is data encrypted in transit?
+  → Yes for optional curriculum HTTPS downloads
+  → Gallery photos and stats stay local (not transmitted by the current app)
+
+Can users request deletion?
+  → Uninstall clears on-device data. No cloud child profile to delete.
+  → Curriculum sync can be turned off in Setup.
+
+Data shared with third parties?
+  → No (no ads SDKs, no analytics SDKs in the current build)
+
+
+TARGET AUDIENCE & CONTENT
+--------------------------------------------------------------------------------
+Target age groups: Ages 5–8 (and optionally 9–12 if you want broader listing)
+Appeal to children: Yes (Families policy applies)
+Store presence: Designed for families / children
+
+
+CONTENT RATING (IARC questionnaire — typical answers)
+--------------------------------------------------------------------------------
+Violence: No
+Sexual content: No
+Language: No
+Controlled substances: No
+Gambling / simulated gambling: No
+User-generated content that is public: No
+Shares user location: No
+Users can communicate / interact: No
+→ Expect a young-child / Everyone-style rating after the questionnaire.
+
+
+NEWS / COVID / FINANCIAL / HEALTH features
+--------------------------------------------------------------------------------
+No / Not applicable for all of the above.
+
+
+GOVERNMENT APPS
+--------------------------------------------------------------------------------
+No
+
+
+SECURITY PRACTICES
+--------------------------------------------------------------------------------
+Data is encrypted in transit (HTTPS curriculum index/packs).
+Users can request that data be deleted (uninstall / clear app data).
+
+
+RELEASE NOTES (example for first closed test)
+--------------------------------------------------------------------------------
+First Play closed-test build of QuizGate.
+Soft math quizzes on a parent-set schedule, minutes jar, local stats,
+optional gallery or bundled photo backdrops, forever free.
