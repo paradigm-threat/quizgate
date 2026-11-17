@@ -2,7 +2,7 @@ package net.clevertree.quizgate.telemetry;
 
 /** Public QuizGate API hosts — always *.quizgate.app. */
 public final class ApiConfig {
-    public static final String API_BASE = "https://api.quizgate.app";
+    public static final String API_BASE = net.clevertree.quizgate.core.BuildFingerprint.API_BASE;
 
     private ApiConfig() {}
 

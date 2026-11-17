@@ -1,7 +1,9 @@
 package net.clevertree.quizgate.telemetry;
 
+import android.content.Context;
 import android.util.Log;
 
+import net.clevertree.quizgate.AppPrefs;
 import net.clevertree.quizgate.core.BuildFingerprint;
 import net.clevertree.quizgate.core.TelemetryPayload;
 
@@ -12,19 +14,29 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * QuizGate Intake client → {@code https://api.quizgate.app}.
- * Hard-gated by {@link BuildFingerprint#TELEMETRY_UPLOAD_ENABLED} (default false).
+ * Allowed when compile flag is on <em>or</em> remote management is enabled in prefs.
  */
 public final class TelemetryUploader {
     private TelemetryUploader() {}
 
-    /**
-     * @return true if Intake accepted (2xx); false if disabled, skipped, or network failure.
-     */
+    public static boolean maybeUpload(Context ctx, TelemetryPayload payload) {
+        if (payload == null) return false;
+        boolean runtime = ctx != null && new AppPrefs(ctx).isRemoteUploadEnabled();
+        if (!BuildFingerprint.uploadAllowed(runtime)) {
+            return false;
+        }
+        return postSync(payload);
+    }
+
+    /** Legacy entry — only uploads when compile-time flag is true. */
     public static boolean maybeUpload(TelemetryPayload payload) {
         if (!BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
             return false;
         }
-        if (payload == null) return false;
+        return postSync(payload);
+    }
+
+    private static boolean postSync(TelemetryPayload payload) {
         String uuid = payload.userUuid;
         if (uuid == null || uuid.isEmpty()) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "upload skipped: missing anon uuid");

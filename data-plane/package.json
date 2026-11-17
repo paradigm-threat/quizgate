@@ -7,9 +7,13 @@
   "scripts": {
     "intake": "node intake/server.mjs",
     "batch": "node batch/drain.mjs",
-    "test": "node --test lib/*.test.mjs batch/*.test.mjs"
+    "test": "node --test lib/*.test.mjs batch/*.test.mjs",
+    "mail:test": "node scripts/send-test-email.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "nodemailer": "^6.10.1"
   }
 }

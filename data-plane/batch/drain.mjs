@@ -183,6 +183,57 @@ function applyContentResearch(job) {
   return { ok: true, hints: profile.content_hints.slice(-3) };
 }
 
+function applyRemoteRegister(job) {
+  const uuid = job.user_uuid;
+  if (!isUuid(uuid)) throw new Error("invalid_uuid");
+  const profile = loadProfile(uuid) || emptyProfile(uuid);
+  profile.updated_at_ms = Date.now();
+  profile.remote_ai = Boolean(job.ai_enabled);
+  profile.admin = {
+    ai_enabled: Boolean(job.ai_enabled),
+    human_enabled: Boolean(job.human_enabled && job.email_hash),
+    email_hash: job.email_hash || profile.admin?.email_hash || null,
+    updated_at_ms: Date.now(),
+  };
+  commitUserFiles(
+    uuid,
+    { "profile.json": JSON.stringify(profile, null, 2) + "\n" },
+    `batch: remote_register ${uuid}`,
+    SERVICE_ID,
+  );
+  return { ok: true, admin: profile.admin };
+}
+
+function applyAdminSettings(job) {
+  const uuid = job.user_uuid;
+  if (!isUuid(uuid)) throw new Error("invalid_uuid");
+  const profile = loadProfile(uuid) || emptyProfile(uuid);
+  const patch = job.patch || {};
+  profile.updated_at_ms = Date.now();
+  if (patch.curriculum_id) profile.curriculum_id = String(patch.curriculum_id);
+  profile.settings = profile.settings || {};
+  if (patch.interval_ms != null) profile.settings.interval_ms = Number(patch.interval_ms);
+  if (patch.jitter_ms != null) profile.settings.jitter_ms = Number(patch.jitter_ms);
+  if (patch.performance_preference) {
+    profile.settings.performance_preference = String(patch.performance_preference);
+  }
+  if (Array.isArray(patch.content_hints)) {
+    profile.content_hints = patch.content_hints.slice(-20);
+  }
+  profile.admin = {
+    ...(profile.admin || {}),
+    last_human_patch_at_ms: Date.now(),
+    last_actor: job.actor || "human_admin",
+  };
+  commitUserFiles(
+    uuid,
+    { "profile.json": JSON.stringify(profile, null, 2) + "\n" },
+    `batch: admin_settings ${uuid}`,
+    SERVICE_ID,
+  );
+  return { ok: true, settings: profile.settings, curriculum_id: profile.curriculum_id };
+}
+
 export async function drainOnce(limit = 8) {
   const pending = listPending(limit);
   const results = [];
@@ -194,6 +245,8 @@ export async function drainOnce(limit = 8) {
       if (leased.type === "progress_sync") result = applyProgressSync(leased);
       else if (leased.type === "intake_gather") result = applyIntakeGather(leased);
       else if (leased.type === "realtime_followup") result = applyContentResearch(leased);
+      else if (leased.type === "remote_register") result = applyRemoteRegister(leased);
+      else if (leased.type === "admin_settings") result = applyAdminSettings(leased);
       else result = { skipped: true, type: leased.type };
       completeJob(leased.id, result);
       results.push({ id: leased.id, ok: true, result });

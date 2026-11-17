@@ -55,12 +55,27 @@ public class AlarmReceiver extends BroadcastReceiver {
             AlarmScheduler.scheduleMorning(context, sched.nextMorningAlarm(now));
         }
         ForegroundApp.captureNow(context);
+        // Pause while the player is still foreground, settle, then bring quiz up —
+        // avoids YouTube auto-enter system PiP on the task switch when possible.
+        final PendingResult async = goAsync();
+        final String trig = trigger;
+        final Context app = context.getApplicationContext();
         try {
-            new MediaGate().pauseForQuiz(context);
+            new MediaGate().pauseThenSettle(app, () -> {
+                try {
+                    QuizLaunch.fromAlarm(app, trig);
+                } finally {
+                    try { async.finish(); } catch (Exception ignored) {}
+                }
+            });
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "pre-quiz media pause", e);
-            Diag.nonFatal(context, "media_pause", e);
+            Diag.nonFatal(app, "media_pause", e);
+            try {
+                QuizLaunch.fromAlarm(app, trig);
+            } finally {
+                try { async.finish(); } catch (Exception ignored) {}
+            }
         }
-        QuizLaunch.fromAlarm(context, trigger);
     }
 }

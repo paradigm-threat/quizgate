@@ -23,8 +23,9 @@ public final class RemoteSettingsPull {
     private RemoteSettingsPull() {}
 
     public static boolean maybePull(Context ctx) {
-        if (!BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) return false;
         if (ctx == null) return false;
+        AppPrefs prefsGate = new AppPrefs(ctx);
+        if (!BuildFingerprint.uploadAllowed(prefsGate.isRemoteUploadEnabled())) return false;
         String uuid = AnonUserId.getOrCreate(ctx);
         try {
             URL url = new URL(ApiConfig.userProfileUrl(uuid));

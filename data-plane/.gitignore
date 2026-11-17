@@ -1,6 +1,9 @@
-.node_modules/
+node_modules/
 .data/
 queue/pending/
 queue/leased/
 queue/done/
 *.log
+smtp.env
+.env
+**/smtp.env

@@ -125,8 +125,10 @@ public final class Diag {
     public static void flushLocalOnly(Context ctx) {
         try {
             TelemetryPayload p = buildPayload(ctx);
-            boolean uploaded = TelemetryUploader.maybeUpload(p);
-            if (uploaded || BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
+            boolean uploaded = TelemetryUploader.maybeUpload(ctx, p);
+            AppPrefs prefs = new AppPrefs(ctx);
+            if (uploaded || prefs.isRemoteUploadEnabled()
+                    || BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
                 RemoteSettingsPull.maybePull(ctx);
             }
         } catch (Exception e) {

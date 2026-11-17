@@ -105,6 +105,12 @@ export function emptyProfile(uuid) {
       performance_preference: "auto",
     },
     content_hints: [],
+    remote_ai: false,
+    admin: {
+      ai_enabled: false,
+      human_enabled: false,
+      email_hash: null,
+    },
   };
 }
 

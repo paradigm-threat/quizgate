@@ -1,6 +1,21 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "admin.quizgate.app" }],
+      "destination": "/admin/",
+      "permanent": false
+    },
+    {
+      "source": "/index",
+      "has": [{ "type": "host", "value": "admin.quizgate.app" }],
+      "destination": "/admin/",
+      "permanent": false
+    }
+  ],
+  "rewrites": [],
   "headers": [
     {
       "source": "/robots.txt",

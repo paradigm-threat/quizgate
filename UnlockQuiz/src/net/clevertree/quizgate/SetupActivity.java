@@ -15,16 +15,20 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import net.clevertree.quizgate.core.AnonUserId;
+import net.clevertree.quizgate.core.BuildFingerprint;
 import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.Scheduler;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
+import net.clevertree.quizgate.telemetry.RemoteRegister;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,6 +47,9 @@ public class SetupActivity extends Activity {
     private TextView statsWrongNum;
     private TextView statsSkippedNum;
     private CheckBox syncEnabled;
+    private CheckBox remoteManagement;
+    private EditText parentEmail;
+    private TextView uuidLine;
     private Spinner curriculumSpinner;
     private Spinner tierSpinner;
     private Spinner perfModeSpinner;
@@ -80,6 +87,9 @@ public class SetupActivity extends Activity {
         statsWrongNum = findViewById(R.id.stats_wrong_num);
         statsSkippedNum = findViewById(R.id.stats_skipped_num);
         syncEnabled = findViewById(R.id.sync_enabled);
+        remoteManagement = findViewById(R.id.remote_management);
+        parentEmail = findViewById(R.id.parent_email);
+        uuidLine = findViewById(R.id.setup_uuid_line);
         curriculumSpinner = findViewById(R.id.curriculum_spinner);
         tierSpinner = findViewById(R.id.tier_spinner);
         perfModeSpinner = findViewById(R.id.perf_mode_spinner);
@@ -100,6 +110,19 @@ public class SetupActivity extends Activity {
             prefs.setSyncEnabled(checked);
             if (checked) CurriculumIndexClient.syncIfEnabled(this);
         });
+        if (remoteManagement != null) {
+            remoteManagement.setChecked(prefs.isRemoteManagementEnabled());
+        }
+        if (parentEmail != null) {
+            parentEmail.setText(prefs.getParentEmail());
+        }
+        if (uuidLine != null) {
+            uuidLine.setText(getString(R.string.setup_uuid_line, AnonUserId.getOrCreate(this)));
+        }
+        Button remoteSave = findViewById(R.id.btn_remote_save);
+        if (remoteSave != null) {
+            remoteSave.setOnClickListener(v -> saveRemoteManagement());
+        }
         bindPerfModeSpinner();
         syncNow.setOnClickListener(v -> {
             if (!prefs.isSyncEnabled()) {
@@ -538,6 +561,37 @@ public class SetupActivity extends Activity {
     private int dp(int value) {
         return Math.round(TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics()));
+    }
+
+    private void saveRemoteManagement() {
+        AppPrefs prefs = new AppPrefs(this);
+        final boolean enable = remoteManagement != null && remoteManagement.isChecked();
+        final String email = parentEmail != null ? parentEmail.getText().toString().trim() : "";
+        if (!enable) {
+            prefs.setRemoteManagementEnabled(false);
+            Toast.makeText(this, R.string.setup_remote_saved, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Toast.makeText(this, "Saving…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            boolean ok = RemoteRegister.register(SetupActivity.this, true,
+                    email.contains("@") ? email : null);
+            runOnUiThread(() -> {
+                if (ok) {
+                    Toast.makeText(this, R.string.setup_remote_saved, Toast.LENGTH_LONG).show();
+                    if (uuidLine != null) {
+                        uuidLine.setText(getString(R.string.setup_uuid_line,
+                                AnonUserId.getOrCreate(this))
+                                + "\n" + BuildFingerprint.ADMIN_URL);
+                    }
+                    // Pull any existing remote profile after register
+                    Diag.flushLocalOnly(this);
+                } else {
+                    prefs.setRemoteManagementEnabled(true); // local opt-in even if register queued later
+                    Toast.makeText(this, R.string.setup_remote_failed, Toast.LENGTH_LONG).show();
+                }
+            });
+        }, "remote-register").start();
     }
 
     private void refreshCountdown() {

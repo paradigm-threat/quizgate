@@ -2,6 +2,7 @@ package net.clevertree.quizgate;
 
 import android.app.AppOpsManager;
 import android.app.usage.UsageEvents;
+import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,6 +13,8 @@ import android.os.Build;
 import android.os.Process;
 import android.provider.Settings;
 import android.util.Log;
+
+import java.util.List;
 
 /**
  * Remember the app under the soft gate and bring it back after unlock so the
@@ -60,6 +63,14 @@ public final class ForegroundApp {
         return d == null ? null : d.pkg;
     }
 
+    /**
+     * How far back to scan usage events. A short window (e.g. 60s) misses the
+     * common case where YouTube (or another player) has been foreground for
+     * minutes without a fresh ACTIVITY_RESUMED — {@code am start} to an already
+     * top task also emits no new event.
+     */
+    private static final long DETECT_LOOKBACK_MS = 15L * 60L * 1000L;
+
     public static Detected detectDetailed(Context ctx) {
         if (!hasUsageAccess(ctx)) {
             Log.w(TAG, "usage access missing — cannot detect previous app");
@@ -68,7 +79,22 @@ public final class ForegroundApp {
         UsageStatsManager usm = (UsageStatsManager) ctx.getSystemService(Context.USAGE_STATS_SERVICE);
         if (usm == null) return null;
         long end = System.currentTimeMillis();
-        long begin = end - 60_000L;
+        long begin = end - DETECT_LOOKBACK_MS;
+        Detected fromEvents = detectFromEvents(ctx, usm, begin, end);
+        if (fromEvents != null) {
+            Log.i(TAG, "detected previous app=" + fromEvents.pkg
+                    + (fromEvents.cls != null ? ("/" + fromEvents.cls) : ""));
+            return fromEvents;
+        }
+        // Fallback: most-recently-used package in the same window (no activity class).
+        Detected fromStats = detectFromUsageStats(ctx, usm, begin, end);
+        Log.i(TAG, "detected previous app="
+                + (fromStats == null ? "null" : fromStats.pkg + " (usage_stats)"));
+        return fromStats;
+    }
+
+    private static Detected detectFromEvents(Context ctx, UsageStatsManager usm,
+                                             long begin, long end) {
         UsageEvents events;
         try {
             events = usm.queryEvents(begin, end);
@@ -94,10 +120,33 @@ public final class ForegroundApp {
             String cls = ev.getClassName();
             lastCls = (cls != null && !cls.isEmpty()) ? cls : null;
         }
-        Log.i(TAG, "detected previous app=" + lastPkg
-                + (lastCls != null ? ("/" + lastCls) : ""));
         if (lastPkg == null) return null;
         return new Detected(lastPkg, lastCls);
+    }
+
+    private static Detected detectFromUsageStats(Context ctx, UsageStatsManager usm,
+                                                 long begin, long end) {
+        List<UsageStats> stats;
+        try {
+            stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_BEST, begin, end);
+        } catch (Exception e) {
+            Log.e(TAG, "queryUsageStats", e);
+            return null;
+        }
+        if (stats == null || stats.isEmpty()) return null;
+        UsageStats best = null;
+        for (UsageStats s : stats) {
+            if (s == null) continue;
+            String pkg = s.getPackageName();
+            if (pkg == null) continue;
+            if (pkg.equals(ctx.getPackageName())) continue;
+            if (isLauncherOrSystemUi(ctx, pkg)) continue;
+            if (best == null || s.getLastTimeUsed() > best.getLastTimeUsed()) {
+                best = s;
+            }
+        }
+        if (best == null || best.getLastTimeUsed() < begin) return null;
+        return new Detected(best.getPackageName(), null);
     }
 
     public static void captureNow(Context ctx) {
@@ -140,35 +189,73 @@ public final class ForegroundApp {
             return false;
         }
         try {
-            Intent launch = null;
-            // Prefer the exact activity that was interrupted (keeps YouTube on the video).
-            if (cls != null && !cls.isEmpty()) {
-                launch = new Intent();
-                launch.setComponent(new ComponentName(pkg, cls));
-                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                if (ctx.getPackageManager().resolveActivity(launch, 0) == null) {
-                    launch = null;
-                }
-            }
+            Intent launch = buildRestoreIntent(ctx, pkg, cls);
             if (launch == null) {
-                launch = ctx.getPackageManager().getLaunchIntentForPackage(pkg);
-                if (launch == null) {
-                    Log.w(TAG, "no launch intent for " + pkg);
-                    return false;
-                }
-                // Do NOT use RESET_TASK_IF_NEEDED — that can drop YouTube back to Home/root.
-                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                Log.w(TAG, "no launch intent for " + pkg);
+                return false;
             }
             ctx.startActivity(launch);
             Log.i(TAG, "restored previous app=" + pkg
-                    + (cls != null ? ("/" + cls) : ""));
+                    + (cls != null ? ("/" + cls) : "")
+                    + " via=" + (launch.getComponent() != null
+                    ? launch.getComponent().flattenToShortString() : "launcher"));
             return true;
         } catch (Exception e) {
             Log.e(TAG, "restore failed pkg=" + pkg, e);
+            return false;
+        }
+    }
+
+    /**
+     * Build a restore intent that works under API 30+ package visibility and for
+     * apps whose usage-stats class is a non-exported target (e.g. YouTube
+     * {@code MainActivity} vs launcher {@code Shell$HomeActivity}).
+     */
+    private static Intent buildRestoreIntent(Context ctx, String pkg, String cls) {
+        PackageManager pm = ctx.getPackageManager();
+        // Prefer the exact activity that was interrupted when it is exported.
+        // Usage-stats often reports YouTube's non-exported MainActivity (alias target);
+        // starting that throws SecurityException — fall through to the launcher entry.
+        if (cls != null && !cls.isEmpty() && isExportedComponent(pm, pkg, cls)) {
+            Intent exact = new Intent();
+            exact.setComponent(new ComponentName(pkg, cls));
+            exact.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            if (pm.resolveActivity(exact, 0) != null) {
+                return exact;
+            }
+        }
+        // Standard launcher entry — needs <queries> MAIN/LAUNCHER (or package) in the manifest.
+        Intent launcher = pm.getLaunchIntentForPackage(pkg);
+        if (launcher != null) {
+            // Do NOT use RESET_TASK_IF_NEEDED — that can drop YouTube back to Home/root.
+            launcher.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            return launcher;
+        }
+        // Last resort: explicit MAIN/LAUNCHER with package (still requires visibility).
+        Intent main = new Intent(Intent.ACTION_MAIN);
+        main.addCategory(Intent.CATEGORY_LAUNCHER);
+        main.setPackage(pkg);
+        main.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (pm.resolveActivity(main, 0) != null) {
+            return main;
+        }
+        return null;
+    }
+
+    private static boolean isExportedComponent(PackageManager pm, String pkg, String cls) {
+        try {
+            android.content.pm.ActivityInfo info =
+                    pm.getActivityInfo(new ComponentName(pkg, cls), 0);
+            return info != null && info.exported;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        } catch (Exception e) {
             return false;
         }
     }

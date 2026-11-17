@@ -9,10 +9,23 @@ package net.clevertree.quizgate.core;
 public final class BuildFingerprint {
     /** Bumped when TelemetryPayload includes anon {@code user_uuid} for Intake. */
     public static final int SCHEMA_VERSION = 3;
+    /**
+     * Compile-time kill switch. Runtime remote management uses
+     * {@link net.clevertree.quizgate.AppPrefs#isRemoteUploadEnabled()} which can
+     * enable sync while this remains false for store builds until privacy review.
+     * When true, upload is always allowed; when false, prefs must opt in.
+     */
     public static final boolean TELEMETRY_UPLOAD_ENABLED = false;
     public static final String DIAG_LOG_TAG = "QuizGateDiag";
+    public static final String API_BASE = "https://api.quizgate.app";
+    public static final String ADMIN_URL = "https://admin.quizgate.app";
 
     private BuildFingerprint() {}
+
+    /** True if compile flag or runtime remote-management opt-in. */
+    public static boolean uploadAllowed(boolean runtimeRemoteEnabled) {
+        return TELEMETRY_UPLOAD_ENABLED || runtimeRemoteEnabled;
+    }
 
     public static String gitSha() {
         try {

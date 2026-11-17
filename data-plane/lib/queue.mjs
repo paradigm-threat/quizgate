@@ -16,10 +16,13 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const QUEUE_ROOT = process.env.QUIZGATE_QUEUE_DIR || join(__dirname, "../queue");
+
+function queueRoot() {
+  return process.env.QUIZGATE_QUEUE_DIR || join(__dirname, "../queue");
+}
 
 function binDir(state) {
-  const d = join(QUEUE_ROOT, state);
+  const d = join(queueRoot(), state);
   mkdirSync(d, { recursive: true });
   return d;
 }
@@ -54,14 +57,29 @@ export function listPending(limit = 32) {
 export function leaseJob(id, workerId = "batch") {
   const src = join(binDir("pending"), `${id}.json`);
   if (!existsSync(src)) return null;
-  const job = JSON.parse(readFileSync(src, "utf8"));
+  let job;
+  try {
+    job = JSON.parse(readFileSync(src, "utf8"));
+  } catch {
+    return null;
+  }
   job.state = "leased";
   job.leased_by = workerId;
   job.leased_at_ms = Date.now();
   job.updated_at_ms = job.leased_at_ms;
   const dest = join(binDir("leased"), `${id}.json`);
-  writeFileSync(dest, JSON.stringify(job, null, 2));
-  unlinkSync(src);
+  try {
+    renameSync(src, dest);
+    writeFileSync(dest, JSON.stringify(job, null, 2));
+  } catch {
+    if (!existsSync(src)) return null;
+    writeFileSync(dest, JSON.stringify(job, null, 2));
+    try {
+      unlinkSync(src);
+    } catch {
+      /* already moved */
+    }
+  }
   return job;
 }
 
@@ -82,6 +100,4 @@ export function pendingCount() {
   return readdirSync(binDir("pending")).filter((n) => n.endsWith(".json")).length;
 }
 
-export function queueRoot() {
-  return QUEUE_ROOT;
-}
+export { queueRoot };

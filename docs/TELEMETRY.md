@@ -78,6 +78,19 @@ Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
 
 `TelemetryUploader.maybeUpload()` is a no-op while the flag is false. Fields stay in the local snapshot shape so enabling upload later needs no schema redesign.
 
+### Media / overlay breadcrumbs (`kind=media`)
+
+Privacy-safe `msg` tokens (no package names):
+
+| msg | Meaning |
+|-----|---------|
+| `was_playing` / `idle` | Soft-pause latch at fire |
+| `pre_pause_settle_ms=N:idle` / `:timeout_active` | Alarm path waited for playback to stop before quiz UI |
+| `overlay_hide_on` / `overlay_hide_unsupported` | `setHideOverlayWindows` availability |
+| `pip_pad_on:detect=pinned\|unknown\|clear…` | Degraded UX pad applied (foreign PiP / media risk) |
+| `pip_pad_off:…` / `pip_pad_cleared` | Pad skipped or removed after pinned task dismissed |
+| `resume_play` | Best-effort MEDIA_PLAY after unlock |
+
 ### Logcat
 
 Stable tag **`QuizGateDiag`** — process start, uncaught exceptions, and Auto `perf_mode_switch` lines for Play log correlation.

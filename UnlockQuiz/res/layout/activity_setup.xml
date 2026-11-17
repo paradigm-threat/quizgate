@@ -397,6 +397,53 @@
             android:textColor="@color/header"
             android:textSize="15sp"/>
 
+        <CheckBox
+            android:id="@+id/remote_management"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/setup_remote_label"
+            android:textColor="@color/header"
+            android:textSize="15sp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/setup_remote_help"
+            android:textColor="@color/header"
+            android:textSize="12sp"
+            android:gravity="center"/>
+
+        <EditText
+            android:id="@+id/parent_email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="@string/setup_parent_email_hint"
+            android:inputType="textEmailAddress"
+            android:textColor="@color/header"
+            android:textSize="15sp"/>
+
+        <Button
+            android:id="@+id/btn_remote_save"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/setup_remote_save"
+            android:textSize="15sp"
+            android:backgroundTint="@color/symbolic"
+            android:textColor="#FFFFFF"/>
+
+        <TextView
+            android:id="@+id/setup_uuid_line"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/header"
+            android:textSize="11sp"
+            android:gravity="center"/>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

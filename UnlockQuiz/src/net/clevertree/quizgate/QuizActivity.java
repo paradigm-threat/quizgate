@@ -135,19 +135,22 @@ public class QuizActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Hide foreign overlays + immersive before content draws (preferred over PiP).
+        // Hide foreign overlays + immersive before content draws.
         OverlayGate.apply(this);
         setContentView(R.layout.activity_quiz);
         prefs = new AppPrefs(this);
         // Capture previous app if alarm path missed it (e.g. Test quiz / ADB).
+        // Always refresh when allowed — detect skips our own package, so a late
+        // capture still finds YouTube/games under a long-lived foreground session.
         // Slim skips usage-stats return-to-app entirely.
-        if (PerformanceMode.allowReturnToApp(prefs) && prefs.getResumePackage() == null) {
+        if (PerformanceMode.allowReturnToApp(prefs)) {
             ForegroundApp.captureNow(this);
-        } else if (!PerformanceMode.allowReturnToApp(prefs)) {
+        } else {
             restorePreviousApp = false;
         }
         // Pause YouTube / music / game audio while the quiz is up (required even if
-        // overlay/PiP hide is unavailable on the OEM).
+        // overlay/PiP hide is unavailable on the OEM). Alarm path already settled a
+        // pre-pause; this reinforces and keeps the sticky resume latch.
         mediaGate.pauseForQuiz(this);
         spoken = findViewById(R.id.spoken);
         symbolic = findViewById(R.id.symbolic);
@@ -156,6 +159,9 @@ public class QuizActivity extends Activity {
         choices = findViewById(R.id.choices);
         digitPad = findViewById(R.id.digit_pad);
         quizPanel = findViewById(R.id.quiz_panel);
+        // If system PiP / mini-player still covers the gate, pad content out of the
+        // usual bottom-end corner (degraded UX — cannot force-close foreign PiP).
+        OverlayGate.applyPipAvoidance(this, quizPanel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
@@ -480,12 +486,14 @@ public class QuizActivity extends Activity {
     }
 
     private void buildDigitPad() {
-        // rows: 1 2 3 / 4 5 6 / 7 8 9 / clear 0 enter
+        // rows: 1 2 3 / 4 5 6 / 7 8 9 / OK 0 Clear
+        // OK is leftmost so system YouTube PiP (typically bottom-right) does not
+        // cover the primary submit control — setHideOverlayWindows cannot hide PiP.
         int[][] rows = {
                 {1, 2, 3},
                 {4, 5, 6},
                 {7, 8, 9},
-                {-1, 0, -2} // -1 clear, -2 enter
+                {-2, 0, -1} // -2 enter/OK, -1 clear
         };
         for (int[] row : rows) {
             LinearLayout line = new LinearLayout(this);

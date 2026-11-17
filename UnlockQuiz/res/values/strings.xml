@@ -80,6 +80,13 @@
     <string name="setup_window_label">Next quiz between</string>
     <string name="setup_minutes_label">Minutes jar</string>
     <string name="setup_sync_label">Auto-sync curricula (Wi‑Fi only)</string>
+    <string name="setup_remote_label">Enable remote management</string>
+    <string name="setup_remote_help">Turns on AI sync to api.quizgate.app. Optional parent email unlocks human admin at admin.quizgate.app (UUID + email + 2FA). Email is stored only as a hash.</string>
+    <string name="setup_parent_email_hint">Parent email (optional, for human admin)</string>
+    <string name="setup_remote_save">Save remote management</string>
+    <string name="setup_remote_saved">Remote management updated</string>
+    <string name="setup_remote_failed">Could not reach api.quizgate.app</string>
+    <string name="setup_uuid_line">Device UUID: %1$s</string>
     <string name="setup_perf_label">Performance mode</string>
     <string name="setup_perf_auto">Auto (recommended)</string>
     <string name="setup_perf_performance">Performance</string>

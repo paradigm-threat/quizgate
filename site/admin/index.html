@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuizGate Remote Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://admin.quizgate.app/">
+  <style>
+    :root { --bg:#f7f3ea; --ink:#1c2430; --card:#fff; --accent:#2a6f6f; --muted:#5c6672; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Georgia, "Times New Roman", serif; background:linear-gradient(160deg,#f7f3ea,#e8eef0); color:var(--ink); min-height:100vh; }
+    main { max-width:720px; margin:0 auto; padding:2rem 1.25rem 4rem; }
+    h1 { font-size:1.75rem; margin:0 0 .35rem; }
+    p.lead { color:var(--muted); margin:0 0 1.5rem; }
+    .card { background:var(--card); border-radius:16px; padding:1.25rem 1.35rem; box-shadow:0 10px 30px rgba(28,36,48,.08); margin-bottom:1rem; }
+    label { display:block; font-size:.85rem; color:var(--muted); margin:.75rem 0 .25rem; }
+    input, select { width:100%; padding:.65rem .75rem; border:1px solid #d5dbe3; border-radius:10px; font:inherit; }
+    button { margin-top:1rem; background:var(--accent); color:#fff; border:0; border-radius:999px; padding:.7rem 1.2rem; font:inherit; cursor:pointer; }
+    button.secondary { background:#445; }
+    .err { color:#a33; margin-top:.75rem; }
+    .ok { color:#2a6f6f; margin-top:.75rem; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#f2f5f7; padding:1rem; border-radius:12px; font-size:.85rem; }
+    .hidden { display:none; }
+    .row { display:flex; gap:.75rem; flex-wrap:wrap; }
+    .row > * { flex:1; min-width:140px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>QuizGate remote admin</h1>
+  <p class="lead">No user directory. You must already know the device UUID. Stats are anonymized; curriculum and schedule can be updated like the AI batch.</p>
+
+  <section id="login" class="card">
+    <h2>Sign in</h2>
+    <label for="uuid">Device UUID</label>
+    <input id="uuid" autocomplete="off" placeholder="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx">
+    <label for="email">Parent email (must match the hash registered on the device)</label>
+    <input id="email" type="email" autocomplete="username" placeholder="you@example.com">
+    <button id="btnOtp" type="button">Send verification code</button>
+    <div id="otpBox" class="hidden">
+      <label for="code">6-digit code</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+      <input id="otpId" type="hidden">
+      <button id="btnVerify" type="button">Verify</button>
+    </div>
+    <p id="loginMsg" class="err"></p>
+  </section>
+
+  <section id="panel" class="card hidden">
+    <h2>Device <span id="uuidShow"></span></h2>
+    <p class="ok">Signed in. Session is local to this browser.</p>
+    <button id="btnRefresh" class="secondary" type="button">Refresh stats</button>
+    <h3>Anonymized stats</h3>
+    <pre id="statsOut">Loading…</pre>
+    <h3>Update settings</h3>
+    <div class="row">
+      <div>
+        <label for="curriculum">Curriculum id</label>
+        <input id="curriculum" placeholder="basic-math">
+      </div>
+      <div>
+        <label for="interval">Interval (minutes)</label>
+        <input id="interval" type="number" min="15" max="180" value="30">
+      </div>
+      <div>
+        <label for="jitter">Jitter ± (minutes)</label>
+        <input id="jitter" type="number" min="0" max="60" value="15">
+      </div>
+    </div>
+    <label for="perf">Performance preference</label>
+    <select id="perf">
+      <option value="auto">Auto</option>
+      <option value="performance">Performance</option>
+      <option value="slim">Slim</option>
+    </select>
+    <button id="btnSave" type="button">Queue settings update</button>
+    <p id="saveMsg"></p>
+    <button id="btnLogout" class="secondary" type="button">Sign out</button>
+  </section>
+</main>
+<script>
+const API = "https://api.quizgate.app";
+const TOKEN_KEY = "quizgate_admin_token";
+const UUID_KEY = "quizgate_admin_uuid";
+
+function msg(el, text, ok) {
+  el.textContent = text || "";
+  el.className = ok ? "ok" : "err";
+}
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({ "content-type": "application/json" }, opts.headers || {});
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) headers.authorization = "Bearer " + token;
+  const res = await fetch(API + path, Object.assign({}, opts, { headers }));
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ("http_" + res.status));
+  return data;
+}
+
+function showPanel(uuid) {
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("panel").classList.remove("hidden");
+  document.getElementById("uuidShow").textContent = uuid;
+  refreshStats();
+}
+
+async function refreshStats() {
+  const uuid = localStorage.getItem(UUID_KEY);
+  const out = document.getElementById("statsOut");
+  try {
+    const data = await api("/v1/admin/users/" + uuid + "/stats");
+    out.textContent = JSON.stringify(data, null, 2);
+    const p = data.profile || {};
+    if (p.curriculum_id) document.getElementById("curriculum").value = p.curriculum_id;
+    if (p.settings) {
+      if (p.settings.interval_ms) document.getElementById("interval").value = Math.round(p.settings.interval_ms / 60000);
+      if (p.settings.jitter_ms != null) document.getElementById("jitter").value = Math.round(p.settings.jitter_ms / 60000);
+      if (p.settings.performance_preference) document.getElementById("perf").value = p.settings.performance_preference;
+    }
+  } catch (e) {
+    out.textContent = String(e.message || e);
+  }
+}
+
+document.getElementById("btnOtp").onclick = async () => {
+  const el = document.getElementById("loginMsg");
+  try {
+    const uuid = document.getElementById("uuid").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const data = await api("/v1/admin/otp", { method: "POST", body: JSON.stringify({ uuid, email }) });
+    document.getElementById("otpId").value = data.otp_id;
+    document.getElementById("otpBox").classList.remove("hidden");
+    msg(el, "Code sent (check inbox). Expires in " + data.expires_in_s + "s.", true);
+  } catch (e) {
+    msg(el, e.message === "smtp_not_configured"
+      ? "Server cannot send email yet — App Password not configured on Intake."
+      : "Could not start verification (wrong UUID/email, or human remote not enabled).");
+  }
+};
+
+document.getElementById("btnVerify").onclick = async () => {
+  const el = document.getElementById("loginMsg");
+  try {
+    const data = await api("/v1/admin/verify", {
+      method: "POST",
+      body: JSON.stringify({
+        otp_id: document.getElementById("otpId").value,
+        code: document.getElementById("code").value.trim(),
+      }),
+    });
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(UUID_KEY, data.user_uuid);
+    showPanel(data.user_uuid);
+  } catch (e) {
+    msg(el, "Verification failed.");
+  }
+};
+
+document.getElementById("btnRefresh").onclick = () => refreshStats();
+document.getElementById("btnSave").onclick = async () => {
+  const el = document.getElementById("saveMsg");
+  const uuid = localStorage.getItem(UUID_KEY);
+  try {
+    const body = {
+      curriculum_id: document.getElementById("curriculum").value.trim(),
+      interval_ms: Number(document.getElementById("interval").value) * 60000,
+      jitter_ms: Number(document.getElementById("jitter").value) * 60000,
+      performance_preference: document.getElementById("perf").value,
+    };
+    const data = await api("/v1/admin/users/" + uuid + "/profile", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    msg(el, "Queued job " + data.job_id + " — device will pick up on next profile pull.", true);
+  } catch (e) {
+    msg(el, String(e.message || e));
+  }
+};
+
+document.getElementById("btnLogout").onclick = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(UUID_KEY);
+  location.reload();
+};
+
+if (localStorage.getItem(TOKEN_KEY) && localStorage.getItem(UUID_KEY)) {
+  showPanel(localStorage.getItem(UUID_KEY));
+}
+</script>
+</body>
+</html>

@@ -29,6 +29,14 @@ Live as of 2026-11-17: Let's Encrypt cert for `api.quizgate.app`; `/health` retu
 
 TLS ask allowlist: keep `api.quizgate.app` in `/etc/caddy/on-demand-extra.txt` (survives park regenerations of `parked-domains.txt`). Do **not** add it to Relay catalog `domains[]` (that parks Host → gateway `:8080`).
 
+## Admin UI
+
+| Name | Type | Target |
+|------|------|--------|
+| `admin` | CNAME → `cname.vercel-dns.com` | Vercel project `quizgate`; host redirect `/` → `/admin/` |
+
+Verified live: `https://admin.quizgate.app` → remote admin login.
+
 ## Optional later
 
 | Name | Role |

@@ -45,6 +45,8 @@ Store publish notes + competitor table: [`docs/STORE_PUBLISH.md`](docs/STORE_PUB
 Performance Auto / Performance / Slim: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).  
 Local diagnostics (upload OFF): [`docs/TELEMETRY.md`](docs/TELEMETRY.md).  
 Anonymized Relay progress plane (`api.quizgate.app`): [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md).  
+Remote admin (`admin.quizgate.app`): [`docs/REMOTE_ADMIN.md`](docs/REMOTE_ADMIN.md).  
+Outgoing 2FA email: [`docs/EMAIL.md`](docs/EMAIL.md).  
 Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test
@@ -113,6 +115,6 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
 - Leave without answering → bypass (no reopen), logged as skipped
-- YouTube / music: soft-pause when the quiz opens (exclusive audio focus + media pause); resume after unlock (best-effort). On API 31+ the quiz window also uses `setHideOverlayWindows` so foreign overlays stay off the gate (system PiP cannot be force-closed by third-party apps — expanding it leaves the quiz and counts as bypass). **Usage access** required to return to the prior app after the session
+- YouTube / music: soft-pause **before** the quiz is brought to the foreground (exclusive audio focus + media-pause burst + short settle so auto-PiP is less likely); resume after unlock (best-effort). On API 31+ the quiz window uses `setHideOverlayWindows` for foreign `TYPE_APPLICATION_OVERLAY` windows. System PiP cannot be force-closed — if a pinned task remains, quiz content is padded away from the usual bottom-end corner (degraded UX). Expanding PiP leaves the quiz and counts as bypass. **Usage access** required to return to the prior app after the session
 - Success / error transitions use random images from the device gallery when permitted
 - Performance: **Auto** (default) uses full UX when healthy; switches to **Slim** on weak device, low battery, or battery saver — see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)

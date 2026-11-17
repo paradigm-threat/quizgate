@@ -22,50 +22,66 @@ public class QuizTriggerService extends Service {
         String trigger = intent != null ? intent.getStringExtra(QuizActivity.EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
         AppPrefs prefs = new AppPrefs(this);
-        // Balanced: reinforce capture + media pause. Slim: AlarmReceiver already did
-        // the essential pause; skip extra usage-stats / media work in FGS.
+        final String trig = trigger;
+        final AppPrefs p = prefs;
+        final int sid = startId;
+        // Promote to FGS immediately (platform deadline), then settle pause before
+        // sending the full-screen PendingIntent so PiP is less likely to spawn mid-send.
+        try {
+            startForeground(QuizLaunch.NOTIF_ID,
+                    QuizLaunch.buildForegroundNotification(this, trig));
+        } catch (Exception e) {
+            Log.e(AlarmScheduler.TAG, "FGS startForeground", e);
+        }
+
+        Runnable sendFsi = () -> {
+            long now = System.currentTimeMillis();
+            Diag.schedule(QuizTriggerService.this, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trig,
+                    "lock", p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
+                    null, "path=fgs"));
+
+            boolean ok = QuizLaunch.sendFullScreenFromService(QuizTriggerService.this, trig);
+            if (ok) {
+                // PendingIntent.send success ≠ QuizActivity started (was mislabeled launch_ok).
+                Diag.schedule(QuizTriggerService.this, new DiagnosticsStore.ScheduleEvent(
+                        System.currentTimeMillis(), TimeZone.getDefault(),
+                        DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trig, "lock",
+                        p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
+                        null, "path=fgs_fsi_send"));
+                Log.i(AlarmScheduler.TAG, "FGS FSI send ok trigger=" + trig);
+            } else {
+                Diag.schedule(QuizTriggerService.this, new DiagnosticsStore.ScheduleEvent(
+                        System.currentTimeMillis(), TimeZone.getDefault(),
+                        DiagnosticsStore.KIND_BAL_BLOCKED, trig, "lock",
+                        p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
+                        null, "path=fgs_fsi_send_fail"));
+                Log.e(AlarmScheduler.TAG, "FGS FSI send failed trigger=" + trig);
+            }
+
+            long stopAfter = PerformanceMode.fgsStopAfterMs(QuizTriggerService.this);
+            handler.postDelayed(() -> {
+                try {
+                    stopForeground(Service.STOP_FOREGROUND_DETACH);
+                } catch (Exception ignored) {
+                    try { stopForeground(false); } catch (Exception ignored2) {}
+                }
+                stopSelf(sid);
+            }, stopAfter);
+        };
+
+        // Balanced: reinforce capture + settle pause before FSI send. Slim: AlarmReceiver
+        // already settled; skip extra usage-stats / media wait in FGS.
         if (!PerformanceMode.isSlim(prefs)) {
             ForegroundApp.captureNow(this);
             try {
-                new MediaGate().pauseForQuiz(this);
+                new MediaGate().pauseThenSettle(this, sendFsi);
+                return START_NOT_STICKY;
             } catch (Exception e) {
                 Log.e(AlarmScheduler.TAG, "FGS media pause", e);
             }
         }
-        long now = System.currentTimeMillis();
-        Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
-                now, TimeZone.getDefault(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger,
-                "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                null, "path=fgs"));
-
-        boolean ok = QuizLaunch.launchFromService(this, trigger);
-        if (ok) {
-            // PendingIntent.send success ≠ QuizActivity started (was mislabeled launch_ok).
-            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
-                    System.currentTimeMillis(), TimeZone.getDefault(),
-                    DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, "lock",
-                    prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                    null, "path=fgs_fsi_send"));
-            Log.i(AlarmScheduler.TAG, "FGS FSI send ok trigger=" + trigger);
-        } else {
-            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
-                    System.currentTimeMillis(), TimeZone.getDefault(),
-                    DiagnosticsStore.KIND_BAL_BLOCKED, trigger, "lock",
-                    prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                    null, "path=fgs_fsi_send_fail"));
-            Log.e(AlarmScheduler.TAG, "FGS FSI send failed trigger=" + trigger);
-        }
-
-        final int sid = startId;
-        long stopAfter = PerformanceMode.fgsStopAfterMs(this);
-        handler.postDelayed(() -> {
-            try {
-                stopForeground(Service.STOP_FOREGROUND_DETACH);
-            } catch (Exception ignored) {
-                try { stopForeground(false); } catch (Exception ignored2) {}
-            }
-            stopSelf(sid);
-        }, stopAfter);
+        sendFsi.run();
         return START_NOT_STICKY;
     }
 

@@ -5,15 +5,16 @@ Public hosts are **`*.quizgate.app` only**.
 | Host | Role |
 |------|------|
 | https://quizgate.app | Marketing / curricula (Vercel) |
-| https://api.quizgate.app | Always-on Intake (cache, enqueue, realtime) |
+| https://admin.quizgate.app | Remote admin UI (UUID + email + 2FA) — see [REMOTE_ADMIN.md](REMOTE_ADMIN.md) |
+| https://api.quizgate.app | Always-on Intake (cache, enqueue, realtime, admin OTP) |
 | `git://iad1.relaygateway.net:9418/quizgate-users.git` | Relay tip (branch `users`) — infra, not a brand host |
 
 ## Flow
 
 1. App mints anon UUID (`AnonUserId`) — capability token, no PII.
 2. Local stats stay on device ([TELEMETRY.md](TELEMETRY.md)).
-3. When `TELEMETRY_UPLOAD_ENABLED` is true, app POSTs privacy-safe snapshots to  
-   `POST /v1/users/{uuid}/sync` on Intake.
+3. Upload is off by default. Runtime **remote management** (Setup) or the compile flag enables POSTs of privacy-safe snapshots to  
+   `POST /v1/users/{uuid}/sync` on Intake. Optional parent email registers a hash for human admin.
 4. Intake **caches + enqueues** (PVC). It does **not** commit the tip.
 5. Batch SI drains the queue, writes `users/<uuid>/profile.json|events.jsonl|days.jsonl` as **`quizgate-batch`**, optionally pushes iad1.
 6. App GETs `/v1/users/{uuid}/profile` for curriculum / frequency / performance preference.

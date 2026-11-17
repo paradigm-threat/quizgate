@@ -300,4 +300,54 @@ public final class AppPrefs {
     public void setLastRemoteProfileAt(long ms) {
         sp.edit().putLong("last_remote_profile_at", Math.max(0L, ms)).apply();
     }
+
+    /**
+     * Parent opted into remote management (AI sync and/or human admin).
+     * Gates runtime upload to api.quizgate.app when compile flag is off.
+     */
+    public boolean isRemoteManagementEnabled() {
+        return sp.getBoolean("remote_management", false);
+    }
+
+    public void setRemoteManagementEnabled(boolean v) {
+        sp.edit().putBoolean("remote_management", v).apply();
+    }
+
+    public boolean isRemoteAiEnabled() {
+        return sp.getBoolean("remote_ai", true);
+    }
+
+    public void setRemoteAiEnabled(boolean v) {
+        sp.edit().putBoolean("remote_ai", v).apply();
+    }
+
+    /** True when progress may sync to Intake (compile flag or remote management). */
+    public boolean isRemoteUploadEnabled() {
+        return net.clevertree.quizgate.core.BuildFingerprint.uploadAllowed(
+                isRemoteManagementEnabled());
+    }
+
+    /**
+     * Optional parent email kept only so Setup can re-register hash.
+     * Prefer not to rely on this for identity — server stores hash only.
+     */
+    public String getParentEmail() {
+        return sp.getString("parent_email", "");
+    }
+
+    public void setParentEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            sp.edit().remove("parent_email").apply();
+        } else {
+            sp.edit().putString("parent_email", email.trim()).apply();
+        }
+    }
+
+    public long getLastRemoteRegisterAt() {
+        return sp.getLong("last_remote_register_at", 0L);
+    }
+
+    public void setLastRemoteRegisterAt(long ms) {
+        sp.edit().putLong("last_remote_register_at", Math.max(0L, ms)).apply();
+    }
 }

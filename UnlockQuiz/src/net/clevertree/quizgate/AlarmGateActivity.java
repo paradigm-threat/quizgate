@@ -58,34 +58,38 @@ public class AlarmGateActivity extends Activity {
             AlarmScheduler.scheduleMorning(this, sched.nextMorningAlarm(now));
         }
         ForegroundApp.captureNow(this);
+        final String trig = trigger;
+        final AppPrefs p = prefs;
+        Runnable launchQuiz = () -> {
+            Intent quiz = QuizLaunch.quizIntent(AlarmGateActivity.this, trig);
+            Diag.schedule(AlarmGateActivity.this, new DiagnosticsStore.ScheduleEvent(
+                    System.currentTimeMillis(), TimeZone.getDefault(),
+                    DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trig, "lock",
+                    p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
+                    null, "path=alarm_gate"));
+            try {
+                startActivity(quiz);
+                Diag.schedule(AlarmGateActivity.this, new DiagnosticsStore.ScheduleEvent(
+                        System.currentTimeMillis(), TimeZone.getDefault(),
+                        DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trig, "lock",
+                        p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
+                        null, "path=alarm_gate"));
+                Log.i(AlarmScheduler.TAG, "alarm gate started QuizActivity trigger=" + trig);
+                finish();
+                return;
+            } catch (Exception e) {
+                Log.e(AlarmScheduler.TAG, "alarm gate startActivity failed — QuizLaunch", e);
+            }
+            // Overlay + FSI path when BAL blocked the trampoline→quiz handoff.
+            QuizLaunch.fromAlarm(AlarmGateActivity.this, trig);
+            finish();
+        };
         try {
-            new MediaGate().pauseForQuiz(this);
+            new MediaGate().pauseThenSettle(this, launchQuiz);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "pre-quiz media pause", e);
             Diag.nonFatal(this, "media_pause", e);
+            launchQuiz.run();
         }
-
-        Intent quiz = QuizLaunch.quizIntent(this, trigger);
-        Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
-                System.currentTimeMillis(), TimeZone.getDefault(),
-                DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, "lock",
-                prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                null, "path=alarm_gate"));
-        try {
-            startActivity(quiz);
-            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
-                    System.currentTimeMillis(), TimeZone.getDefault(),
-                    DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, "lock",
-                    prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                    null, "path=alarm_gate"));
-            Log.i(AlarmScheduler.TAG, "alarm gate started QuizActivity trigger=" + trigger);
-            finish();
-            return;
-        } catch (Exception e) {
-            Log.e(AlarmScheduler.TAG, "alarm gate startActivity failed — QuizLaunch", e);
-        }
-        // Overlay + FSI path when BAL blocked the trampoline→quiz handoff.
-        QuizLaunch.fromAlarm(this, trigger);
-        finish();
     }
 }

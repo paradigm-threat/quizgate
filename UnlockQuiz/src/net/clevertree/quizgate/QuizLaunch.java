@@ -32,7 +32,11 @@ public final class QuizLaunch {
 
     private QuizLaunch() {}
 
-    /** From {@link AlarmReceiver}: FSI notification + PendingIntent.send (BAL-safe). */
+    /**
+     * From {@link AlarmReceiver} after {@link MediaGate#pauseThenSettle}: FSI
+     * notification + overlay/FSI bring-up (BAL-safe). Notification posts first so the
+     * settle window still shows an alarm cue; activity start happens here post-pause.
+     */
     public static void fromAlarm(Context ctx, String trigger) {
         Context app = ctx.getApplicationContext();
         if (trigger == null || trigger.isEmpty()) trigger = "interval";
@@ -106,6 +110,20 @@ public final class QuizLaunch {
             NotificationManager nm = ctx.getSystemService(NotificationManager.class);
             if (nm != null) nm.notify(NOTIF_ID, n);
         }
+        return sendFullScreen(ctx, pi);
+    }
+
+    /**
+     * FSI PendingIntent.send only — caller must already be a started foreground
+     * service (see {@link QuizTriggerService}).
+     */
+    public static boolean sendFullScreenFromService(Context ctx, String trigger) {
+        ensureChannel(ctx);
+        Intent quiz = quizIntent(ctx, trigger);
+        PendingIntent pi = activityPi(ctx, quiz);
+        // Refresh the ongoing alarm notification in case channel/text changed.
+        NotificationManager nm = ctx.getSystemService(NotificationManager.class);
+        if (nm != null) nm.notify(NOTIF_ID, buildNotification(ctx, pi));
         return sendFullScreen(ctx, pi);
     }
 
