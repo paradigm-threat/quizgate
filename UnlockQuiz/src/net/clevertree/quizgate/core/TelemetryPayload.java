@@ -7,6 +7,8 @@ import java.util.TimeZone;
 /**
  * Builds a privacy-safe JSON snapshot for eventual Clevertree upload.
  * Never includes names, emails, package names, IPs, or free-text answers.
+ * Includes a {@code performance} block for live debug / iteration when upload
+ * is enabled later (upload stays OFF until published).
  */
 public final class TelemetryPayload {
     public final int schemaVersion;
@@ -35,6 +37,22 @@ public final class TelemetryPayload {
     public final List<String> recentQuiz;
     public final List<String> recentSchedule;
     public final List<String> recentExceptions;
+    // Performance / Auto triage (structured, queryable)
+    public final String perfPreference;
+    public final String perfEffective;
+    public final String perfAutoReasons;
+    public final long perfSwitchAt;
+    public final String perfSwitchFrom;
+    public final String perfSwitchTo;
+    public final int perfBatteryPct;
+    public final boolean perfCharging;
+    public final boolean perfBatterySaver;
+    public final boolean perfBatteryLowBroadcast;
+    public final boolean perfLowRamDevice;
+    public final int perfRamClassMb;
+    public final long perfTotalRamMb;
+    public final int perfCpuCount;
+    public final boolean perfThermalSevere;
 
     private TelemetryPayload(Builder b) {
         this.schemaVersion = BuildFingerprint.SCHEMA_VERSION;
@@ -63,10 +81,25 @@ public final class TelemetryPayload {
         this.recentQuiz = b.recentQuiz;
         this.recentSchedule = b.recentSchedule;
         this.recentExceptions = b.recentExceptions;
+        this.perfPreference = b.perfPreference;
+        this.perfEffective = b.perfEffective;
+        this.perfAutoReasons = b.perfAutoReasons;
+        this.perfSwitchAt = b.perfSwitchAt;
+        this.perfSwitchFrom = b.perfSwitchFrom;
+        this.perfSwitchTo = b.perfSwitchTo;
+        this.perfBatteryPct = b.perfBatteryPct;
+        this.perfCharging = b.perfCharging;
+        this.perfBatterySaver = b.perfBatterySaver;
+        this.perfBatteryLowBroadcast = b.perfBatteryLowBroadcast;
+        this.perfLowRamDevice = b.perfLowRamDevice;
+        this.perfRamClassMb = b.perfRamClassMb;
+        this.perfTotalRamMb = b.perfTotalRamMb;
+        this.perfCpuCount = b.perfCpuCount;
+        this.perfThermalSevere = b.perfThermalSevere;
     }
 
     public String toJson() {
-        StringBuilder sb = new StringBuilder(512);
+        StringBuilder sb = new StringBuilder(768);
         sb.append("{\"schema_version\":").append(schemaVersion);
         sb.append(",\"built_at\":").append(builtAt);
         sb.append(",\"build\":{");
@@ -96,6 +129,24 @@ public final class TelemetryPayload {
         sb.append(",\"photos\":").append(photos);
         sb.append('}');
         sb.append(",\"gate\":{\"other_app\":").append(otherAppPresent).append('}');
+        // Live-debug performance block — structured reason codes + numerics
+        sb.append(",\"performance\":{");
+        sb.append("\"preference\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(perfPreference)))).append('"');
+        sb.append(",\"effective\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(perfEffective)))).append('"');
+        sb.append(",\"auto_reasons\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(perfAutoReasons)))).append('"');
+        sb.append(",\"last_switch_at\":").append(perfSwitchAt);
+        sb.append(",\"last_switch_from\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(perfSwitchFrom)))).append('"');
+        sb.append(",\"last_switch_to\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(perfSwitchTo)))).append('"');
+        sb.append(",\"battery_pct\":").append(perfBatteryPct);
+        sb.append(",\"charging\":").append(perfCharging);
+        sb.append(",\"battery_saver\":").append(perfBatterySaver);
+        sb.append(",\"battery_low_broadcast\":").append(perfBatteryLowBroadcast);
+        sb.append(",\"low_ram_device\":").append(perfLowRamDevice);
+        sb.append(",\"ram_class_mb\":").append(perfRamClassMb);
+        sb.append(",\"total_ram_mb\":").append(perfTotalRamMb);
+        sb.append(",\"cpu_count\":").append(perfCpuCount);
+        sb.append(",\"thermal_severe\":").append(perfThermalSevere);
+        sb.append('}');
         sb.append(",\"storage\":{\"stats_bytes\":").append(statsBytes)
                 .append(",\"diag_bytes\":").append(diagBytes).append('}');
         if (today != null) {
@@ -113,12 +164,15 @@ public final class TelemetryPayload {
         return sb.toString();
     }
 
+    private static String nullToEmpty(String s) {
+        return s == null ? "" : s;
+    }
+
     private static void appendJsonlArray(StringBuilder sb, String key, List<String> lines) {
         sb.append(",\"").append(key).append("\":[");
         if (lines != null) {
             for (int i = 0; i < lines.size(); i++) {
                 if (i > 0) sb.append(',');
-                // Lines are already JSON objects
                 sb.append(lines.get(i));
             }
         }
@@ -129,9 +183,6 @@ public final class TelemetryPayload {
         return new Builder(builtAt);
     }
 
-    /**
-     * Assemble payload from local stores (core-only fields; Android fills device/perms).
-     */
     public static TelemetryPayload fromStores(StatsStore stats, DiagnosticsStore diag,
                                               long nowMs, TimeZone zone,
                                               int versionCode, String versionName) throws IOException {
@@ -175,6 +226,21 @@ public final class TelemetryPayload {
         private List<String> recentQuiz;
         private List<String> recentSchedule;
         private List<String> recentExceptions;
+        private String perfPreference = "";
+        private String perfEffective = "";
+        private String perfAutoReasons = "";
+        private long perfSwitchAt;
+        private String perfSwitchFrom = "";
+        private String perfSwitchTo = "";
+        private int perfBatteryPct = -1;
+        private boolean perfCharging;
+        private boolean perfBatterySaver;
+        private boolean perfBatteryLowBroadcast;
+        private boolean perfLowRamDevice;
+        private int perfRamClassMb;
+        private long perfTotalRamMb;
+        private int perfCpuCount;
+        private boolean perfThermalSevere;
 
         private Builder(long builtAt) { this.builtAt = builtAt; }
 
@@ -202,6 +268,21 @@ public final class TelemetryPayload {
         public Builder recentQuiz(List<String> v) { this.recentQuiz = v; return this; }
         public Builder recentSchedule(List<String> v) { this.recentSchedule = v; return this; }
         public Builder recentExceptions(List<String> v) { this.recentExceptions = v; return this; }
+        public Builder perfPreference(String v) { this.perfPreference = v; return this; }
+        public Builder perfEffective(String v) { this.perfEffective = v; return this; }
+        public Builder perfAutoReasons(String v) { this.perfAutoReasons = v; return this; }
+        public Builder perfSwitchAt(long v) { this.perfSwitchAt = v; return this; }
+        public Builder perfSwitchFrom(String v) { this.perfSwitchFrom = v; return this; }
+        public Builder perfSwitchTo(String v) { this.perfSwitchTo = v; return this; }
+        public Builder perfBatteryPct(int v) { this.perfBatteryPct = v; return this; }
+        public Builder perfCharging(boolean v) { this.perfCharging = v; return this; }
+        public Builder perfBatterySaver(boolean v) { this.perfBatterySaver = v; return this; }
+        public Builder perfBatteryLowBroadcast(boolean v) { this.perfBatteryLowBroadcast = v; return this; }
+        public Builder perfLowRamDevice(boolean v) { this.perfLowRamDevice = v; return this; }
+        public Builder perfRamClassMb(int v) { this.perfRamClassMb = v; return this; }
+        public Builder perfTotalRamMb(long v) { this.perfTotalRamMb = v; return this; }
+        public Builder perfCpuCount(int v) { this.perfCpuCount = v; return this; }
+        public Builder perfThermalSevere(boolean v) { this.perfThermalSevere = v; return this; }
 
         public TelemetryPayload build() { return new TelemetryPayload(this); }
     }

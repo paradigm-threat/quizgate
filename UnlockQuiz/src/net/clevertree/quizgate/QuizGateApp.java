@@ -24,6 +24,12 @@ public class QuizGateApp extends Application {
             if (prior != null) prior.uncaughtException(thread, throwable);
             else System.exit(2);
         });
+        // Resolve Auto/Performance/Slim once per process start (no polling).
+        try {
+            PerformanceMode.reevaluate(this, "app_start");
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "perf reevaluate on start", e);
+        }
         // Slim: skip process-start snapshot I/O; uncaught handler still snapshots.
         if (!PerformanceMode.isSlim(this)) {
             Diag.logcatSnapshot(this);

@@ -64,7 +64,8 @@ public class DiagnosticsStoreTest {
 
         TelemetryPayload p = TelemetryPayload.fromStores(stats, diag, now, utc, 1, "1.0");
         String json = p.toJson();
-        Assert.isTrue(json.contains("\"schema_version\":1"), "schema");
+        Assert.isTrue(json.contains("\"schema_version\":2"), "schema");
+        Assert.isTrue(json.contains("\"performance\":"), "performance block");
         Assert.isTrue(json.contains("\"upload_enabled\":false"), "upload off");
         Assert.isTrue(json.contains("recent_schedule"), "has schedule");
         Assert.isTrue(json.contains(DiagnosticsStore.KIND_ALARM_FIRED)

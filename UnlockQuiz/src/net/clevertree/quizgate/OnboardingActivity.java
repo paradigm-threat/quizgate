@@ -15,16 +15,17 @@ import android.widget.Toast;
 import net.clevertree.quizgate.core.Scheduler;
 
 /**
- * Skippable first-run intro: welcome → photos → schedule → permissions
- * (one ScheduleAuth gap at a time) → Setup.
+ * Skippable first-run intro: welcome → photos → schedule → performance
+ * → permissions (one ScheduleAuth gap at a time) → Setup.
  */
 public class OnboardingActivity extends Activity {
     private static final int REQ_PHOTOS = 41;
     private static final int STEP_WELCOME = 0;
     private static final int STEP_PHOTOS = 1;
     private static final int STEP_SCHEDULE = 2;
-    private static final int STEP_PERMISSIONS = 3;
-    private static final int STEP_DONE = 4;
+    private static final int STEP_PERF = 3;
+    private static final int STEP_PERMISSIONS = 4;
+    private static final int STEP_DONE = 5;
 
     private AppPrefs prefs;
     private TextView title;
@@ -35,12 +36,14 @@ public class OnboardingActivity extends Activity {
     private Button permLater;
     private LinearLayout photoActions;
     private LinearLayout scheduleActions;
+    private LinearLayout perfActions;
     private LinearLayout permActions;
     private TextView intervalValue;
     private TextView jitterValue;
     private TextView windowValue;
     private int step;
     private String pendingPhotoSource = PhotoLibrary.SOURCE_BUNDLED;
+    private String draftPerfMode = PerformanceMode.AUTO;
     private long draftIntervalMs = Scheduler.DEFAULT_INTERVAL_MS;
     private long draftJitterMs = Scheduler.DEFAULT_JITTER_MS;
     /** Gap currently shown on the permissions step (NONE when all granted). */
@@ -63,6 +66,7 @@ public class OnboardingActivity extends Activity {
         permLater = findViewById(R.id.btn_onboard_perm_later);
         photoActions = findViewById(R.id.onboard_photo_actions);
         scheduleActions = findViewById(R.id.onboard_schedule_actions);
+        perfActions = findViewById(R.id.onboard_perf_actions);
         permActions = findViewById(R.id.onboard_perm_actions);
         intervalValue = findViewById(R.id.onboard_interval_value);
         jitterValue = findViewById(R.id.onboard_jitter_value);
@@ -72,6 +76,7 @@ public class OnboardingActivity extends Activity {
 
         draftIntervalMs = prefs.getIntervalMs();
         draftJitterMs = prefs.getJitterMs();
+        draftPerfMode = prefs.getPerformanceMode();
 
         skip.setOnClickListener(v -> finishOnboarding(pendingPhotoSource, true));
         next.setOnClickListener(v -> onNext());
@@ -84,6 +89,18 @@ public class OnboardingActivity extends Activity {
         findViewById(R.id.btn_interval_plus).setOnClickListener(v -> bumpInterval(1));
         findViewById(R.id.btn_jitter_minus).setOnClickListener(v -> bumpJitter(-1));
         findViewById(R.id.btn_jitter_plus).setOnClickListener(v -> bumpJitter(1));
+        View btnAuto = findViewById(R.id.btn_onboard_perf_auto);
+        View btnPerf = findViewById(R.id.btn_onboard_perf_performance);
+        View btnSlim = findViewById(R.id.btn_onboard_perf_slim);
+        if (btnAuto != null) {
+            btnAuto.setOnClickListener(v -> choosePerfAndContinue(PerformanceMode.AUTO));
+        }
+        if (btnPerf != null) {
+            btnPerf.setOnClickListener(v -> choosePerfAndContinue(PerformanceMode.PERFORMANCE));
+        }
+        if (btnSlim != null) {
+            btnSlim.setOnClickListener(v -> choosePerfAndContinue(PerformanceMode.SLIM));
+        }
         if (permAllow != null) {
             permAllow.setOnClickListener(v -> allowCurrentPermission());
         }
@@ -112,7 +129,10 @@ public class OnboardingActivity extends Activity {
             pendingPhotoSource = PhotoLibrary.SOURCE_BUNDLED;
             goSchedule();
         } else if (step == STEP_SCHEDULE) {
-            goPermissions();
+            goPerf();
+        } else if (step == STEP_PERF) {
+            // Continue keeps Auto if they didn't tap a button (default).
+            choosePerfAndContinue(draftPerfMode);
         } else if (step == STEP_DONE) {
             finishOnboarding(pendingPhotoSource, false);
         } else {
@@ -123,6 +143,16 @@ public class OnboardingActivity extends Activity {
     private void goSchedule() {
         step = STEP_SCHEDULE;
         showStep();
+    }
+
+    private void goPerf() {
+        step = STEP_PERF;
+        showStep();
+    }
+
+    private void choosePerfAndContinue(String mode) {
+        draftPerfMode = PerformanceMode.normalize(mode);
+        goPermissions();
     }
 
     private void goPermissions() {
@@ -171,6 +201,7 @@ public class OnboardingActivity extends Activity {
     private void showStep() {
         photoActions.setVisibility(View.GONE);
         scheduleActions.setVisibility(View.GONE);
+        if (perfActions != null) perfActions.setVisibility(View.GONE);
         if (permActions != null) permActions.setVisibility(View.GONE);
         next.setVisibility(View.VISIBLE);
         if (step == STEP_WELCOME) {
@@ -188,6 +219,11 @@ public class OnboardingActivity extends Activity {
             scheduleActions.setVisibility(View.VISIBLE);
             next.setText(R.string.onboard_continue);
             refreshScheduleLabels();
+        } else if (step == STEP_PERF) {
+            title.setText(R.string.onboard_perf_title);
+            body.setText(R.string.onboard_perf_body);
+            if (perfActions != null) perfActions.setVisibility(View.VISIBLE);
+            next.setVisibility(View.GONE);
         } else if (step == STEP_PERMISSIONS) {
             showPermissionStep();
         } else if (step == STEP_DONE) {
@@ -294,10 +330,15 @@ public class OnboardingActivity extends Activity {
         if (useDefaultSchedule) {
             prefs.setIntervalMs(Scheduler.DEFAULT_INTERVAL_MS);
             prefs.setJitterMs(Scheduler.DEFAULT_JITTER_MS);
+            prefs.setPerformanceMode(PerformanceMode.AUTO);
         } else {
             prefs.setIntervalMs(draftIntervalMs);
             prefs.setJitterMs(draftJitterMs);
+            prefs.setPerformanceMode(draftPerfMode);
         }
+        try {
+            PerformanceMode.reevaluate(this, "onboarding");
+        } catch (Exception ignored) {}
         prefs.setOnboardingDone(true);
         // First-run: parents arm on Setup; later launches open play quiz
         goSetup();

@@ -1,6 +1,6 @@
 # QuizGate
 
-Clevertree soft quiz gate for young kids: every half hour (±15m) + morning gate, math digit pad, local/bundled photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+Clevertree soft quiz gate for young kids: every half hour (±15m → next fire in **15–45 min**) + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions, unlock after 3 misses or bypass (Home). Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
@@ -8,11 +8,12 @@ Package: `net.clevertree.quizgate`
 
 - Site: https://quizgate.clevertree.net  
 - Privacy: https://quizgate.clevertree.net/privacy  
-- GitHub (CI primary): https://github.com/paradigm-threat/quizgate  
-- GitLab (mirror): https://gitlab.com/clevertree/quizgate  
+- GitLab (**primary**): https://gitlab.com/clevertree/quizgate  
+- GitHub (may be suspended / secondary): https://github.com/paradigm-threat/quizgate  
+- Clevertree thank-you: https://clevertree.net/thankyou  
 - Vercel team: **clevertrees-projects** · project **quizgate** · root directory `site` · production branch `main` · domain `quizgate.clevertree.net`
 
-**Team note — GitHub ↔ Vercel:** the Clevertree Vercel team can deploy GitHub organization repositories. Push to `main` on GitHub once the project is linked under [Vercel → quizgate → Git](https://vercel.com/clevertrees-projects/quizgate/settings/git) (repo `paradigm-threat/quizgate`, root `site`). GitLab remains a mirror only; site deploys come from GitHub.
+**Team note — remotes:** push/pull **GitLab** first. Site deploys historically expect GitHub → Vercel; if GitHub is unavailable, treat GitLab as source of truth for the app and sync site separately.
 
 Photos are loaded from the device gallery at runtime (MediaStore). No personal photos are bundled in the APK or repo.
 
@@ -24,9 +25,10 @@ Photos are loaded from the device gallery at runtime (MediaStore). No personal p
 ```
 
 **CI/CD**
-- **GitHub Actions** (primary): `regression` → `android-apk` (uploads `QuizGate.apk`) + `ios-stub` on `main` / PRs
-- **GitLab CI** (mirror): same regression + APK artifact on `main` / MRs
+- **GitLab CI** (primary while GitHub is unreliable): regression + APK artifact on `main` / MRs
+- **GitHub Actions** (when available): `regression` → `android-apk` (uploads `QuizGate.apk`) + `ios-stub` on `main` / PRs
 - Device e2e (`SERIAL=<id> ./scripts/e2e_phone.sh`) stays **manual**
+- Play **AAB + release keystore** are still human steps — CI ships sideload APK only
 
 The **iOS stub** under `ios/QuizGateStub/` is an empty branded shell for CI only — **not** an App Store / Screen Time product.
 
@@ -40,11 +42,15 @@ python3 -m http.server 8000 --directory site
 
 Play Store setup + listing copy: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`store/play/`](store/play/).  
 Store publish notes + competitor table: [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md).  
-Battery / lean mode: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+Performance Auto / Performance / Slim: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).  
+Local diagnostics (upload OFF): [`docs/TELEMETRY.md`](docs/TELEMETRY.md).  
+Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test
 
-First launch opens skippable onboarding (gallery photos vs bundled ocean/space/plane/nature/animals backdrops). Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
+First launch opens skippable onboarding: photos → schedule (default 30±15) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
+
+**Fully working** soft gate needs those grants (photos optional). Setup shows a requirements checklist and prompts the next missing gap with a cooldown.
 
 ```bash
 SERIAL=<device> ./scripts/e2e_phone.sh
@@ -54,6 +60,18 @@ adb -s <device> shell am start -n net.clevertree.quizgate/.OnboardingActivity
 # Setup directly (skips intro if already done):
 adb -s <device> shell am start -n net.clevertree.quizgate/.SetupActivity
 ```
+
+### Wireless debugging (optional)
+
+Pairing port ≠ connect port. On the tablet: Developer options → Wireless debugging → Pair with pairing code, then:
+
+```bash
+adb pair <ip>:<pairing_port> <code>
+adb connect <ip>:<connect_port>
+adb devices -l
+```
+
+Samsung/ColorOS may drop wireless debugging on Wi‑Fi roam — prefer USB or re-pair; do not put pairing codes or device IPs in the repo.
 
 Force quiz:
 
@@ -80,15 +98,20 @@ Dump stats (debuggable / run-as):
 ```bash
 adb shell run-as net.clevertree.quizgate cat files/stats/sessions.jsonl
 adb shell run-as net.clevertree.quizgate cat files/stats/events.jsonl
+adb shell run-as net.clevertree.quizgate cat files/stats/diagnostics/schedule.jsonl
 ```
+
+Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF** until a published Clevertree ingest exists.
 
 ## Behavior
 
+- Schedule: default **30±15 min**; morning alarm; re-arm on boot, app update (`MY_PACKAGE_REPLACED`), and time/timezone change
 - Header: “Please answer this question”
-- MVP catalog: addition-under-10 math only (no colors, counting, or animals)
+- Curriculum: bundled **basic-math v3** — addition under 10 + sparse subtraction (~5 items / ~20% pool)
 - Math: spoken + `2 + 5 = _` (digit pad by default)
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
 - Leave without answering → bypass (no reopen), logged as skipped
-- YouTube / music soft-pauses when the quiz opens and tries to resume after unlock
+- YouTube / music: soft-pause when the quiz opens (exclusive audio focus + media pause); resume after unlock (best-effort). **Usage access** required to return to the prior app after the session
 - Success / error transitions use random images from the device gallery when permitted
+- Performance: **Auto** (default) uses full UX when healthy; switches to **Slim** on weak device, low battery, or battery saver — see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)

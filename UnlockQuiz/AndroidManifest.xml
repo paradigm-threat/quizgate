@@ -123,6 +123,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Auto performance mode: battery / power-save only — no polling -->
+        <receiver android:name=".PowerStateReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_LOW"/>
+                <action android:name="android.intent.action.BATTERY_OKAY"/>
+                <action android:name="android.os.action.POWER_SAVE_MODE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".QuizTriggerService"
             android:exported="true"

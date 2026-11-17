@@ -35,6 +35,8 @@ public final class DiagnosticsStore {
     public static final String KIND_QUIZ = "quiz";
     public static final String KIND_PERM = "perm";
     public static final String KIND_MEDIA = "media";
+    /** Auto performance↔slim switch (structured reasons in note/msg). */
+    public static final String KIND_PERF_MODE = "perf_mode";
 
     private final File diagDir;
     private final BoundedJsonl breadcrumbs;

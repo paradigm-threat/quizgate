@@ -50,6 +50,18 @@ public final class Diag {
         }
     }
 
+    /**
+     * Always-on breadcrumb for triage-critical events (e.g. Auto perf↔slim switch).
+     * Not gated by slim optional-diag suppression.
+     */
+    public static void breadcrumbAlways(Context ctx, DiagBreadcrumb b) {
+        try {
+            diagnostics(ctx).appendBreadcrumb(b);
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "breadcrumbAlways failed", e);
+        }
+    }
+
     public static void schedule(Context ctx, DiagnosticsStore.ScheduleEvent e) {
         try {
             if (e != null && !PerformanceMode.recordScheduleKind(new AppPrefs(ctx), e.kind)) {
@@ -140,6 +152,8 @@ public final class Diag {
                     == PackageManager.PERMISSION_GRANTED;
         }
         String resume = prefs.getResumePackage();
+        PerformanceMode.reevaluate(app, "telemetry");
+        net.clevertree.quizgate.core.PerfPolicy.AutoSignals sig = PerformanceMode.lastSignals(app);
         return TelemetryPayload.builder(now)
                 .gitSha(BuildFingerprint.gitSha())
                 .versionCode(versionCode(app))
@@ -165,6 +179,21 @@ public final class Diag {
                 .recentQuiz(stats.recentEventLines(DiagnosticsStore.RECENT_QUIZ_DEFAULT))
                 .recentSchedule(diag.recentSchedule(40))
                 .recentExceptions(diag.recentExceptions(20))
+                .perfPreference(prefs.getPerformanceMode())
+                .perfEffective(PerformanceMode.effective(app))
+                .perfAutoReasons(prefs.getLastAutoReasons())
+                .perfSwitchAt(prefs.getLastPerfSwitchAt())
+                .perfSwitchFrom(prefs.getLastPerfSwitchFrom())
+                .perfSwitchTo(prefs.getLastPerfSwitchTo())
+                .perfBatteryPct(sig == null ? -1 : sig.batteryPct)
+                .perfCharging(sig != null && sig.charging)
+                .perfBatterySaver(sig != null && sig.batterySaver)
+                .perfBatteryLowBroadcast(sig != null && sig.batteryLowBroadcast)
+                .perfLowRamDevice(sig != null && sig.lowRamDevice)
+                .perfRamClassMb(sig == null ? 0 : sig.ramClassMb)
+                .perfTotalRamMb(sig == null ? 0L : sig.totalRamMb)
+                .perfCpuCount(sig == null ? 0 : sig.cpuCount)
+                .perfThermalSevere(sig != null && sig.thermalSevere)
                 .build();
     }
 

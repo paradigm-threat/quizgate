@@ -187,15 +187,80 @@ public final class AppPrefs {
     }
 
     /**
-     * {@link PerformanceMode#BALANCED} (default) or {@link PerformanceMode#SLIM}.
-     * Slim never disables exact alarms or boot re-arm.
+     * User preference: {@link PerformanceMode#PERFORMANCE}, {@link PerformanceMode#SLIM},
+     * or {@link PerformanceMode#AUTO} (default). Never disables exact alarms / boot re-arm.
      */
     public String getPerformanceMode() {
-        return PerformanceMode.normalize(sp.getString("performance_mode", PerformanceMode.BALANCED));
+        return PerformanceMode.normalize(sp.getString("performance_mode", PerformanceMode.AUTO));
     }
 
     public void setPerformanceMode(String mode) {
         sp.edit().putString("performance_mode", PerformanceMode.normalize(mode)).apply();
+    }
+
+    /** Last resolved effective profile: performance | slim. */
+    public String getEffectivePerformanceMode() {
+        String v = sp.getString("perf_effective", "");
+        if (PerformanceMode.SLIM.equals(v)) return PerformanceMode.SLIM;
+        if (PerformanceMode.PERFORMANCE.equals(v) || PerformanceMode.BALANCED.equals(v)) {
+            return PerformanceMode.PERFORMANCE;
+        }
+        return "";
+    }
+
+    public void setEffectivePerformanceMode(String effective) {
+        String e = PerformanceMode.SLIM.equals(effective)
+                ? PerformanceMode.SLIM : PerformanceMode.PERFORMANCE;
+        sp.edit().putString("perf_effective", e).apply();
+    }
+
+    public String getLastAutoReasons() {
+        return sp.getString("perf_auto_reasons", "");
+    }
+
+    public void setLastAutoReasons(String csv) {
+        sp.edit().putString("perf_auto_reasons", csv == null ? "" : csv).apply();
+    }
+
+    public String getLastAutoSignalsJson() {
+        return sp.getString("perf_auto_signals", "{}");
+    }
+
+    public void setLastAutoSignalsJson(String json) {
+        sp.edit().putString("perf_auto_signals", json == null || json.isEmpty() ? "{}" : json).apply();
+    }
+
+    public long getLastPerfSwitchAt() {
+        return sp.getLong("perf_switch_at", 0L);
+    }
+
+    public void setLastPerfSwitchAt(long ms) {
+        sp.edit().putLong("perf_switch_at", Math.max(0L, ms)).apply();
+    }
+
+    public String getLastPerfSwitchFrom() {
+        return sp.getString("perf_switch_from", "");
+    }
+
+    public void setLastPerfSwitchFrom(String from) {
+        sp.edit().putString("perf_switch_from", from == null ? "" : from).apply();
+    }
+
+    public String getLastPerfSwitchTo() {
+        return sp.getString("perf_switch_to", "");
+    }
+
+    public void setLastPerfSwitchTo(String to) {
+        sp.edit().putString("perf_switch_to", to == null ? "" : to).apply();
+    }
+
+    /** Sticky flag from {@link android.content.Intent#ACTION_BATTERY_LOW}. */
+    public boolean isBatteryLowFlag() {
+        return sp.getBoolean("battery_low_flag", false);
+    }
+
+    public void setBatteryLowFlag(boolean v) {
+        sp.edit().putBoolean("battery_low_flag", v).apply();
     }
 
     public boolean isSlimPerformance() {

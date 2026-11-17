@@ -3,6 +3,8 @@
 Privacy-safe on-device logging for Play Console crash/ANR triage and (later) Clevertree upload.
 **Network upload is OFF** (`BuildFingerprint.TELEMETRY_UPLOAD_ENABLED = false`).
 
+**Live-debug goal:** structured, queryable fields (reason codes + numerics) so Play bugs and eventual uploads are easy to triage — not vague free-text. Prefer switch/session breadcrumbs over high-frequency sampling (especially in Slim).
+
 ## Paths (app-private)
 
 | Path | Role |
@@ -10,8 +12,8 @@ Privacy-safe on-device logging for Play Console crash/ANR triage and (later) Cle
 | `files/stats/events.jsonl` | Recent raw quiz events (ring buffer) |
 | `files/stats/sessions.jsonl` | Recent session summaries (ring buffer) |
 | `files/stats/days.jsonl` | Durable per-day rollups (asked/right/wrong/skipped) |
-| `files/stats/diagnostics/schedule.jsonl` | Alarm / quiz lifecycle timestamps |
-| `files/stats/diagnostics/breadcrumbs.jsonl` | Triage stream (quiz outcomes, media, perms) |
+| `files/stats/diagnostics/schedule.jsonl` | Alarm / quiz lifecycle timestamps (`alarm_scheduled`, `alarm_fired`, arm, quiz start/end, `perf_mode`, …) |
+| `files/stats/diagnostics/breadcrumbs.jsonl` | Triage stream (quiz outcomes, media, perms, Auto switches) |
 | `files/stats/diagnostics/exceptions.jsonl` | Non-fatal + uncaught breadcrumbs |
 
 No world-readable external storage. No advertising IDs.
@@ -55,16 +57,28 @@ SharedPreferences (including optional resume package) are **excluded** from back
 - `alarm_fired` — OS alarm delivered
 - `skip_fire` — morning skipped (already cleared)
 - `quiz_started` / `quiz_ended` — session bounds
+- `perf_mode` — Auto performance↔slim switch (reason codes + stats in `note`)
 
 Plus `trigger`, `session_type`, `next_alarm_at`, `interval_ms`, `jitter_ms`, optional `other_app` boolean (**never** package name), optional short `note`.
 
-### Upload payload (stub)
+### Upload / snapshot payload (`TelemetryPayload`, schema **v2**)
 
-Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes build fingerprint (`versionCode`/`versionName`/git SHA), coarse device model, locale/tz, permission booleans, today rollup, recent quiz/schedule/exception lines, storage sizes. `TelemetryUploader.maybeUpload()` is a no-op while the flag is false.
+Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
+
+- Build fingerprint (`versionCode` / `versionName` / git SHA)
+- Coarse device model, locale/tz
+- Permission booleans, today rollup, recent quiz/schedule/exception lines, storage sizes
+- Structured **`performance`** block for live debug / future server ingest:
+  - `preference` (`auto`|`performance`|`slim`), `effective` (`performance`|`slim`)
+  - `auto_reasons` (CSV reason codes)
+  - `last_switch_at` / `last_switch_from` / `last_switch_to`
+  - Numerics: `battery_pct`, `charging`, `battery_saver`, `battery_low_broadcast`, `low_ram_device`, `ram_class_mb`, `total_ram_mb`, `cpu_count`, `thermal_severe`
+
+`TelemetryUploader.maybeUpload()` is a no-op while the flag is false. Fields stay in the local snapshot shape so enabling upload later needs no schema redesign.
 
 ### Logcat
 
-Stable tag **`QuizGateDiag`** — process start + uncaught exceptions print a one-line snapshot for Play log correlation.
+Stable tag **`QuizGateDiag`** — process start, uncaught exceptions, and Auto `perf_mode_switch` lines for Play log correlation.
 
 ## What we never collect
 

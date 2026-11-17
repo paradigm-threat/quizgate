@@ -6,7 +6,8 @@ package net.clevertree.quizgate.core;
  * Git SHA is optional ({@code GitStamp} generated at APK build time).
  */
 public final class BuildFingerprint {
-    public static final int SCHEMA_VERSION = 1;
+    /** Bumped when TelemetryPayload gains the structured {@code performance} block. */
+    public static final int SCHEMA_VERSION = 2;
     public static final boolean TELEMETRY_UPLOAD_ENABLED = false;
     public static final String DIAG_LOG_TAG = "QuizGateDiag";
 

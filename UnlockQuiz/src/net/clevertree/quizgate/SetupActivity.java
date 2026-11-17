@@ -135,25 +135,33 @@ public class SetupActivity extends Activity {
     private void bindPerfModeSpinner() {
         if (perfModeSpinner == null) return;
         AppPrefs prefs = new AppPrefs(this);
+        // Order: Auto (0), Performance (1), Slim (2)
         List<String> labels = new ArrayList<>();
-        labels.add(getString(R.string.setup_perf_balanced));
+        labels.add(getString(R.string.setup_perf_auto));
+        labels.add(getString(R.string.setup_perf_performance));
         labels.add(getString(R.string.setup_perf_slim));
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, labels);
         suppressPerfSpinner = true;
         perfModeSpinner.setAdapter(adapter);
-        perfModeSpinner.setSelection(prefs.isSlimPerformance() ? 1 : 0);
-        refreshPerfDetail(prefs.isSlimPerformance());
+        String pref = prefs.getPerformanceMode();
+        int sel = 0;
+        if (PerformanceMode.PERFORMANCE.equals(pref)) sel = 1;
+        else if (PerformanceMode.SLIM.equals(pref)) sel = 2;
+        perfModeSpinner.setSelection(sel);
+        refreshPerfDetail(pref);
         perfModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (suppressPerfSpinner) return;
-                boolean slim = position == 1;
-                String mode = slim ? PerformanceMode.SLIM : PerformanceMode.BALANCED;
+                String mode = PerformanceMode.AUTO;
+                if (position == 1) mode = PerformanceMode.PERFORMANCE;
+                else if (position == 2) mode = PerformanceMode.SLIM;
                 AppPrefs p = new AppPrefs(SetupActivity.this);
                 if (!mode.equals(p.getPerformanceMode())) {
                     p.setPerformanceMode(mode);
+                    PerformanceMode.reevaluate(SetupActivity.this, "setup_pref");
                 }
-                refreshPerfDetail(slim);
+                refreshPerfDetail(mode);
                 countdownHandler.removeCallbacks(countdownTick);
                 countdownHandler.post(countdownTick);
             }
@@ -162,9 +170,16 @@ public class SetupActivity extends Activity {
         suppressPerfSpinner = false;
     }
 
-    private void refreshPerfDetail(boolean slim) {
+    private void refreshPerfDetail(String preference) {
         if (perfDetail == null) return;
-        perfDetail.setText(slim ? R.string.setup_perf_slim_detail : R.string.setup_perf_balanced_detail);
+        String pref = PerformanceMode.normalize(preference);
+        if (PerformanceMode.SLIM.equals(pref)) {
+            perfDetail.setText(R.string.setup_perf_slim_detail);
+        } else if (PerformanceMode.PERFORMANCE.equals(pref)) {
+            perfDetail.setText(R.string.setup_perf_performance_detail);
+        } else {
+            perfDetail.setText(R.string.setup_perf_auto_detail);
+        }
     }
 
     private void bumpInterval(int steps) {
