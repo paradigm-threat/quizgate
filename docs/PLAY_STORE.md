@@ -118,8 +118,8 @@ Help: https://support.google.com/googleplay/android-developer/answer/9845334
 
 | Item | Status |
 |------|--------|
-| Sideload **APK** (CI artifact) | Ready — GitHub/GitLab CI builds `QuizGate.apk` |
-| Play **AAB** + release keystore | **Not ready** — needs Gradle/bundletool (or equivalent) + Play App Signing |
+| Sideload **APK** (CI artifact) | Ready — GitLab CI (primary) builds `QuizGate.apk`; GitHub Actions when available |
+| Play **AAB** + release keystore | **Not ready** — human Gradle/bundletool + Play App Signing; keep keystore out of git |
 | `targetSdk` 34 | Current manifest target |
 | Privacy URL live | Yes |
 | Icon 512 + feature 1024×500 | Yes (`store/play/upload/`) |
@@ -160,11 +160,15 @@ Source kit also has Lock / Open variants under `B_lock_numbers/` and `C_open_gat
 
 | Permission | Why |
 |------------|-----|
-| `POST_NOTIFICATIONS` | Soft-gate reminder notification / FGS fallback |
-| Exact alarms | Schedule quizzes |
-| `READ_MEDIA_IMAGES` | Optional gallery backdrops |
-| `PACKAGE_USAGE_STATS` | Return child to previous app after unlock |
+| Exact alarms | Schedule quizzes (30±15 + morning) |
+| `POST_NOTIFICATIONS` | Soft-gate reminder / FGS fallback |
 | Battery unrestricted | OEM reliability for alarms |
+| Full-screen intent | Alarm-style quiz open |
+| Appear-on-top / overlay | Launch when background activity starts are blocked |
+| `PACKAGE_USAGE_STATS` | Return child to previous app after unlock |
+| `READ_MEDIA_IMAGES` | Optional gallery backdrops |
+
+Onboarding / Setup prompts these **one at a time** via `ScheduleAuth` (exact → notif → battery → FSI → overlay → usage). Photos stay optional.
 
 We do **not** currently require Accessibility or Device Admin for the soft gate.
 
@@ -174,8 +178,8 @@ We do **not** currently require Accessibility or Device Admin for the soft gate.
 
 ```
 QuizGate is a parent-configured soft quiz gate. No login.
-1. Install → complete or skip onboarding → Setup → Arm scheduling.
-2. Grant notifications, battery unrestricted, appear-on-top, full-screen alerts, and usage access (return to last app); photos optional.
+1. Install → complete or skip onboarding (photos, 30±15 schedule, Auto/Performance/Slim) → Setup → Arm scheduling.
+2. Grant exact alarms, notifications, battery unrestricted, full-screen alerts, appear-on-top, and usage access (return to last app); photos optional.
 3. Tap “Test quiz now” to open a quiz without waiting for an alarm.
 Forever free; no ads; no IAP. Privacy: https://quizgate.clevertree.net/privacy
 ```

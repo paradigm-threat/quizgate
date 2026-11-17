@@ -9,6 +9,11 @@ This document captures what it takes, plus an honest competitor snapshot.
 Marketing / privacy URL (required by both stores later):
 https://quizgate.clevertree.net/privacy
 
+Clevertree thank-you page (post-download / signup, separate site):
+https://clevertree.net/thankyou
+
+App source of truth: **GitLab** `clevertree/quizgate` (GitHub may be suspended). CI APK from GitLab; Play AAB + release keystore remain manual.
+
 ---
 
 ## Competitors
@@ -43,7 +48,7 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
 - **Not** a Screenwise-style control suite (web filter, device-admin lockdown, IAP-adjacent Play listing) as the product identity
 - Clevertree **forever-free** policy (no ads, no IAP, no paywall — all products)
 - Roadmap differentiators: progressive curriculum packs + anonymous **SI** (Super Intelligence, i.e. AI) batch curation; soft gate now, harder lock later if Android APIs allow
-- Soft half-hour/morning quiz today (basic-math pack, math only); gallery/bundled backdrops on-device; optional curriculum sync
+- Soft half-hour/morning quiz today (basic-math v3: addition + sparse subtraction); gallery/bundled backdrops on-device; optional curriculum sync; Auto/Performance/Slim profiles
 
 ---
 
@@ -71,9 +76,12 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
   the same
 - Store listing: short/full description, screenshots (phone + tablet), feature graphic
   1024×500 (kit already has), content rating (IARC), contact email
-- Sensitive permissions story: exact alarms, notifications, `READ_MEDIA_IMAGES`,
-  battery exemption — explain in Console; Accessibility only if we later add hard
+- Sensitive permissions story: exact alarms, notifications, battery exemption,
+  full-screen intent, overlay, usage stats (return-to-app), optional
+  `READ_MEDIA_IMAGES` — explain in Console; Accessibility only if we later add hard
   app-intercept (current soft quiz may not need it)
+- Local diagnostics / Play triage: bounded `files/stats/` + `QuizGateDiag` logcat;
+  upload OFF — see [`TELEMETRY.md`](TELEMETRY.md)
 
 **Effort estimate:** ~1–2 weeks calendar if org account already exists and 12 testers
 can be recruited; longer if waiting out the 14-day closed test on a new personal account.
