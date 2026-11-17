@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.quizgate.app/schema/profile.v1.json",
+  "title": "QuizGate user profile",
+  "type": "object",
+  "required": ["schema", "user_uuid", "updated_at_ms", "curriculum_id"],
+  "properties": {
+    "schema": { "const": "quizgate.user.profile.v1" },
+    "user_uuid": { "type": "string", "format": "uuid" },
+    "updated_at_ms": { "type": "integer" },
+    "curriculum_id": { "type": "string" },
+    "readiness": {
+      "type": "object",
+      "properties": {
+        "score": { "type": "number" },
+        "next_curriculum_id": { "type": ["string", "null"] },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "interval_ms": { "type": "integer" },
+        "jitter_ms": { "type": "integer" },
+        "performance_preference": {
+          "type": "string",
+          "enum": ["auto", "performance", "slim"]
+        }
+      }
+    },
+    "content_hints": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

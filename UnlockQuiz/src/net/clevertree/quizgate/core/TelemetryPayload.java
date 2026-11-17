@@ -13,6 +13,8 @@ import java.util.TimeZone;
 public final class TelemetryPayload {
     public final int schemaVersion;
     public final long builtAt;
+    /** Anonymous capability UUID — never PII. */
+    public final String userUuid;
     public final String gitSha;
     public final int versionCode;
     public final String versionName;
@@ -57,6 +59,7 @@ public final class TelemetryPayload {
     private TelemetryPayload(Builder b) {
         this.schemaVersion = BuildFingerprint.SCHEMA_VERSION;
         this.builtAt = b.builtAt;
+        this.userUuid = b.userUuid;
         this.gitSha = b.gitSha;
         this.versionCode = b.versionCode;
         this.versionName = b.versionName;
@@ -102,6 +105,7 @@ public final class TelemetryPayload {
         StringBuilder sb = new StringBuilder(768);
         sb.append("{\"schema_version\":").append(schemaVersion);
         sb.append(",\"built_at\":").append(builtAt);
+        sb.append(",\"user_uuid\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(userUuid)))).append('"');
         sb.append(",\"build\":{");
         sb.append("\"version_code\":").append(versionCode);
         sb.append(",\"version_name\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(versionName))).append('"');
@@ -202,6 +206,7 @@ public final class TelemetryPayload {
 
     public static final class Builder {
         private final long builtAt;
+        private String userUuid = "";
         private String gitSha = "unknown";
         private int versionCode;
         private String versionName = "";
@@ -244,6 +249,7 @@ public final class TelemetryPayload {
 
         private Builder(long builtAt) { this.builtAt = builtAt; }
 
+        public Builder userUuid(String v) { this.userUuid = v == null ? "" : v; return this; }
         public Builder gitSha(String v) { this.gitSha = v; return this; }
         public Builder versionCode(int v) { this.versionCode = v; return this; }
         public Builder versionName(String v) { this.versionName = v; return this; }

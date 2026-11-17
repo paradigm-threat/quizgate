@@ -1,0 +1,6 @@
+.node_modules/
+.data/
+queue/pending/
+queue/leased/
+queue/done/
+*.log

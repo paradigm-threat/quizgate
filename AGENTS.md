@@ -31,6 +31,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 - [`README.md`](README.md) — build, install, behavior overview
 - [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — Auto / Performance / Slim
 - [`docs/TELEMETRY.md`](docs/TELEMETRY.md) — diagnostics paths + payload (live-debug)
+- [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — `api.quizgate.app` Intake + `quizgate-users` Relay tip (upload OFF until publish)
 - [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md)
 - [`docs/CURRICULUM.md`](docs/CURRICULUM.md) · [`docs/WIDGET.md`](docs/WIDGET.md)
 

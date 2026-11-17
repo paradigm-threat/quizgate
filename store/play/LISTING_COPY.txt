@@ -81,7 +81,9 @@ Is data encrypted in transit?
   → Gallery photos and stats stay local (not transmitted by the current app)
 
 Can users request deletion?
-  → Uninstall clears on-device data. No cloud child profile to delete.
+  → Uninstall clears on-device data. No named cloud child profile.
+  → Optional future anonymous sync (api.quizgate.app, UUID capability only)
+    stays OFF in current builds; update Data safety before enabling.
   → Curriculum sync can be turned off in Setup.
 
 Data shared with third parties?

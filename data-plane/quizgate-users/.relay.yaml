@@ -1,0 +1,35 @@
+name: quizgate-users
+version: "1.0.0"
+description: >-
+  QuizGate anonymized per-UUID progress SoT. UUID = capability; no listing.
+  Batch SI is the sole permanent tip writer; Intake only reads/enqueues.
+canonical: "https://api.quizgate.app/"
+client:
+  hooks:
+    get:
+      path: hooks/client/get.jsx
+server:
+  hooks:
+    get:
+      path: hooks/server/get.cs
+    pre-commit:
+      path: hooks/server/pre-commit.cs
+    pre-receive:
+      path: hooks/server/pre-receive.cs
+git:
+  autoPush:
+    branches: ["users", "main"]
+    originList:
+      - "iad1.relaygateway.net"
+    debounceSeconds: 2
+  branchRules:
+    default:
+      requireSigned: false
+      allowUnsigned: true
+    branches:
+      - name: users
+        rule:
+          allowUnsigned: true
+      - name: main
+        rule:
+          allowUnsigned: true

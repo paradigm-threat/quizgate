@@ -8,12 +8,14 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.AnonUserId;
 import net.clevertree.quizgate.core.BuildFingerprint;
 import net.clevertree.quizgate.core.DiagBreadcrumb;
 import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.TelemetryPayload;
 import net.clevertree.quizgate.core.TelemetryRedaction;
+import net.clevertree.quizgate.telemetry.RemoteSettingsPull;
 import net.clevertree.quizgate.telemetry.TelemetryUploader;
 
 import java.io.File;
@@ -116,11 +118,17 @@ public final class Diag {
         }
     }
 
-    /** Build payload + attempt upload (no-op while flag is false). */
+    /**
+     * Build payload + attempt Intake sync (no-op while upload flag is false),
+     * then pull remote profile settings when sync is enabled.
+     */
     public static void flushLocalOnly(Context ctx) {
         try {
             TelemetryPayload p = buildPayload(ctx);
-            TelemetryUploader.maybeUpload(p);
+            boolean uploaded = TelemetryUploader.maybeUpload(p);
+            if (uploaded || BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
+                RemoteSettingsPull.maybePull(ctx);
+            }
         } catch (Exception e) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "flush failed", e);
         }
@@ -155,6 +163,7 @@ public final class Diag {
         PerformanceMode.reevaluate(app, "telemetry");
         net.clevertree.quizgate.core.PerfPolicy.AutoSignals sig = PerformanceMode.lastSignals(app);
         return TelemetryPayload.builder(now)
+                .userUuid(AnonUserId.getOrCreate(app))
                 .gitSha(BuildFingerprint.gitSha())
                 .versionCode(versionCode(app))
                 .versionName(versionName(app))

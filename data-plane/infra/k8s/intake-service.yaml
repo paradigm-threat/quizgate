@@ -1,0 +1,61 @@
+# Skeleton — bind to iad1 / Spot inventory as with MyProblem Intake.
+apiVersion: v1
+kind: Service
+metadata:
+  name: quizgate-intake
+  labels:
+    app: quizgate-intake
+spec:
+  selector:
+    app: quizgate-intake
+  ports:
+    - name: http
+      port: 8791
+      targetPort: 8791
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quizgate-intake
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quizgate-intake
+  template:
+    metadata:
+      labels:
+        app: quizgate-intake
+    spec:
+      containers:
+        - name: intake
+          image: quizgate-data-plane:latest
+          command: ["node", "intake/server.mjs"]
+          ports:
+            - containerPort: 8791
+          env:
+            - name: PORT
+              value: "8791"
+            - name: QUIZGATE_QUEUE_DIR
+              value: /var/quizgate/queue
+            - name: QUIZGATE_CACHE_DIR
+              value: /var/quizgate/cache
+            - name: QUIZGATE_USERS_ROOT
+              value: /var/quizgate/users
+          volumeMounts:
+            - name: queue
+              mountPath: /var/quizgate/queue
+            - name: cache
+              mountPath: /var/quizgate/cache
+            - name: users
+              mountPath: /var/quizgate/users
+      volumes:
+        - name: queue
+          persistentVolumeClaim:
+            claimName: quizgate-queue
+        - name: cache
+          persistentVolumeClaim:
+            claimName: quizgate-cache
+        - name: users
+          persistentVolumeClaim:
+            claimName: quizgate-users-tip

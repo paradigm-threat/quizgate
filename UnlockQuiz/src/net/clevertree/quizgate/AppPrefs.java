@@ -291,4 +291,13 @@ public final class AppPrefs {
     public boolean isSlimPerformance() {
         return PerformanceMode.isSlim(this);
     }
+
+    /** Last successful remote profile pull from api.quizgate.app (0 = never). */
+    public long getLastRemoteProfileAt() {
+        return sp.getLong("last_remote_profile_at", 0L);
+    }
+
+    public void setLastRemoteProfileAt(long ms) {
+        sp.edit().putLong("last_remote_profile_at", Math.max(0L, ms)).apply();
+    }
 }

@@ -44,6 +44,7 @@ Play Store setup + listing copy: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [
 Store publish notes + competitor table: [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md).  
 Performance Auto / Performance / Slim: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).  
 Local diagnostics (upload OFF): [`docs/TELEMETRY.md`](docs/TELEMETRY.md).  
+Anonymized Relay progress plane (`api.quizgate.app`): [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md).  
 Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test

@@ -1,0 +1,15 @@
+{
+  "name": "quizgate-data-plane",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QuizGate Intake + batch SI for api.quizgate.app / quizgate-users Relay tip",
+  "scripts": {
+    "intake": "node intake/server.mjs",
+    "batch": "node batch/drain.mjs",
+    "test": "node --test lib/*.test.mjs batch/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

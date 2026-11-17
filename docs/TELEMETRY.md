@@ -2,6 +2,7 @@
 
 Privacy-safe on-device logging for Play Console crash/ANR triage and (later) Clevertree upload.
 **Network upload is OFF** (`BuildFingerprint.TELEMETRY_UPLOAD_ENABLED = false`).
+When enabled, Intake is **`https://api.quizgate.app`** only (see [`DATA_PLANE.md`](DATA_PLANE.md)).
 
 **Live-debug goal:** structured, queryable fields (reason codes + numerics) so Play bugs and eventual uploads are easy to triage — not vague free-text. Prefer switch/session breadcrumbs over high-frequency sampling (especially in Slim).
 
@@ -61,10 +62,11 @@ SharedPreferences (including optional resume package) are **excluded** from back
 
 Plus `trigger`, `session_type`, `next_alarm_at`, `interval_ms`, `jitter_ms`, optional `other_app` boolean (**never** package name), optional short `note`.
 
-### Upload / snapshot payload (`TelemetryPayload`, schema **v2**)
+### Upload / snapshot payload (`TelemetryPayload`, schema **v3**)
 
 Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
 
+- Anonymous `user_uuid` (device-generated capability UUID)
 - Build fingerprint (`versionCode` / `versionName` / git SHA)
 - Coarse device model, locale/tz
 - Permission booleans, today rollup, recent quiz/schedule/exception lines, storage sizes
@@ -86,7 +88,7 @@ Names, emails, phones, account IDs, precise location, contacts, Wi‑Fi SSIDs, I
 
 ## Enabling upload later
 
-1. Stand up Clevertree ingest HTTPS endpoint.
+1. Run Intake at `https://api.quizgate.app` + batch writer for `quizgate-users` ([DATA_PLANE.md](DATA_PLANE.md)).
 2. Flip `BuildFingerprint.TELEMETRY_UPLOAD_ENABLED` to `true` (and/or a remote/prefs gate).
-3. Implement POST body in `TelemetryUploader` (payload already JSON).
+3. `TelemetryUploader` POSTs JSON to `/v1/users/{uuid}/sync`; `RemoteSettingsPull` GETs profile.
 4. Update Play Data safety + privacy policy before shipping.
