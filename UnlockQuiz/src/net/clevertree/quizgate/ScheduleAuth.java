@@ -22,9 +22,9 @@ import java.io.File;
 import java.util.TimeZone;
 
 /**
- * OS authorizations that keep the quiz schedule firing: exact alarms, battery
- * exemption, notifications (FGS fallback), full-screen intent, appear-on-top,
- * usage stats. Checks + optional single Settings prompt (no dialog spam).
+ * OS authorizations for a fully working QuizGate: exact alarms, notifications,
+ * battery exemption, full-screen intent, appear-on-top, usage stats (return to
+ * last app). Checks + single Settings prompt at a time (90s cooldown).
  */
 public final class ScheduleAuth {
     private static final String TAG = AlarmScheduler.TAG;
@@ -71,19 +71,20 @@ public final class ScheduleAuth {
         }
 
         public Gap firstGap() {
-            Gap required = firstRequiredGap();
-            if (required != Gap.NONE) return required;
-            if (!usageStats) return Gap.USAGE_STATS;
-            return Gap.NONE;
+            return firstRequiredGap();
         }
 
-        /** Schedule-critical gaps only (excludes optional usage access). */
+        /**
+         * Gaps needed for quizzes to fire on time and return to the prior app.
+         * Order matches onboarding / Setup prompts (one at a time).
+         */
         public Gap firstRequiredGap() {
             if (!exactAlarm) return Gap.EXACT_ALARM;
             if (!notifications) return Gap.NOTIFICATIONS;
             if (!batteryUnrestricted) return Gap.BATTERY;
             if (!fullScreenIntent) return Gap.FULL_SCREEN_INTENT;
             if (!overlay) return Gap.OVERLAY;
+            if (!usageStats) return Gap.USAGE_STATS;
             return Gap.NONE;
         }
 
@@ -244,8 +245,8 @@ public final class ScheduleAuth {
     }
 
     /**
-     * Live checklist for Setup: required schedule/auth items first, then optional
-     * usage access. Home widget is appended by Setup (not a Gap).
+     * Live checklist for Setup / Parents: schedule + overlay + usage access.
+     * Home widget is appended by Setup (not a Gap).
      */
     public static java.util.List<CheckItem> checklist(Context ctx) {
         Snapshot s = snapshot(ctx);
@@ -270,9 +271,74 @@ public final class ScheduleAuth {
             items.add(new CheckItem(Gap.OVERLAY, true, s.overlay,
                     R.string.setup_req_overlay_title, R.string.setup_req_overlay_detail));
         }
-        items.add(new CheckItem(Gap.USAGE_STATS, false, s.usageStats,
+        items.add(new CheckItem(Gap.USAGE_STATS, true, s.usageStats,
                 R.string.setup_req_usage_title, R.string.setup_req_usage_detail));
         return items;
+    }
+
+    /** Plain-language title for onboarding for a gap (0 if none). */
+    public static int onboardTitleRes(Gap gap) {
+        if (gap == null) return 0;
+        switch (gap) {
+            case EXACT_ALARM: return R.string.onboard_perm_exact_title;
+            case NOTIFICATIONS: return R.string.onboard_perm_notif_title;
+            case BATTERY: return R.string.onboard_perm_battery_title;
+            case FULL_SCREEN_INTENT: return R.string.onboard_perm_fsi_title;
+            case OVERLAY: return R.string.onboard_perm_overlay_title;
+            case USAGE_STATS: return R.string.onboard_perm_usage_title;
+            default: return 0;
+        }
+    }
+
+    /** Plain-language why-copy for onboarding for a gap (0 if none). */
+    public static int onboardBodyRes(Gap gap) {
+        if (gap == null) return 0;
+        switch (gap) {
+            case EXACT_ALARM: return R.string.onboard_perm_exact_body;
+            case NOTIFICATIONS: return R.string.onboard_perm_notif_body;
+            case BATTERY: return R.string.onboard_perm_battery_body;
+            case FULL_SCREEN_INTENT: return R.string.onboard_perm_fsi_body;
+            case OVERLAY: return R.string.onboard_perm_overlay_body;
+            case USAGE_STATS: return R.string.onboard_perm_usage_body;
+            default: return 0;
+        }
+    }
+
+    /** True when this gap is already granted (or not applicable on this OS). */
+    public static boolean isGranted(Context ctx, Gap gap) {
+        if (gap == null || gap == Gap.NONE) return true;
+        Snapshot s = snapshot(ctx);
+        switch (gap) {
+            case EXACT_ALARM: return s.exactAlarm;
+            case NOTIFICATIONS: return s.notifications;
+            case BATTERY: return s.batteryUnrestricted;
+            case FULL_SCREEN_INTENT: return s.fullScreenIntent;
+            case OVERLAY: return s.overlay;
+            case USAGE_STATS: return s.usageStats;
+            default: return true;
+        }
+    }
+
+    /**
+     * Next unmet gap after {@code after} in prompt order, or NONE.
+     * Used by onboarding to walk one permission at a time without Settings spam.
+     * Pass NONE/null to get the first unmet gap.
+     */
+    public static Gap nextGapAfter(Context ctx, Gap after) {
+        Gap[] order = {
+                Gap.EXACT_ALARM, Gap.NOTIFICATIONS, Gap.BATTERY,
+                Gap.FULL_SCREEN_INTENT, Gap.OVERLAY, Gap.USAGE_STATS
+        };
+        boolean past = (after == null || after == Gap.NONE);
+        for (Gap g : order) {
+            if (!past) {
+                if (g == after) past = true;
+                continue;
+            }
+            // isGranted is true when N/A on this OS (snapshot defaults).
+            if (!isGranted(ctx, g)) return g;
+        }
+        return Gap.NONE;
     }
 
     /** Parent-friendly bullet list of unmet required items (empty if all set). */

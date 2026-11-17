@@ -37,6 +37,7 @@ public class SetupActivity extends Activity {
     private TextView status;
     private TextView minutesJar;
     private TextView nextQuiz;
+    private TextView scheduleHealth;
     private View statsCard;
     private TextView statsMood;
     private TextView statsAskedNum;
@@ -69,6 +70,7 @@ public class SetupActivity extends Activity {
         status = findViewById(R.id.setup_status);
         minutesJar = findViewById(R.id.minutes_jar);
         nextQuiz = findViewById(R.id.setup_next_quiz);
+        scheduleHealth = findViewById(R.id.setup_schedule_health);
         statsCard = findViewById(R.id.stats_card);
         statsMood = findViewById(R.id.stats_mood);
         statsAskedNum = findViewById(R.id.stats_asked_num);
@@ -329,14 +331,14 @@ public class SetupActivity extends Activity {
     }
 
     private void finishArmSuccess() {
-        // One authorization prompt for any remaining optional gap (e.g. usage).
+        // Prompt the next missing grant (one at a time, cooldown in ScheduleAuth).
         ScheduleAuth.promptNextGap(this);
         maybeRequestPhotos();
         Toast.makeText(this, "Armed", Toast.LENGTH_SHORT).show();
         refreshStatus();
     }
 
-    /** Optional gallery backdrop — not schedule-critical; never stacks with auth Settings. */
+    /** Optional gallery backdrop — never stacks with auth Settings prompts. */
     private void maybeRequestPhotos() {
         ScheduleAuth.Snapshot s = ScheduleAuth.snapshot(this);
         // Don't stack photo prompt over required Settings screens.
@@ -488,6 +490,7 @@ public class SetupActivity extends Activity {
         AppPrefs p = new AppPrefs(this);
         if (!p.isArmed() || p.nextAlarmAt() <= 0L) {
             nextQuiz.setText(R.string.setup_next_quiz_unarmed);
+            refreshScheduleHealth(p);
             return;
         }
         long mins = Scheduler.minutesUntil(p.nextAlarmAt(), System.currentTimeMillis());
@@ -495,6 +498,34 @@ public class SetupActivity extends Activity {
             nextQuiz.setText(R.string.setup_next_quiz_due);
         } else {
             nextQuiz.setText(getString(R.string.setup_next_quiz_armed, mins));
+        }
+        refreshScheduleHealth(p);
+    }
+
+    /** Absolute last-fired / next-alarm timestamps so schedule health is visible without adb. */
+    private void refreshScheduleHealth(AppPrefs p) {
+        if (scheduleHealth == null) return;
+        long last = p.lastFiredAt();
+        long next = p.nextAlarmAt();
+        String lastLabel = last > 0L
+                ? formatClock(last)
+                : getString(R.string.setup_schedule_health_never);
+        String nextLabel = (p.isArmed() && next > 0L)
+                ? formatClock(next)
+                : "—";
+        scheduleHealth.setText(getString(R.string.setup_schedule_health_line, lastLabel, nextLabel));
+    }
+
+    private static String formatClock(long ms) {
+        java.text.DateFormat fmt = android.text.format.DateFormat.getTimeFormat(
+                // Activity context unavailable in static helper — use default locale pattern
+                null);
+        // DateFormat.getTimeFormat(null) NPE on some OEMs — fall back to java.text
+        try {
+            return new java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                    .format(new java.util.Date(ms));
+        } catch (Exception e) {
+            return String.valueOf(ms);
         }
     }
 

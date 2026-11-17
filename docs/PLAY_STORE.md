@@ -163,7 +163,7 @@ Source kit also has Lock / Open variants under `B_lock_numbers/` and `C_open_gat
 | `POST_NOTIFICATIONS` | Soft-gate reminder notification / FGS fallback |
 | Exact alarms | Schedule quizzes |
 | `READ_MEDIA_IMAGES` | Optional gallery backdrops |
-| `PACKAGE_USAGE_STATS` | Optional — return child to previous app after unlock |
+| `PACKAGE_USAGE_STATS` | Return child to previous app after unlock |
 | Battery unrestricted | OEM reliability for alarms |
 
 We do **not** currently require Accessibility or Device Admin for the soft gate.
@@ -175,7 +175,7 @@ We do **not** currently require Accessibility or Device Admin for the soft gate.
 ```
 QuizGate is a parent-configured soft quiz gate. No login.
 1. Install → complete or skip onboarding → Setup → Arm scheduling.
-2. Grant notifications; optionally photos + usage access + battery unrestricted.
+2. Grant notifications, battery unrestricted, appear-on-top, full-screen alerts, and usage access (return to last app); photos optional.
 3. Tap “Test quiz now” to open a quiz without waiting for an alarm.
 Forever free; no ads; no IAP. Privacy: https://quizgate.clevertree.net/privacy
 ```

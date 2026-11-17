@@ -188,6 +188,33 @@
                 android:textStyle="bold"/>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/onboard_perm_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btn_onboard_perm_allow"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:backgroundTint="@color/accent"
+                android:text="@string/onboard_perm_allow"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"/>
+
+            <Button
+                android:id="@+id/btn_onboard_perm_later"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="@color/symbolic"
+                android:text="@string/onboard_perm_later"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"/>
+        </LinearLayout>
+
         <Button
             android:id="@+id/btn_onboard_next"
             android:layout_width="match_parent"
