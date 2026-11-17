@@ -17,7 +17,7 @@ import java.util.List;
 /** Fetches slim curricula index.json when sync is enabled. */
 public final class CurriculumIndexClient {
     public static final String DEFAULT_INDEX_URL =
-            "https://quizgate.clevertree.net/curricula/index.json";
+            "https://quizgate.app/curricula/index.json";
     private static final String TAG = "CurriculumIndex";
 
     private CurriculumIndexClient() {}

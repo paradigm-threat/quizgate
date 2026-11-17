@@ -7,7 +7,7 @@ Concise orientation for coding agents. Prefer updating existing docs over adding
 - **Primary git remote:** GitLab `git@gitlab.com:clevertree/quizgate.git` (`gitlab`). Pull/push here first.
 - **GitHub** (`paradigm-threat/quizgate` / `origin`) may be suspended or secondary — do not assume push works.
 - **CI APK:** GitLab CI (and GitHub Actions when available) builds sideload `QuizGate.apk`. Play **AAB + release keystore** remain human / not in CI.
-- Site: `site/` → https://quizgate.clevertree.net (Vercel). Clevertree thank-you lives on https://clevertree.net/thankyou (separate repo).
+- Site: `site/` → https://quizgate.app (Vercel). Clevertree thank-you lives on https://clevertree.net/thankyou (separate repo).
 - Never commit secrets, keystores, pairing codes, or device IPs into docs.
 
 ## Pull before edit

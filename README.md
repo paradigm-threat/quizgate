@@ -6,12 +6,12 @@ Clevertree soft quiz gate for young kids: every half hour (±15m → next fire i
 
 Package: `net.clevertree.quizgate`
 
-- Site: https://quizgate.clevertree.net  
-- Privacy: https://quizgate.clevertree.net/privacy  
+- Site: https://quizgate.app  
+- Privacy: https://quizgate.app/privacy  
 - GitLab (**primary**): https://gitlab.com/clevertree/quizgate  
 - GitHub (may be suspended / secondary): https://github.com/paradigm-threat/quizgate  
 - Clevertree thank-you: https://clevertree.net/thankyou  
-- Vercel team: **clevertrees-projects** · project **quizgate** · root directory `site` · production branch `main` · domain `quizgate.clevertree.net`
+- Vercel team: **clevertrees-projects** · project **quizgate** · root directory `site` · production branch `main` · domain `quizgate.app`
 
 **Team note — remotes:** push/pull **GitLab** first. Site deploys historically expect GitHub → Vercel; if GitHub is unavailable, treat GitLab as source of truth for the app and sync site separately.
 

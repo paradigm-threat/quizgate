@@ -1,6 +1,6 @@
 # QuizGate curricula (source of truth)
 
-Signed `.qgpack` zips are built from folders here. The Android APK bundles `basic-math` and can sync newer packs from `https://quizgate.clevertree.net/curricula/index.json`.
+Signed `.qgpack` zips are built from folders here. The Android APK bundles `basic-math` and can sync newer packs from `https://quizgate.app/curricula/index.json`.
 
 ## Commands
 

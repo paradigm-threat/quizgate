@@ -18,8 +18,8 @@ Upload-ready graphics live in [`store/play/upload/`](../store/play/upload/).
 | **Families policy** | https://support.google.com/googleplay/android-developer/answer/9893335 |
 | **Data safety** | https://support.google.com/googleplay/android-developer/answer/10787469 |
 | **Graphic assets specs** | https://support.google.com/googleplay/android-developer/answer/9866151 |
-| Privacy policy (live) | https://quizgate.clevertree.net/privacy |
-| Marketing site | https://quizgate.clevertree.net |
+| Privacy policy (live) | https://quizgate.app/privacy |
+| Marketing site | https://quizgate.app |
 
 Package name (must never change once claimed): `net.clevertree.quizgate`
 
@@ -91,7 +91,7 @@ Also set:
 
 | Section | Answer summary |
 |---------|----------------|
-| Privacy policy | `https://quizgate.clevertree.net/privacy` |
+| Privacy policy | `https://quizgate.app/privacy` |
 | Ads | **No** |
 | Data safety | See draft in `LISTING_COPY.txt` (photos on-device; local stats; optional HTTPS curriculum sync; no ads SDKs). Local diagnostics schema + privacy rules: [`TELEMETRY.md`](TELEMETRY.md) (upload OFF until published). |
 | Target audience | Include children (e.g. 5–8); Families policy applies |
@@ -181,5 +181,5 @@ QuizGate is a parent-configured soft quiz gate. No login.
 1. Install → complete or skip onboarding (photos, 30±15 schedule, Auto/Performance/Slim) → Setup → Arm scheduling.
 2. Grant exact alarms, notifications, battery unrestricted, full-screen alerts, appear-on-top, and usage access (return to last app); photos optional.
 3. Tap “Test quiz now” to open a quiz without waiting for an alarm.
-Forever free; no ads; no IAP. Privacy: https://quizgate.clevertree.net/privacy
+Forever free; no ads; no IAP. Privacy: https://quizgate.app/privacy
 ```

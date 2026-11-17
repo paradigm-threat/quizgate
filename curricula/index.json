@@ -13,7 +13,7 @@
       "description": "Addition and light subtraction under 10 \u2014 math only (no color questions).",
       "contentSha256": "762099d1e6e4787ee9d9191cd9f684324cc561e898853a57abd309a1877efd2a",
       "sizeBytes": 10476,
-      "packUrl": "https://quizgate.clevertree.net/curricula/packs/basic-math-v3.qgpack",
+      "packUrl": "https://quizgate.app/curricula/packs/basic-math-v3.qgpack",
       "bundled": true
     }
   ]

@@ -39,7 +39,7 @@ Permissions (why we ask)
 • Usage access (optional) — pause media during a quiz and return to the app your child was just using
 • Battery unrestricted — so reminders stay reliable on some devices
 
-QuizGate is open source. Privacy policy: https://quizgate.clevertree.net/privacy
+QuizGate is open source. Privacy policy: https://quizgate.app/privacy
 
 
 APP CATEGORY
@@ -51,8 +51,8 @@ Tags (optional): Parental controls, Math, Kids
 CONTACT DETAILS
 --------------------------------------------------------------------------------
 Email:   support@clevertree.net
-Website: https://quizgate.clevertree.net
-Privacy: https://quizgate.clevertree.net/privacy
+Website: https://quizgate.app
+Privacy: https://quizgate.app/privacy
 
 
 CONTAINS ADS

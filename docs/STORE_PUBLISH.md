@@ -7,7 +7,7 @@ This document captures what it takes, plus an honest competitor snapshot.
 [`docs/PLAY_STORE.md`](PLAY_STORE.md) · [`store/play/`](../store/play/)
 
 Marketing / privacy URL (required by both stores later):
-https://quizgate.clevertree.net/privacy
+https://quizgate.app/privacy
 
 Clevertree thank-you page (post-download / signup, separate site):
 https://clevertree.net/thankyou
@@ -68,7 +68,7 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
 - `targetSdk` must meet current Play minimum (moving target)
 - Package `net.clevertree.quizgate` is fine; register Play package name / developer
   verification as required
-- **Privacy policy URL** (public HTTPS — host on quizgate.clevertree.net) + in-app link
+- **Privacy policy URL** (public HTTPS — host on quizgate.app) + in-app link
 - **Data safety** form (declare accurately; gallery read is on-device)
 - Declare **Contains ads: No**; no IAP
 - **Target audience / Families**: if targeting children, comply with Play Families /

@@ -26,7 +26,7 @@ A zip containing:
 - `curriculum.json` — tiers, round rules, earn rules, items[]
 - `SIGNATURE` — `UNSIGNED-BUNDLED` for APK assets; ed25519 over sha256 for published packs (Phase 1 accepts bundled + sha match)
 
-Index: `https://quizgate.clevertree.net/curricula/index.json`
+Index: `https://quizgate.app/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
