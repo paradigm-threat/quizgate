@@ -1,6 +1,8 @@
 import net.clevertree.quizgate.core.Catalog;
+import net.clevertree.quizgate.core.PresentedQuestion;
 import net.clevertree.quizgate.core.Question;
 import net.clevertree.quizgate.core.QuestionPicker;
+import net.clevertree.quizgate.core.RenderFormat;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,7 +20,7 @@ public class QuestionPickerTest {
         Map<String, Integer> counts = new HashMap<>();
         int n = 2000;
         for (int i = 0; i < n; i++) {
-            String id = picker.first().id;
+            String id = picker.first().id();
             counts.put(id, counts.getOrDefault(id, 0) + 1);
         }
         int add = counts.getOrDefault("add", 0);
@@ -29,8 +31,15 @@ public class QuestionPickerTest {
         Assert.isTrue(sub < n * 0.35, "sub share too high: " + sub);
         Assert.isTrue(sub > n * 0.05, "sub should still appear: " + sub);
 
-        Question next = picker.nextDifferent("add");
-        Assert.eq("sub", next.id, "only other question");
+        PresentedQuestion next = picker.nextDifferent("add");
+        Assert.eq("sub", next.id(), "only other question");
+
+        // force_qid path stays on equation (ADB / screenshots)
+        QuestionPicker forced = new QuestionPicker(catalog, new Random(1L)).preferFirst("add");
+        for (int i = 0; i < 20; i++) {
+            Assert.eq(RenderFormat.EQUATION, forced.first().format, "preferFirst → equation");
+        }
+
         System.out.println("QuestionPickerTest OK add=" + add + " sub=" + sub);
     }
 

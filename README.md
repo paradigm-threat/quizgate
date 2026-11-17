@@ -108,7 +108,7 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 
 - Schedule: default **30±15 min**; morning alarm; re-arm on boot, app update (`MY_PACKAGE_REPLACED`), and time/timezone change
 - Header: “Please answer this question”
-- Curriculum: bundled **basic-math v3** — addition under 10 + sparse subtraction (~5 items / ~20% pool)
+- Curriculum: bundled **basic-math v3** — addition under 10 + sparse subtraction (~5 items / ~20% pool); math asks randomly as fill-in (`equation`) or Pickles-style **True/False** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
 - Math: spoken + `2 + 5 = _` (digit pad by default)
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock

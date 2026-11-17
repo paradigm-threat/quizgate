@@ -1,8 +1,10 @@
 import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.CurriculumParser;
+import net.clevertree.quizgate.core.PresentedQuestion;
 import net.clevertree.quizgate.core.Question;
 import net.clevertree.quizgate.core.QuestionPicker;
 import net.clevertree.quizgate.core.QuizSession;
+import net.clevertree.quizgate.core.RenderFormat;
 import net.clevertree.quizgate.core.SessionOutcome;
 
 import java.nio.file.Files;
@@ -22,19 +24,22 @@ public class CurriculumParserTest {
         Question m01 = pack.catalog.byId("m01");
         Assert.isTrue(m01 != null, "legacy m01");
         Assert.eq("2", m01.correct, "m01 correct");
+        // Formats come from engine defaults — catalog is not duplicated for true/false.
+        Assert.eq(2, RenderFormat.allowedFor(m01).size(), "math formats");
 
         Assert.isTrue(pack.catalogForTier("K").size() > 0, "tier K");
 
         // Round of 3 corrects unlocks
-        QuestionPicker picker = new QuestionPicker(pack.catalog, new Random(7L));
+        QuestionPicker picker = new QuestionPicker(pack.catalog, new Random(7L))
+                .preferFormat(RenderFormat.EQUATION);
         QuizSession s = new QuizSession("r1", "interval", 1000L, picker, 3, 3, true);
         for (int i = 0; i < 2; i++) {
-            Question q = s.getCurrent();
-            QuizSession.AnswerResult r = s.answer(q.correct, 1000L + i);
+            PresentedQuestion q = s.getCurrent();
+            QuizSession.AnswerResult r = s.answer(q.correctChoice, 1000L + i);
             Assert.eq(QuizSession.AnswerResult.CORRECT_CONTINUE, r, "continue " + i);
         }
-        Question q = s.getCurrent();
-        QuizSession.AnswerResult done = s.answer(q.correct, 3000L);
+        PresentedQuestion q = s.getCurrent();
+        QuizSession.AnswerResult done = s.answer(q.correctChoice, 3000L);
         Assert.eq(QuizSession.AnswerResult.CORRECT_ROUND_DONE, done, "round done");
         Assert.eq(SessionOutcome.CORRECT, s.getOutcome(), "outcome");
         Assert.eq(3, s.getCorrectInRound(), "correct count");

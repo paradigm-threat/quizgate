@@ -22,7 +22,7 @@ public final class QuizSession {
     private final int roundSize;
     private final int maxWrong;
     private final boolean consolingUnlock;
-    private Question current;
+    private PresentedQuestion current;
     private int missStreak;
     private int correctInRound;
     private final List<String> questionsShown = new ArrayList<>();
@@ -44,13 +44,13 @@ public final class QuizSession {
         this.maxWrong = Math.max(1, maxWrong);
         this.consolingUnlock = consolingUnlock;
         this.current = picker.first();
-        questionsShown.add(current.id);
+        questionsShown.add(current.id());
     }
 
     public String getSessionId() { return sessionId; }
     public String getTrigger() { return trigger; }
     public long getStartedAt() { return startedAt; }
-    public Question getCurrent() { return current; }
+    public PresentedQuestion getCurrent() { return current; }
     public int getMissStreak() { return missStreak; }
     public int getCorrectInRound() { return correctInRound; }
     public int getRoundSize() { return roundSize; }
@@ -68,9 +68,9 @@ public final class QuizSession {
                 end(SessionOutcome.CORRECT, now);
                 return roundSize == 1 ? AnswerResult.CORRECT_UNLOCK : AnswerResult.CORRECT_ROUND_DONE;
             }
-            String prev = current.id;
+            String prev = current.id();
             current = picker.nextDifferent(prev);
-            questionsShown.add(current.id);
+            questionsShown.add(current.id());
             return AnswerResult.CORRECT_CONTINUE;
         }
         missStreak++;
@@ -78,9 +78,9 @@ public final class QuizSession {
             end(SessionOutcome.CONSOLING_UNLOCK, now);
             return AnswerResult.WRONG_CONSOLING;
         }
-        String prev = current.id;
+        String prev = current.id();
         current = picker.nextDifferent(prev);
-        questionsShown.add(current.id);
+        questionsShown.add(current.id());
         return AnswerResult.WRONG_CONTINUE;
     }
 

@@ -8,6 +8,8 @@ public final class QuestionPicker {
     private final Catalog catalog;
     private final Random random;
     private String preferredFirstId;
+    /** When set, always use this format (ADB / screenshots / tests). */
+    private RenderFormat forcedFormat;
 
     public QuestionPicker(Catalog catalog, Random random) {
         this.catalog = catalog;
@@ -20,21 +22,45 @@ public final class QuestionPicker {
         return this;
     }
 
-    public Question first() {
-        if (preferredFirstId != null) {
-            Question q = catalog.byId(preferredFirstId);
-            if (q != null) return q;
-        }
-        return pickWeighted(catalog.all());
+    /** Force render format (e.g. {@link RenderFormat#EQUATION} for digit-pad e2e). */
+    public QuestionPicker preferFormat(RenderFormat format) {
+        this.forcedFormat = format;
+        return this;
     }
 
-    public Question nextDifferent(String excludeId) {
+    public PresentedQuestion first() {
+        Question q;
+        if (preferredFirstId != null) {
+            q = catalog.byId(preferredFirstId);
+            if (q == null) q = pickWeighted(catalog.all());
+        } else {
+            q = pickWeighted(catalog.all());
+        }
+        return present(q);
+    }
+
+    public PresentedQuestion nextDifferent(String excludeId) {
         List<Question> pool = new ArrayList<>();
         for (Question q : catalog.all()) {
             if (!q.id.equals(excludeId)) pool.add(q);
         }
-        if (pool.isEmpty()) return catalog.byId(excludeId);
-        return pickWeighted(pool);
+        Question q = pool.isEmpty() ? catalog.byId(excludeId) : pickWeighted(pool);
+        return present(q);
+    }
+
+    PresentedQuestion present(Question q) {
+        RenderFormat format = chooseFormat(q);
+        return MathPresentation.present(q, format, random);
+    }
+
+    private RenderFormat chooseFormat(Question q) {
+        if (forcedFormat != null) return forcedFormat;
+        // Deterministic ADB / force_qid smoke: stay on equation + digit/MC entry.
+        if (preferredFirstId != null) return RenderFormat.EQUATION;
+        List<RenderFormat> allowed = RenderFormat.allowedFor(q);
+        if (allowed.isEmpty()) return RenderFormat.EQUATION;
+        if (allowed.size() == 1) return allowed.get(0);
+        return allowed.get(random.nextInt(allowed.size()));
     }
 
     /** Uniform among equal weights; lower {@link Question#weight} stays rarer as the pool grows. */

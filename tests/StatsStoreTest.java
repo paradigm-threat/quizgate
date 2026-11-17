@@ -1,6 +1,7 @@
 import net.clevertree.quizgate.core.Catalog;
 import net.clevertree.quizgate.core.QuestionPicker;
 import net.clevertree.quizgate.core.QuizSession;
+import net.clevertree.quizgate.core.RenderFormat;
 import net.clevertree.quizgate.core.StatsEvent;
 import net.clevertree.quizgate.core.StatsStore;
 
@@ -17,17 +18,18 @@ public class StatsStoreTest {
         StatsStore store = new StatsStore(dir);
         TimeZone utc = TimeZone.getTimeZone("UTC");
 
-        QuestionPicker picker = new QuestionPicker(c, new Random(7));
+        QuestionPicker picker = new QuestionPicker(c, new Random(7)).preferFormat(RenderFormat.EQUATION);
         QuizSession s = new QuizSession("sessA", "adb_force", 1000L, picker);
-        store.appendEvent(new StatsEvent(1000, "sessA", "shown", s.getCurrent().id, "", 0), utc);
-        String correct = s.getCurrent().correct;
-        store.appendEvent(new StatsEvent(1100, "sessA", "correct", s.getCurrent().id, correct, 0), utc);
+        store.appendEvent(new StatsEvent(1000, "sessA", "shown", s.getCurrent().id(), "", 0), utc);
+        String correct = s.getCurrent().correctChoice;
+        store.appendEvent(new StatsEvent(1100, "sessA", "correct", s.getCurrent().id(), correct, 0), utc);
         s.answer(correct, 1100L);
         store.appendSession(s);
 
-        QuizSession s2 = new QuizSession("sessB", "interval", 2000L, new QuestionPicker(c, new Random(8)));
+        QuizSession s2 = new QuizSession("sessB", "interval", 2000L,
+                new QuestionPicker(c, new Random(8)).preferFormat(RenderFormat.EQUATION));
         s2.bypass(2100L);
-        store.appendEvent(new StatsEvent(2100, "sessB", "bypass", s2.getCurrent().id, "", 0), utc);
+        store.appendEvent(new StatsEvent(2100, "sessB", "bypass", s2.getCurrent().id(), "", 0), utc);
         store.appendSession(s2);
 
         StatsStore.Aggregates a = store.aggregates();

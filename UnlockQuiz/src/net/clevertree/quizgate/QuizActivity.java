@@ -28,9 +28,11 @@ import net.clevertree.quizgate.core.DiagBreadcrumb;
 import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.DigitAnswer;
+import net.clevertree.quizgate.core.PresentedQuestion;
 import net.clevertree.quizgate.core.Question;
 import net.clevertree.quizgate.core.QuestionPicker;
 import net.clevertree.quizgate.core.QuizSession;
+import net.clevertree.quizgate.core.RenderFormat;
 import net.clevertree.quizgate.core.StatsEvent;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
@@ -219,6 +221,13 @@ public class QuizActivity extends Activity {
         if (getIntent() != null && getIntent().hasExtra("force_qid")) {
             picker.preferFirst(getIntent().getStringExtra("force_qid"));
         }
+        if (getIntent() != null && getIntent().hasExtra("render_format")) {
+            RenderFormat forced = RenderFormat.fromId(getIntent().getStringExtra("render_format"));
+            if (forced != null) picker.preferFormat(forced);
+        } else if (trigger != null && trigger.startsWith("adb_")) {
+            // Digit-pad / MC e2e stays on equation entry UI.
+            picker.preferFormat(RenderFormat.EQUATION);
+        }
         startRound(trigger);
     }
 
@@ -271,7 +280,7 @@ public class QuizActivity extends Activity {
                 clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_STARTED,
                 trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                 prefs.getResumePackage() != null, ""));
-        logEvent("shown", session.getCurrent().id, "", 0);
+        logPresented("shown", session.getCurrent(), "", 0);
         bindQuestion(session.getCurrent());
     }
 
@@ -327,21 +336,32 @@ public class QuizActivity extends Activity {
         }
     }
 
-    private void bindQuestion(Question q) {
-        spoken.setText(q.spoken);
+    private void bindQuestion(PresentedQuestion presented) {
+        Question q = presented.question;
+        spoken.setText(presented.spoken);
         digitAnswer = new DigitAnswer();
-        boolean digitMode = "math".equals(q.type) && prefs.useDigitPadForMath();
-        if (q.symbolic != null && !q.symbolic.isEmpty()) {
-            symbolicTemplate = q.symbolic;
+        boolean trueFalse = presented.isTrueFalse();
+        boolean digitMode = !trueFalse && "math".equals(q.type) && prefs.useDigitPadForMath();
+        if (presented.displaySymbolic != null && !presented.displaySymbolic.isEmpty()) {
+            symbolicTemplate = trueFalse ? presented.displaySymbolic : q.symbolic;
             symbolic.setVisibility(View.VISIBLE);
-            refreshSymbolic();
+            if (trueFalse) {
+                symbolic.setText(presented.displaySymbolic);
+            } else {
+                refreshSymbolic();
+            }
         } else {
             symbolicTemplate = "";
             symbolic.setVisibility(View.GONE);
         }
         choices.removeAllViews();
         digitPad.removeAllViews();
-        if (digitMode) {
+        if (trueFalse) {
+            digitPad.setVisibility(View.GONE);
+            digitAnswerView.setVisibility(View.GONE);
+            choices.setVisibility(View.VISIBLE);
+            buildTrueFalseChoices();
+        } else if (digitMode) {
             choices.setVisibility(View.GONE);
             digitPad.setVisibility(View.VISIBLE);
             digitAnswerView.setVisibility(View.VISIBLE);
@@ -420,6 +440,43 @@ public class QuizActivity extends Activity {
             btn.setOnClickListener(v -> onChoice(choice));
             choices.addView(btn);
         }
+    }
+
+    /** Pickles-style True/False: green check + red X (not digit pad). */
+    private void buildTrueFalseChoices() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        row.setLayoutParams(rowLp);
+
+        row.addView(styleTrueFalseButton(getString(R.string.choice_true_mark),
+                Color.parseColor("#27AE60"), PresentedQuestion.CHOICE_TRUE));
+        row.addView(styleTrueFalseButton(getString(R.string.choice_false_mark),
+                Color.parseColor("#E74C3C"), PresentedQuestion.CHOICE_FALSE));
+        choices.addView(row);
+    }
+
+    private Button styleTrueFalseButton(String mark, int fill, String choice) {
+        Button btn = new Button(this);
+        btn.setText(mark);
+        btn.setAllCaps(false);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36);
+        btn.setTextColor(Color.WHITE);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setShape(GradientDrawable.OVAL);
+        bg.setColor(fill);
+        bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
+        btn.setBackground(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(96), dp(96));
+        lp.setMargins(dp(20), dp(12), dp(20), dp(12));
+        btn.setLayoutParams(lp);
+        btn.setGravity(Gravity.CENTER);
+        btn.setContentDescription(PresentedQuestion.CHOICE_TRUE.equals(choice)
+                ? getString(R.string.choice_true) : getString(R.string.choice_false));
+        btn.setOnClickListener(v -> onChoice(choice));
+        return btn;
     }
 
     private void buildDigitPad() {
@@ -511,7 +568,6 @@ public class QuizActivity extends Activity {
     private void submitDigitAnswer() {
         if (digitAnswer.isEmpty()) return;
         String v = digitAnswer.value();
-        Question q = session.getCurrent();
         // Normalize to catalog correct string form
         String choice = v;
         try {
@@ -522,12 +578,12 @@ public class QuizActivity extends Activity {
 
     private void onChoice(String choice) {
         if (session.isEnded() || finishing || inTransition) return;
-        Question q = session.getCurrent();
+        PresentedQuestion q = session.getCurrent();
         QuizSession.AnswerResult result = session.answer(choice, clock.nowMillis());
         currentAnswered = true;
         if (result == QuizSession.AnswerResult.CORRECT_UNLOCK
                 || result == QuizSession.AnswerResult.CORRECT_ROUND_DONE) {
-            logEvent("correct", q.id, choice, session.getMissStreak());
+            logPresented("correct", q, choice, session.getMissStreak());
             int earn = activePack == null ? 0
                     : session.getCorrectInRound() * activePack.earnMinutesPerCorrect;
             if (earn > 0) prefs.addMinutes(earn);
@@ -535,17 +591,17 @@ public class QuizActivity extends Activity {
             return;
         }
         if (result == QuizSession.AnswerResult.CORRECT_CONTINUE) {
-            logEvent("correct", q.id, choice, session.getMissStreak());
+            logPresented("correct", q, choice, session.getMissStreak());
             inTransition = true;
             handler.postDelayed(() -> {
                 inTransition = false;
                 currentAnswered = false;
                 bindQuestion(session.getCurrent());
-                logEvent("shown", session.getCurrent().id, "", session.getMissStreak());
+                logPresented("shown", session.getCurrent(), "", session.getMissStreak());
             }, 350);
             return;
         }
-        logEvent("wrong", q.id, choice, session.getMissStreak());
+        logPresented("wrong", q, choice, session.getMissStreak());
         if (result == QuizSession.AnswerResult.WRONG_CONSOLING) {
             showFailTransitionThenFinish();
             return;
@@ -553,7 +609,7 @@ public class QuizActivity extends Activity {
         showErrorTransitionThen(session.getCurrent());
     }
 
-    private void showErrorTransitionThen(Question next) {
+    private void showErrorTransitionThen(PresentedQuestion next) {
         inTransition = true;
         stopBalloonPulse();
         applyErrorStyle();
@@ -563,14 +619,14 @@ public class QuizActivity extends Activity {
                 fadeOutTransition(() -> {
                     inTransition = false;
                     bindQuestion(next);
-                    logEvent("shown", next.id, "", session.getMissStreak());
+                    logPresented("shown", next, "", session.getMissStreak());
                 })));
     }
 
     private void showFailTransitionThenFinish() {
         inTransition = true;
         stopBalloonPulse();
-        logEvent("consoling", "", "", session.getMissStreak());
+        logEvent("consoling", "", "", session.getMissStreak(), "");
         applyErrorStyle();
         transitionTitle.setText(R.string.fail_title);
         preparePhotoBackground(false);
@@ -1121,13 +1177,14 @@ public class QuizActivity extends Activity {
 
     private void finishWithBypass() {
         if (finishing) return;
-        String qid = session.getCurrent() != null ? session.getCurrent().id : "";
+        PresentedQuestion cur = session.getCurrent();
+        String qid = cur != null ? cur.id() : "";
         if (!currentAnswered && !qid.isEmpty()) {
-            logEvent("skipped", qid, "", session.getMissStreak());
+            logPresented("skipped", cur, "", session.getMissStreak());
             currentAnswered = true; // avoid double-count
         }
         session.bypass(clock.nowMillis());
-        logEvent("bypass", qid, "", session.getMissStreak());
+        logPresented("bypass", cur, "", session.getMissStreak());
         finishSession();
     }
 
@@ -1178,7 +1235,13 @@ public class QuizActivity extends Activity {
         finish();
     }
 
-    private void logEvent(String type, String qid, String choice, int streak) {
+    private void logPresented(String type, PresentedQuestion presented, String choice, int streak) {
+        String qid = presented == null ? "" : presented.id();
+        String format = presented != null && presented.format != null ? presented.format.id : "";
+        logEvent(type, qid, choice, streak, format);
+    }
+
+    private void logEvent(String type, String qid, String choice, int streak, String renderFormat) {
         long now = clock.nowMillis();
         long latency = -1L;
         if ("shown".equals(type)) {
@@ -1191,9 +1254,10 @@ public class QuizActivity extends Activity {
         String curriculumId = prefs.getActiveCurriculumId();
         String trigger = session != null ? session.getTrigger() : "";
         boolean demo = StatsStore.isDemoTrigger(trigger);
+        String format = renderFormat == null ? "" : renderFormat;
         try {
             stats.appendEvent(new StatsEvent(now, session.getSessionId(), type, qid, choice, streak,
-                    latency, curriculumId, sessionType, demo), TimeZone.getDefault());
+                    latency, curriculumId, sessionType, demo, format), TimeZone.getDefault());
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats event", e);
             Diag.nonFatal(this, "stats_event", e);

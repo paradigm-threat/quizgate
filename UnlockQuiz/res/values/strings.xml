@@ -2,6 +2,10 @@
 <resources>
     <string name="app_name">QuizGate</string>
     <string name="header">Please answer this question</string>
+    <string name="choice_true">True</string>
+    <string name="choice_false">False</string>
+    <string name="choice_true_mark">✓</string>
+    <string name="choice_false_mark">✗</string>
     <string name="consoling_title">Oh well, better luck next time!</string>
     <string name="consoling_sub">You can try again later.</string>
     <string name="retry_in">Retry in</string>

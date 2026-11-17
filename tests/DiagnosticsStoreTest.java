@@ -64,7 +64,8 @@ public class DiagnosticsStoreTest {
 
         TelemetryPayload p = TelemetryPayload.fromStores(stats, diag, now, utc, 1, "1.0");
         String json = p.toJson();
-        Assert.isTrue(json.contains("\"schema_version\":2"), "schema");
+        Assert.isTrue(json.contains("\"schema_version\":" + net.clevertree.quizgate.core.BuildFingerprint.SCHEMA_VERSION),
+                "schema");
         Assert.isTrue(json.contains("\"performance\":"), "performance block");
         Assert.isTrue(json.contains("\"upload_enabled\":false"), "upload off");
         Assert.isTrue(json.contains("recent_schedule"), "has schedule");

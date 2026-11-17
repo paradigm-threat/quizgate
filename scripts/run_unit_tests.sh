@@ -8,7 +8,8 @@ JSON="$ROOT/UnlockQuiz/assets/questions.json"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 # Core + tests only (no Android framework sources)
-find "$SRC/net/clevertree/quizgate/core" -name '*.java' > "$OUT/sources.txt"
+# Skip Android-only helpers (e.g. AnonUserId uses Context) so JVM unit tests stay runnable.
+find "$SRC/net/clevertree/quizgate/core" -name '*.java' ! -name 'AnonUserId.java' > "$OUT/sources.txt"
 find "$TESTS" -name '*.java' >> "$OUT/sources.txt"
 javac --release 17 -d "$OUT" @"$OUT/sources.txt"
 
@@ -31,6 +32,8 @@ echo "== DigitAnswerTest =="
 java -cp "$OUT" DigitAnswerTest
 echo "== QuestionPickerTest =="
 java -cp "$OUT" QuestionPickerTest
+echo "== MathPresentationTest =="
+java -cp "$OUT" MathPresentationTest
 echo "== PerfPolicyTest =="
 java -cp "$OUT" PerfPolicyTest
 echo "== CurriculumParserTest =="

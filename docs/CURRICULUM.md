@@ -34,6 +34,25 @@ Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQu
 
 Optional per-item `weight` (integer ≥1, default 1): `QuestionPicker` uses weighted random selection so rarer skills stay uncommon as the pool grows. basic-math sets addition `weight: 2` and subtraction `weight: 1`.
 
+## Render formats (ask-time)
+
+Catalog items stay **one logical question** (operands + op + correct result). The engine chooses a **render format** when asking — no duplicate rows for True/False vs fill-in.
+
+| Type | Default allowed formats (code) |
+|------|--------------------------------|
+| `math` | `equation` · `true_false` |
+| other | `equation` (fill / multiple-choice as today) |
+
+- **`equation`** — show `1 + 2 = _`; entry is digit pad or multiple-choice per `math_entry` pref.
+- **`true_false`** — show a full equation (`1 + 2 = 4`); child taps ✓ / ✗. At ask time the RHS is either the correct result (True) or a small integer offset (False). Own UI — not the digit pad.
+
+Optional per-item `formats` overrides are reserved for later; basic-math relies on the math defaults above. Stats may log `render_format` on quiz events (token only).
+
+### Roadmap (not implemented)
+
+- **Missing addend / algebra blank** — e.g. `□ + 2 = 3` or `x + 2 = 3` (Pickles-style “fill the blank” on an addend). Same catalog row; new `RenderFormat` + presentation only.
+- Compare / inequality cards and other Pickles templates as additional formats when the template engine grows.
+
 ## Sync
 
 - Pref `sync_enabled` (default on, Wi‑Fi-only downloads)

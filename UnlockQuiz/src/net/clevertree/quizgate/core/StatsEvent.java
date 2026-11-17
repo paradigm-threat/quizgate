@@ -17,19 +17,27 @@ public final class StatsEvent {
     public final String sessionType;
     /** True for adb_/prime_/seed sessions — excluded from day rollups. */
     public final boolean demo;
+    /** Ask-time render format id ({@code equation}, {@code true_false}); empty if unknown. */
+    public final String renderFormat;
 
     public StatsEvent(long ts, String sessionId, String type, String questionId, String choice, int missStreak) {
-        this(ts, sessionId, type, questionId, choice, missStreak, -1L, "", "", false);
+        this(ts, sessionId, type, questionId, choice, missStreak, -1L, "", "", false, "");
     }
 
     public StatsEvent(long ts, String sessionId, String type, String questionId, String choice,
                       int missStreak, long latencyMs, String curriculumId, String sessionType) {
-        this(ts, sessionId, type, questionId, choice, missStreak, latencyMs, curriculumId, sessionType, false);
+        this(ts, sessionId, type, questionId, choice, missStreak, latencyMs, curriculumId, sessionType, false, "");
     }
 
     public StatsEvent(long ts, String sessionId, String type, String questionId, String choice,
                       int missStreak, long latencyMs, String curriculumId, String sessionType,
                       boolean demo) {
+        this(ts, sessionId, type, questionId, choice, missStreak, latencyMs, curriculumId, sessionType, demo, "");
+    }
+
+    public StatsEvent(long ts, String sessionId, String type, String questionId, String choice,
+                      int missStreak, long latencyMs, String curriculumId, String sessionType,
+                      boolean demo, String renderFormat) {
         this.ts = ts;
         this.sessionId = sessionId == null ? "" : sessionId;
         this.type = type == null ? "" : type;
@@ -40,6 +48,7 @@ public final class StatsEvent {
         this.curriculumId = curriculumId == null ? "" : curriculumId;
         this.sessionType = sessionType == null ? "" : sessionType;
         this.demo = demo;
+        this.renderFormat = renderFormat == null ? "" : renderFormat;
     }
 
     public String toJsonLine() {
@@ -59,6 +68,10 @@ public final class StatsEvent {
         if (!sessionType.isEmpty()) {
             sb.append(",\"session_type\":\"")
                     .append(JsonUtil.esc(TelemetryRedaction.safeToken(sessionType))).append('"');
+        }
+        if (!renderFormat.isEmpty()) {
+            sb.append(",\"render_format\":\"")
+                    .append(JsonUtil.esc(TelemetryRedaction.safeToken(renderFormat))).append('"');
         }
         if (demo) sb.append(",\"demo\":true");
         sb.append('}');

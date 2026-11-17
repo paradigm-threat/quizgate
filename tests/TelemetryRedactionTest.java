@@ -5,7 +5,7 @@ public class TelemetryRedactionTest {
     public static void main(String[] args) {
         Assert.isTrue(!BuildFingerprint.TELEMETRY_UPLOAD_ENABLED, "upload default off");
         Assert.eq("QuizGateDiag", BuildFingerprint.DIAG_LOG_TAG, "diag tag");
-        Assert.eq(2, BuildFingerprint.SCHEMA_VERSION, "schema");
+        Assert.eq(3, BuildFingerprint.SCHEMA_VERSION, "schema");
 
         Assert.eq("basic-math", TelemetryRedaction.safeToken("basic-math"), "curriculum id");
         Assert.eq("m01", TelemetryRedaction.safeToken("m01"), "qid");
