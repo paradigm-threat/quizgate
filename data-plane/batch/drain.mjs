@@ -16,6 +16,7 @@ import {
   publishRemotes,
   readDays,
 } from "../lib/userStore.mjs";
+import { checkInbox, planAdminEmailAction } from "../lib/inboundMail.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -265,9 +266,34 @@ export async function drainOnce(limit = 8) {
   return { drained: results.length, pending_left: pendingCount(), results };
 }
 
+/**
+ * Optional inbox poll (same Maildir as relay-ops). Does not apply admin changes yet —
+ * only reports UUID-bearing messages for future admin-email-to-batch.
+ */
+export function pollInboundInbox() {
+  if (process.env.QUIZGATE_BATCH_CHECK_INBOX !== "1") return null;
+  try {
+    const inbox = checkInbox({
+      unreadOnly: true,
+      quizgateOnly: process.env.QUIZGATE_BATCH_INBOX_QUIZGATE_ONLY !== "0",
+      withBody: true,
+    });
+    const plans = (inbox.messages || []).map((m) => ({
+      id: m.id,
+      subject: m.subject,
+      ...planAdminEmailAction(m),
+    }));
+    return { ...inbox, plans, applied: false };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err), applied: false };
+  }
+}
+
 async function main() {
   const limit = Number(process.env.QUIZGATE_BATCH_LIMIT || 16);
   const out = await drainOnce(limit);
+  const inbox = pollInboundInbox();
+  if (inbox) out.inbound_mail = inbox;
   console.log(JSON.stringify(out, null, 2));
   if (process.env.QUIZGATE_BATCH_DECOMMISSION === "1" && out.pending_left === 0) {
     console.log("batch_idle_decommission_signal");

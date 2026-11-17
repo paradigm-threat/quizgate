@@ -46,7 +46,7 @@ Performance Auto / Performance / Slim: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.
 Local diagnostics (upload OFF): [`docs/TELEMETRY.md`](docs/TELEMETRY.md).  
 Anonymized Relay progress plane (`api.quizgate.app`): [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md).  
 Remote admin (`admin.quizgate.app`): [`docs/REMOTE_ADMIN.md`](docs/REMOTE_ADMIN.md).  
-Outgoing 2FA email: [`docs/EMAIL.md`](docs/EMAIL.md).  
+Email (outbound Gmail 2FA + inbound `batch@quizgate.app` Maildir): [`docs/EMAIL.md`](docs/EMAIL.md).  
 Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test

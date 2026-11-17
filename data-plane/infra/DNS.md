@@ -37,6 +37,18 @@ TLS ask allowlist: keep `api.quizgate.app` in `/etc/caddy/on-demand-extra.txt` (
 
 Verified live: `https://admin.quizgate.app` → remote admin login.
 
+## Inbound mail (MX)
+
+Same OpenSMTPD catcher as Relay fleet (iad1 Maildir `/home/arl/Maildir`). See [EMAIL.md](../../docs/EMAIL.md).
+
+| Name | Type | Value | Notes |
+|------|------|-------|-------|
+| `mail` | A | `162.209.124.53` | Overrides Vercel `*` ALIAS for SMTP name |
+| `@` | MX | `10 mail.quizgate.app.` | Catch-all → `batch@quizgate.app` etc. |
+| `@` | TXT | `v=spf1 -all` | Receive-only; **outbound 2FA is Gmail**, not this domain |
+
+OpenSMTPD tables on iad1 include `quizgate.app` + `mail.quizgate.app` → user `arl`.
+
 ## Optional later
 
 | Name | Role |
@@ -47,5 +59,7 @@ Verified live: `https://admin.quizgate.app` → remote admin login.
 
 ```bash
 dig api.quizgate.app +short   # expect 162.209.124.53
+dig MX quizgate.app +short    # expect 10 mail.quizgate.app.
+dig A mail.quizgate.app +short  # expect 162.209.124.53
 curl -sS https://api.quizgate.app/health
 ```

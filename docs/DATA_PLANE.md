@@ -28,7 +28,10 @@ Realtime photo / ASR / TTS hit `/v1/users/{uuid}/realtime/{kind}` — results re
 | [`data-plane/quizgate-users/`](../data-plane/quizgate-users/) | Relay SoT hooks + schema |
 | [`data-plane/intake/server.mjs`](../data-plane/intake/server.mjs) | Always-on API |
 | [`data-plane/batch/drain.mjs`](../data-plane/batch/drain.mjs) | Sole tip writer |
-| [`data-plane/infra/DNS.md`](../data-plane/infra/DNS.md) | DNS / TLS |
+| [`data-plane/batch/checkInbox.mjs`](../data-plane/batch/checkInbox.mjs) | Poll Relay Maildir (same as fleet Inbox) |
+| [`data-plane/lib/inboundMail.mjs`](../data-plane/lib/inboundMail.mjs) | Shared Maildir reader wrapper |
+| [`data-plane/infra/DNS.md`](../data-plane/infra/DNS.md) | DNS / TLS / MX |
+| [`docs/EMAIL.md`](EMAIL.md) | Outbound Gmail vs inbound `batch@quizgate.app` |
 | [`UnlockQuiz/.../telemetry/`](../UnlockQuiz/src/net/clevertree/quizgate/telemetry/) | APK client |
 
 ## Local
@@ -56,3 +59,16 @@ curl -sS "https://api.quizgate.app/v1/users/$UUID/profile"
 ```
 
 Upload remains **OFF** in the APK (`TELEMETRY_UPLOAD_ENABLED = false`) until privacy + Play Data safety are updated for production.
+
+## Inbound mail (batch)
+
+Relay OpenSMTPD on iad1 accepts **`batch@quizgate.app`** (catch-all) into the shared fleet Maildir. Batch polls with the same helper as relay-ops Inbox:
+
+```bash
+cd data-plane
+npm run inbox -- --quizgate --body --plan
+# optional on drain:
+QUIZGATE_BATCH_CHECK_INBOX=1 node batch/drain.mjs
+```
+
+Outbound 2FA stays on Gmail SMTP — see [EMAIL.md](EMAIL.md). Future: UUID-in-thread admin email → same decisions as admin UI / API (hook only today).

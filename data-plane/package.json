@@ -7,6 +7,7 @@
   "scripts": {
     "intake": "node intake/server.mjs",
     "batch": "node batch/drain.mjs",
+    "inbox": "node batch/checkInbox.mjs",
     "test": "node --test lib/*.test.mjs batch/*.test.mjs",
     "mail:test": "node scripts/send-test-email.mjs"
   },
