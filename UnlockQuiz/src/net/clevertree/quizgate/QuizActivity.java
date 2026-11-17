@@ -52,7 +52,6 @@ public class QuizActivity extends Activity {
     public static final String TRIGGER_PLAY = "play";
     private static final int ERROR_COUNTDOWN_SEC = 3;
     private static final int FAIL_COUNTDOWN_SEC = 6;
-    private static final long SUCCESS_HOLD_MS = 2000;
     private static final long FADE_MS = 450;
     private static final long PHOTO_FLASH_MS = 280;
     private static final float BALLOON_INFLATED = 1.10f;

@@ -32,9 +32,6 @@ import java.util.List;
 import java.util.TimeZone;
 
 public class SetupActivity extends Activity {
-    private static final long COUNTDOWN_TICK_BALANCED_MS = 30_000L;
-    private static final long COUNTDOWN_TICK_SLIM_MS = 60_000L;
-
     private TextView status;
     private TextView minutesJar;
     private TextView nextQuiz;
@@ -64,8 +61,7 @@ public class SetupActivity extends Activity {
     private final Runnable countdownTick = new Runnable() {
         @Override public void run() {
             refreshCountdown();
-            long tick = PerformanceMode.isSlim(SetupActivity.this)
-                    ? COUNTDOWN_TICK_SLIM_MS : COUNTDOWN_TICK_BALANCED_MS;
+            long tick = PerformanceMode.setupCountdownTickMs(new AppPrefs(SetupActivity.this));
             countdownHandler.postDelayed(this, tick);
         }
     };
