@@ -5,8 +5,9 @@ Concise orientation for coding agents. Prefer updating existing docs over adding
 ## Remotes & CI
 
 - **Primary git remote:** GitLab `git@gitlab.com:clevertree/quizgate.git` (`gitlab`). Pull/push here first.
-- **GitHub** (`paradigm-threat/quizgate` / `origin`) may be suspended or secondary — do not assume push works.
-- **CI APK:** GitLab CI (and GitHub Actions when available) builds sideload `QuizGate.apk`. Play **AAB + release keystore** remain human / not in CI.
+- **GitHub** (`paradigm-threat/quizgate` / `origin` / `github`) is writable again; keep GitLab as source of truth and sync when needed.
+- **CI APK:** GitLab CI is **off** (quota — `.gitlab-ci.yml` `workflow: rules: - when: never`). Prefer **GitHub Actions** (`.github/workflows/ci.yml`) for regression + sideload APK. Play **AAB + release keystore** remain human / not in CI.
+- **Re-enable GitLab CI:** restore the previous `workflow.rules` `if:` triggers documented at the top of `.gitlab-ci.yml`.
 - Site: `site/` → https://quizgate.app (Vercel). Clevertree thank-you lives on https://clevertree.net/thankyou (separate repo).
 - Never commit secrets, keystores, pairing codes, or device IPs into docs.
 

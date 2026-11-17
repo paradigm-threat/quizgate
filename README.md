@@ -9,7 +9,7 @@ Package: `net.clevertree.quizgate`
 - Site: https://quizgate.app  
 - Privacy: https://quizgate.app/privacy  
 - GitLab (**primary**): https://gitlab.com/clevertree/quizgate  
-- GitHub (may be suspended / secondary): https://github.com/paradigm-threat/quizgate  
+- GitHub (secondary / Actions CI): https://github.com/paradigm-threat/quizgate  
 - Clevertree thank-you: https://clevertree.net/thankyou  
 - Vercel team: **clevertrees-projects** · project **quizgate** · root directory `site` · production branch `main` · domain `quizgate.app`
 
@@ -25,8 +25,8 @@ Photos are loaded from the device gallery at runtime (MediaStore). No personal p
 ```
 
 **CI/CD**
-- **GitLab CI** (primary while GitHub is unreliable): regression + APK artifact on `main` / MRs
-- **GitHub Actions** (when available): `regression` → `android-apk` (uploads `QuizGate.apk`) + `ios-stub` on `main` / PRs
+- **GitLab CI**: **disabled** (compute quota). `.gitlab-ci.yml` has `workflow: rules: - when: never`. Re-enable notes are in that file / `AGENTS.md`.
+- **GitHub Actions** (current CI): `regression` → `android-apk` (uploads `QuizGate.apk`) + `ios-stub` on `main` / PRs
 - Device e2e (`SERIAL=<id> ./scripts/e2e_phone.sh`) stays **manual**
 - Play **AAB + release keystore** are still human steps — CI ships sideload APK only
 

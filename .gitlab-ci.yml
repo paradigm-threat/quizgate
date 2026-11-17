@@ -1,11 +1,15 @@
 # Mirror of GitHub Actions CI for clevertree/quizgate.
 # Device e2e (scripts/e2e_phone.sh) stays manual — needs a physical SERIAL.
+#
+# CI DISABLED (quota): workflow never runs. Jobs below kept for history.
+# Re-enable: replace the `when: never` rule with the previous triggers:
+#   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+#   - if: $CI_PIPELINE_SOURCE == "web"
 
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "web"
+    - when: never
 
 stages:
   - test
