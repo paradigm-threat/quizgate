@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -35,9 +36,9 @@ import java.util.List;
 public final class OverlayGate {
     private static final String TAG = AlarmScheduler.TAG;
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
-    /** Typical system PiP footprint on tablets — keep controls clear of bottom-end. */
-    private static final int PIP_PAD_BOTTOM_DP = 168;
-    private static final int PIP_PAD_END_DP = 152;
+    /** Floor pads; large tablets use a fraction of the display (see {@link #pipPadsPx}). */
+    private static final int PIP_PAD_BOTTOM_DP = 200;
+    private static final int PIP_PAD_END_DP = 180;
     private static final long[] PIP_RECHECK_MS = { 400L, 900L, 1600L, 2800L };
 
     private OverlayGate() {}
@@ -80,17 +81,19 @@ public final class OverlayGate {
 
     /**
      * Detect foreign PiP / media risk and pad quiz content out of the usual PiP corner.
-     * Call after {@code setContentView}. Safe to call multiple times; schedules light
-     * rechecks while the activity is alive.
+     * Call after {@code setContentView}. Pads every non-null view (panel + stats bar).
+     * Schedules light rechecks while the activity is alive.
      */
-    public static void applyPipAvoidance(Activity activity, View content) {
-        if (activity == null || content == null) return;
+    public static void applyPipAvoidance(Activity activity, View... contents) {
+        if (activity == null || contents == null || contents.length == 0) return;
         Context app = activity.getApplicationContext();
         AppPrefs prefs = new AppPrefs(app);
         Boolean pinned = detectForeignPinnedTask();
         boolean mediaRisk = prefs.wasMediaPlaying();
         boolean pad = mediaRisk || Boolean.TRUE.equals(pinned);
-        applyPipPadding(content, pad);
+        for (View content : contents) {
+            if (content != null) applyPipPadding(content, pad);
+        }
         String detect = pinned == null ? "unknown" : (pinned ? "pinned" : "clear");
         String msg = pad
                 ? ("pip_pad_on:detect=" + detect + (mediaRisk ? ":media_risk" : ""))
@@ -110,11 +113,12 @@ public final class OverlayGate {
         tick[0] = () -> {
             if (activity.isFinishing() || activity.isDestroyed()) return;
             Boolean again = detectForeignPinnedTask();
-            boolean stillRisk = prefs.wasMediaPlaying() && Boolean.TRUE.equals(again);
-            boolean needPad = Boolean.TRUE.equals(again) || stillRisk;
-            // Once clear and media latch was the only reason, drop pad for full UI.
-            if (!needPad && Boolean.FALSE.equals(again)) {
-                applyPipPadding(content, false);
+            // Only drop pad when we positively observe no pinned task. Unknown keep pad
+            // for the media-risk session (degraded UX beats blocked digit pad).
+            if (Boolean.FALSE.equals(again)) {
+                for (View content : contents) {
+                    if (content != null) applyPipPadding(content, false);
+                }
                 try {
                     Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
                                     System.currentTimeMillis(),
@@ -125,7 +129,11 @@ public final class OverlayGate {
                 } catch (Exception ignored) {}
                 return;
             }
-            if (needPad) applyPipPadding(content, true);
+            if (Boolean.TRUE.equals(again) || prefs.wasMediaPlaying()) {
+                for (View content : contents) {
+                    if (content != null) applyPipPadding(content, true);
+                }
+            }
             if (idx[0] < PIP_RECHECK_MS.length) {
                 HANDLER.postDelayed(tick[0], PIP_RECHECK_MS[idx[0]++]);
             }
@@ -134,15 +142,33 @@ public final class OverlayGate {
         idx[0] = 1;
     }
 
+    private static boolean pipDetectLogged;
+
     /**
      * Best-effort: is any task in windowing mode pinned (system PiP)?
-     * {@code null} = API / permission unavailable (do not treat as clear).
+     * {@code null} = API / permission unavailable (do not treat as clear — third-party
+     * apps usually cannot enumerate foreign pinned tasks on modern Android).
      */
     static Boolean detectForeignPinnedTask() {
         if (Build.VERSION.SDK_INT < 29) return null;
         try {
             Class<?> atmClass = Class.forName("android.app.ActivityTaskManager");
-            Object atm = atmClass.getMethod("getInstance").invoke(null);
+            Object atm = null;
+            for (String name : new String[] { "getInstance", "getService" }) {
+                try {
+                    Method m = atmClass.getDeclaredMethod(name);
+                    m.setAccessible(true);
+                    atm = m.invoke(null);
+                    if (atm != null) break;
+                } catch (NoSuchMethodException ignored) {}
+            }
+            if (atm == null) {
+                // ActivityManager.getService() → IActivityManager / IActivityTaskManager
+                Method amSvc = Class.forName("android.app.ActivityManager")
+                        .getDeclaredMethod("getService");
+                amSvc.setAccessible(true);
+                atm = amSvc.invoke(null);
+            }
             if (atm == null) return null;
             Method getTasks = null;
             for (String name : new String[] { "getAllRootTaskInfos", "getAllStackInfos" }) {
@@ -164,7 +190,10 @@ public final class OverlayGate {
         } catch (SecurityException se) {
             return null;
         } catch (Throwable t) {
-            Log.w(TAG, "pip detect unavailable", t);
+            if (!pipDetectLogged) {
+                pipDetectLogged = true;
+                Log.i(TAG, "pip detect unavailable (using media_risk pad)");
+            }
             return null;
         }
     }
@@ -198,23 +227,58 @@ public final class OverlayGate {
         int right = content.getPaddingRight();
         int bottom = content.getPaddingBottom();
         Object tag = content.getTag(R.id.quiz_panel);
-        // Store baseline paddings once (use quiz_panel id as stable key bucket via tag).
+        // Store baseline paddings + margins once: [pl,pt,pr,pb, ml,mt,mr,mb]
         int[] base = tag instanceof int[] ? (int[]) tag : null;
+        ViewGroup.MarginLayoutParams mlp = null;
+        if (content.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            mlp = (ViewGroup.MarginLayoutParams) content.getLayoutParams();
+        }
         if (base == null) {
-            base = new int[] { left, top, right, bottom };
+            base = new int[] {
+                    left, top, right, bottom,
+                    mlp != null ? mlp.leftMargin : 0,
+                    mlp != null ? mlp.topMargin : 0,
+                    mlp != null ? mlp.rightMargin : 0,
+                    mlp != null ? mlp.bottomMargin : 0
+            };
             content.setTag(R.id.quiz_panel, base);
         }
+        // Card-like bottom bars: margins only (padding would inflate the filled background).
+        boolean marginOnly = content.getId() == R.id.quiz_stats_bar;
         if (!on) {
             content.setPadding(base[0], base[1], base[2], base[3]);
+            if (mlp != null) {
+                mlp.setMargins(base[4], base[5], base[6], base[7]);
+                content.setLayoutParams(mlp);
+            }
             return;
         }
-        int extraBottom = dp(content, PIP_PAD_BOTTOM_DP);
-        int extraEnd = dp(content, PIP_PAD_END_DP);
+        int[] pads = pipPadsPx(content);
+        int extraEnd = pads[0];
+        int extraBottom = pads[1];
         boolean rtl = content.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-        int newLeft = base[0] + (rtl ? extraEnd : 0);
-        int newRight = base[2] + (rtl ? 0 : extraEnd);
-        int newBottom = Math.max(base[3], extraBottom);
-        content.setPadding(newLeft, base[1], newRight, newBottom);
+        if (!marginOnly) {
+            int newLeft = base[0] + (rtl ? extraEnd : 0);
+            int newRight = base[2] + (rtl ? 0 : extraEnd);
+            int newBottom = Math.max(base[3], extraBottom);
+            content.setPadding(newLeft, base[1], newRight, newBottom);
+        }
+        if (mlp != null && marginOnly) {
+            int mLeft = base[4] + (rtl ? extraEnd : 0);
+            int mRight = base[6] + (rtl ? 0 : extraEnd);
+            int mBottom = Math.max(base[7], extraBottom);
+            mlp.setMargins(mLeft, base[5], mRight, mBottom);
+            content.setLayoutParams(mlp);
+        }
+    }
+
+    /** @return [endPx, bottomPx] sized for tablet PiP footprints. */
+    private static int[] pipPadsPx(View v) {
+        android.util.DisplayMetrics dm = v.getResources().getDisplayMetrics();
+        // ~22% end / 28% bottom clears typical Samsung tablet PiP without crushing the pad.
+        int end = Math.max(dp(v, PIP_PAD_END_DP), Math.round(dm.widthPixels * 0.22f));
+        int bottom = Math.max(dp(v, PIP_PAD_BOTTOM_DP), Math.round(dm.heightPixels * 0.28f));
+        return new int[] { end, bottom };
     }
 
     private static int dp(View v, int dp) {

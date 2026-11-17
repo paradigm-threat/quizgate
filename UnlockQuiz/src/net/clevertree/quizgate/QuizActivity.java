@@ -159,10 +159,10 @@ public class QuizActivity extends Activity {
         choices = findViewById(R.id.choices);
         digitPad = findViewById(R.id.digit_pad);
         quizPanel = findViewById(R.id.quiz_panel);
-        // If system PiP / mini-player still covers the gate, pad content out of the
-        // usual bottom-end corner (degraded UX — cannot force-close foreign PiP).
-        OverlayGate.applyPipAvoidance(this, quizPanel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
+        // If system PiP / mini-player still covers the gate, pad panel + stats out of
+        // the usual bottom-end corner (degraded UX — cannot force-close foreign PiP).
+        OverlayGate.applyPipAvoidance(this, quizPanel, quizStatsBar);
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);
@@ -1228,18 +1228,21 @@ public class QuizActivity extends Activity {
         if (!playMode) {
             AlarmScheduler.scheduleAfterSessionEnd(this);
         }
-        // Bring YouTube / game / whatever back before we disappear
+        // Bring YouTube / game / whatever back before we disappear.
+        // Delay finish slightly so the restore startActivity wins over the
+        // task underneath (often Home once YouTube has moved into system PiP).
         if (restorePreviousApp && PerformanceMode.allowReturnToApp(prefs)) {
             try {
                 ForegroundApp.restore(this);
             } catch (Exception e) {
                 Log.e(AlarmScheduler.TAG, "restore previous app", e);
             }
-        } else {
-            AppPrefs clear = new AppPrefs(this);
-            clear.setResumePackage(null);
-            clear.setResumeClass(null);
+            handler.postDelayed(this::finish, 220);
+            return;
         }
+        AppPrefs clear = new AppPrefs(this);
+        clear.setResumePackage(null);
+        clear.setResumeClass(null);
         finish();
     }
 
