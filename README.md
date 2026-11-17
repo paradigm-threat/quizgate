@@ -51,7 +51,7 @@ Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test
 
-First launch opens skippable onboarding: photos → schedule (default 30±15) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
+First launch opens skippable onboarding: photos → schedule (default 30±15) → UI placement (Top default / Bottom) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
 
 **Fully working** soft gate needs those grants (photos optional). Setup shows a requirements checklist and prompts the next missing gap with a cooldown.
 
@@ -115,6 +115,6 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
 - Leave without answering → bypass (no reopen), logged as skipped
-- YouTube / music: soft-pause **before** the quiz is brought to the foreground (exclusive audio focus + media-pause burst + short settle so auto-PiP is less likely); resume after unlock (best-effort). On API 31+ the quiz window uses `setHideOverlayWindows` for foreign `TYPE_APPLICATION_OVERLAY` windows. System PiP cannot be force-closed — critical quiz controls stay centered and lifted above the bottom-end overlay band (stats may sit in that corner); pinned-task detection is diagnostics-only. Expanding PiP leaves the quiz and counts as bypass. **Usage access** required to return to the prior app after the session
+- YouTube / music: soft-pause **before** the quiz is brought to the foreground (exclusive audio focus + media-pause burst + short settle so auto-PiP is less likely); resume after unlock (best-effort). On API 31+ the quiz window uses `setHideOverlayWindows` for foreign `TYPE_APPLICATION_OVERLAY` windows. Critical quiz controls start near the **top** by default (Parents can choose **bottom**) and can be **dragged anywhere**; they snap back if pulled too far off-screen so answers stay reachable. Expanding PiP leaves the quiz and counts as bypass. **Usage access** required to return to the prior app after the session
 - Success / error transitions use random images from the device gallery when permitted
 - Performance: **Auto** (default) uses full UX when healthy; switches to **Slim** on weak device, low battery, or battery saver — see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)

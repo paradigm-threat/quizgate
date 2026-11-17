@@ -87,8 +87,6 @@ Privacy-safe `msg` tokens (no package names):
 | `was_playing` / `idle` | Soft-pause latch at fire |
 | `pre_pause_settle_ms=N:idle` / `:timeout_active` | Alarm path waited for playback to stop before quiz UI |
 | `overlay_hide_on` / `overlay_hide_unsupported` | `setHideOverlayWindows` availability |
-| `corner_reserve_on:detect=…:layout=bottom_center` | Symmetric bottom clearance for critical controls; detect is diag-only |
-| `pip_detect_recheck:detect=…` | Follow-up pinned-task probe (layout unchanged) |
 | `resume_play` | Best-effort MEDIA_PLAY after unlock |
 
 ### Logcat

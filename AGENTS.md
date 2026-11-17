@@ -24,7 +24,8 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Grants (`ScheduleAuth`) | One at a time: exact alarm → notifications → battery → FSI → overlay → usage |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
 | Stats | `files/stats/` capped JSONL; day rollups 90d; upload OFF |
-| Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays; lift critical controls above bottom-end PiP band (centered; stats may sit in corner); PiP detect = diag only |
+| Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |
+| Quiz UI | Pref `ui_placement` top (default) / bottom as initial anchor; critical column is 2D-pannable with snap-back so answers stay reachable |
 | Curriculum | bundled `basic-math` v3 (+ sparse subtraction) |
 
 ## Key docs

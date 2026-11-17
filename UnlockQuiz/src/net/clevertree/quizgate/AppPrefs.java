@@ -72,6 +72,30 @@ public final class AppPrefs {
         sp.edit().putString("math_entry", mode).apply();
     }
 
+    /** Critical quiz UI packed toward the top of the screen (default). */
+    public static final String UI_PLACEMENT_TOP = "top";
+    /** Critical quiz UI packed toward the bottom of the screen. */
+    public static final String UI_PLACEMENT_BOTTOM = "bottom";
+
+    /**
+     * Parent preference: where to pack critical quiz controls.
+     * {@link #UI_PLACEMENT_TOP} (default) or {@link #UI_PLACEMENT_BOTTOM}.
+     */
+    public String getUiPlacement() {
+        String v = sp.getString("ui_placement", UI_PLACEMENT_TOP);
+        return UI_PLACEMENT_BOTTOM.equals(v) ? UI_PLACEMENT_BOTTOM : UI_PLACEMENT_TOP;
+    }
+
+    public void setUiPlacement(String placement) {
+        sp.edit().putString("ui_placement",
+                UI_PLACEMENT_BOTTOM.equals(placement) ? UI_PLACEMENT_BOTTOM : UI_PLACEMENT_TOP)
+                .apply();
+    }
+
+    public boolean isUiBottom() {
+        return UI_PLACEMENT_BOTTOM.equals(getUiPlacement());
+    }
+
     public boolean useDigitPadForMath() {
         return !"multiple_choice".equals(getMathEntryMode());
     }

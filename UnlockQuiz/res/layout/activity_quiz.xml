@@ -18,94 +18,102 @@
         android:layout_height="match_parent"
         android:background="#D9F7F1E8"/>
 
-    <!-- Critical quiz column: centered in the safe area. OverlayGate adds symmetric
-         bottom inset so digit pad / answers / T/F sit above the bottom-end PiP band. -->
-    <LinearLayout
-        android:id="@+id/quiz_panel"
+    <!-- 2D pan host: drag the question/answers anywhere; snap-back keeps
+         critical controls recoverable if panned too far off-screen. -->
+    <net.clevertree.quizgate.QuizPanView
+        android:id="@+id/quiz_pan"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingLeft="24dp"
-        android:paddingRight="24dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="88dp"
-        android:gravity="center">
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp">
 
-        <TextView
-            android:id="@+id/header"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/header"
-            android:textColor="@color/header"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:gravity="center"/>
-
-        <!-- Question “balloon”: inflate / relax pulse -->
         <LinearLayout
-            android:id="@+id/question_balloon"
+            android:id="@+id/quiz_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:orientation="vertical"
             android:gravity="center_horizontal"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
             <TextView
-                android:id="@+id/spoken"
+                android:id="@+id/header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="@string/header"
                 android:textColor="@color/header"
-                android:textSize="28sp"
+                android:textSize="26sp"
+                android:textStyle="bold"
                 android:gravity="center"/>
 
-            <TextView
-                android:id="@+id/symbolic"
+            <!-- Question “balloon”: inflate / relax pulse -->
+            <LinearLayout
+                android:id="@+id/question_balloon"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:textColor="@color/symbolic"
-                android:textSize="36sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:visibility="gone"/>
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
-            <TextView
-                android:id="@+id/digit_answer"
+                <TextView
+                    android:id="@+id/spoken"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/header"
+                    android:textSize="28sp"
+                    android:gravity="center"/>
+
+                <TextView
+                    android:id="@+id/symbolic"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="@color/symbolic"
+                    android:textSize="36sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:visibility="gone"/>
+
+                <TextView
+                    android:id="@+id/digit_answer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/accent_dark"
+                    android:textSize="44sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:minHeight="56dp"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/choices"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/accent_dark"
-                android:textSize="44sp"
-                android:textStyle="bold"
+                android:orientation="vertical"
                 android:gravity="center"
-                android:minHeight="56dp"
+                android:layout_marginTop="16dp"/>
+
+            <LinearLayout
+                android:id="@+id/digit_pad"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
                 android:visibility="gone"/>
         </LinearLayout>
+    </net.clevertree.quizgate.QuizPanView>
 
-        <LinearLayout
-            android:id="@+id/choices"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:layout_marginTop="16dp"/>
-
-        <LinearLayout
-            android:id="@+id/digit_pad"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:visibility="gone"/>
-    </LinearLayout>
-
-    <!-- Today's stats — pinned to screen bottom, away from keypad -->
+    <!-- Today's stats — opposite end from the initial UI anchor. -->
     <LinearLayout
         android:id="@+id/quiz_stats_bar"
         android:layout_width="match_parent"
@@ -114,6 +122,7 @@
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginBottom="12dp"
+        android:layout_marginTop="12dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="14dp"

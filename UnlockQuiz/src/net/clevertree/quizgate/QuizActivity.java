@@ -13,6 +13,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
@@ -95,6 +96,7 @@ public class QuizActivity extends Activity {
     private int balloonCyclesLeft;
     private LinearLayout choices;
     private LinearLayout digitPad;
+    private QuizPanView quizPan;
     private View quizPanel;
     private View quizStatsBar;
     private TextView quizStatsMood;
@@ -158,11 +160,10 @@ public class QuizActivity extends Activity {
         questionBalloon = findViewById(R.id.question_balloon);
         choices = findViewById(R.id.choices);
         digitPad = findViewById(R.id.digit_pad);
+        quizPan = findViewById(R.id.quiz_pan);
         quizPanel = findViewById(R.id.quiz_panel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
-        // Lift critical controls above the bottom-end overlay/PiP band; stats may sit
-        // in that corner. Pause-before-launch remains the primary anti-PiP measure.
-        OverlayGate.applyPipAvoidance(this, quizPanel);
+        applyUiPlacement();
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);
@@ -263,6 +264,7 @@ public class QuizActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         OverlayGate.onFocus(this);
+        applyUiPlacement();
         if (browsingStats) browsingStats = false;
     }
 
@@ -488,11 +490,35 @@ public class QuizActivity extends Activity {
         return btn;
     }
 
+    /**
+     * Initial Top/Bottom anchor from parent preference. Kids can then pan the
+     * question UI freely in 2D; {@link QuizPanView} snaps back if dragged too far.
+     */
+    private void applyUiPlacement() {
+        final boolean bottom = prefs != null && prefs.isUiBottom();
+        if (quizPan != null) {
+            quizPan.setAnchorBottom(bottom);
+            quizPan.resetPan(false);
+        }
+        if (quizStatsBar != null) {
+            FrameLayout.LayoutParams lp = quizStatsBar.getLayoutParams() instanceof FrameLayout.LayoutParams
+                    ? (FrameLayout.LayoutParams) quizStatsBar.getLayoutParams()
+                    : new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.gravity = bottom ? Gravity.TOP | Gravity.CENTER_HORIZONTAL
+                    : Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+            lp.leftMargin = dp(16);
+            lp.rightMargin = dp(16);
+            lp.topMargin = dp(12);
+            lp.bottomMargin = dp(12);
+            quizStatsBar.setLayoutParams(lp);
+        }
+    }
+
     private void buildDigitPad() {
-        // rows: 1 2 3 / 4 5 6 / 7 8 9 / OK 0 Clear
-        // OK is leftmost so system YouTube PiP (typically bottom-right) does not
-        // cover the primary submit control — setHideOverlayWindows cannot hide PiP.
-        // Landscape: compact keys so the pad fits above the bottom-end PiP band.
+        // rows: 1 2 3 / 4 5 6 / 7 8 9 / Clear 0 OK
+        // Landscape: compact keys so the pad fits on short screens.
         boolean land = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
         int keyH = land ? dp(48) : dp(68);
@@ -503,9 +529,9 @@ public class QuizActivity extends Activity {
                 {1, 2, 3},
                 {4, 5, 6},
                 {7, 8, 9},
-                {-2, 0, -1} // -2 enter/OK, -1 clear
+                {-1, 0, -2} // -1 clear, -2 enter/OK
         };
-        // Cap width and center — full-bleed landscape keys stretch into the PiP corner.
+        // Cap width and keep the pad centered horizontally.
         int screenW = getResources().getDisplayMetrics().widthPixels;
         int padW = Math.min(screenW - dp(48), dp(land ? 520 : 720));
         LinearLayout.LayoutParams padLp = new LinearLayout.LayoutParams(
@@ -558,6 +584,7 @@ public class QuizActivity extends Activity {
             }
             digitPad.addView(line);
         }
+        if (quizPan != null) quizPan.requestLayout();
     }
 
     private Button styleChoiceButton(String label, Integer chipColor) {

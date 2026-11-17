@@ -52,7 +52,9 @@ public class SetupActivity extends Activity {
     private TextView uuidLine;
     private Spinner curriculumSpinner;
     private Spinner tierSpinner;
+    private Spinner uiPlacementSpinner;
     private Spinner perfModeSpinner;
+    private TextView uiPlacementDetail;
     private TextView perfDetail;
     private TextView intervalValue;
     private TextView jitterValue;
@@ -62,6 +64,7 @@ public class SetupActivity extends Activity {
     private View reqCard;
     private final List<CurriculumPack> packList = new ArrayList<>();
     private boolean suppressSpinner;
+    private boolean suppressUiPlacementSpinner;
     private boolean suppressPerfSpinner;
     private boolean skipAuthWarn;
     private final Handler countdownHandler = new Handler(Looper.getMainLooper());
@@ -92,7 +95,9 @@ public class SetupActivity extends Activity {
         uuidLine = findViewById(R.id.setup_uuid_line);
         curriculumSpinner = findViewById(R.id.curriculum_spinner);
         tierSpinner = findViewById(R.id.tier_spinner);
+        uiPlacementSpinner = findViewById(R.id.ui_placement_spinner);
         perfModeSpinner = findViewById(R.id.perf_mode_spinner);
+        uiPlacementDetail = findViewById(R.id.setup_ui_placement_detail);
         perfDetail = findViewById(R.id.setup_perf_detail);
         intervalValue = findViewById(R.id.setup_interval_value);
         jitterValue = findViewById(R.id.setup_jitter_value);
@@ -123,6 +128,7 @@ public class SetupActivity extends Activity {
         if (remoteSave != null) {
             remoteSave.setOnClickListener(v -> saveRemoteManagement());
         }
+        bindUiPlacementSpinner();
         bindPerfModeSpinner();
         syncNow.setOnClickListener(v -> {
             if (!prefs.isSyncEnabled()) {
@@ -153,6 +159,45 @@ public class SetupActivity extends Activity {
         refreshScheduleLabels();
         refreshStatus();
         CurriculumIndexClient.syncIfEnabled(this);
+    }
+
+    private void bindUiPlacementSpinner() {
+        if (uiPlacementSpinner == null) return;
+        AppPrefs prefs = new AppPrefs(this);
+        // Order: Top (0, default), Bottom (1)
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.setup_ui_placement_top));
+        labels.add(getString(R.string.setup_ui_placement_bottom));
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item, labels);
+        suppressUiPlacementSpinner = true;
+        uiPlacementSpinner.setAdapter(adapter);
+        int sel = prefs.isUiBottom() ? 1 : 0;
+        uiPlacementSpinner.setSelection(sel);
+        refreshUiPlacementDetail(prefs.getUiPlacement());
+        uiPlacementSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (suppressUiPlacementSpinner) return;
+                String placement = position == 1
+                        ? AppPrefs.UI_PLACEMENT_BOTTOM : AppPrefs.UI_PLACEMENT_TOP;
+                AppPrefs p = new AppPrefs(SetupActivity.this);
+                if (!placement.equals(p.getUiPlacement())) {
+                    p.setUiPlacement(placement);
+                }
+                refreshUiPlacementDetail(placement);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        suppressUiPlacementSpinner = false;
+    }
+
+    private void refreshUiPlacementDetail(String placement) {
+        if (uiPlacementDetail == null) return;
+        if (AppPrefs.UI_PLACEMENT_BOTTOM.equals(placement)) {
+            uiPlacementDetail.setText(R.string.setup_ui_placement_bottom_detail);
+        } else {
+            uiPlacementDetail.setText(R.string.setup_ui_placement_top_detail);
+        }
     }
 
     private void bindPerfModeSpinner() {
