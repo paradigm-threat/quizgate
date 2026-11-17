@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <!-- Appear on top: BAL exemption so scheduled locks can open while another app is foreground (Android 10+/16). -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <!-- Hide other apps' overlay windows while the quiz gate is focused (API 31+). -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -70,6 +72,8 @@
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
+            android:resizeableActivity="false"
+            android:supportsPictureInPicture="false"
             android:theme="@style/Theme.UnlockQuiz.Fullscreen">
             <intent-filter>
                 <action android:name="net.clevertree.quizgate.FORCE_QUIZ"/>

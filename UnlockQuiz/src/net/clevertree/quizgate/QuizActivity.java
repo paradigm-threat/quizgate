@@ -13,7 +13,6 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
@@ -134,11 +133,8 @@ public class QuizActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                        | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        // Hide foreign overlays + immersive before content draws (preferred over PiP).
+        OverlayGate.apply(this);
         setContentView(R.layout.activity_quiz);
         prefs = new AppPrefs(this);
         // Capture previous app if alarm path missed it (e.g. Test quiz / ADB).
@@ -148,7 +144,8 @@ public class QuizActivity extends Activity {
         } else if (!PerformanceMode.allowReturnToApp(prefs)) {
             restorePreviousApp = false;
         }
-        // Pause YouTube / music / game audio while the quiz is up
+        // Pause YouTube / music / game audio while the quiz is up (required even if
+        // overlay/PiP hide is unavailable on the OEM).
         mediaGate.pauseForQuiz(this);
         spoken = findViewById(R.id.spoken);
         symbolic = findViewById(R.id.symbolic);
@@ -250,7 +247,13 @@ public class QuizActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        OverlayGate.onFocus(this);
         if (browsingStats) browsingStats = false;
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) OverlayGate.onFocus(this);
     }
 
     private void startRound(String trigger) {

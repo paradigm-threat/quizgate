@@ -23,7 +23,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Grants (`ScheduleAuth`) | One at a time: exact alarm → notifications → battery → FSI → overlay → usage |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
 | Stats | `files/stats/` capped JSONL; day rollups 90d; upload OFF |
-| Media | Usage access for return-to-app; soft pause on quiz, resume after unlock |
+| Media | Usage access for return-to-app; soft pause on quiz, resume after unlock; API 31+ hide foreign overlays on gate |
 | Curriculum | bundled `basic-math` v3 (+ sparse subtraction) |
 
 ## Key docs

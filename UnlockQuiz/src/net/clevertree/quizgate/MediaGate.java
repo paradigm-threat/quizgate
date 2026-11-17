@@ -15,12 +15,21 @@ import android.view.KeyEvent;
  * appears, then resume after unlock. Uses exclusive transient audio focus + media
  * key events — no Accessibility Service required. Resume is best-effort.
  *
- * <p>State is process-wide: alarm / FGS / QuizActivity may each call
- * {@link #pauseForQuiz} after media is already paused; a second call must not
- * clear the "was playing" latch or the unlock path would skip {@code MEDIA_PLAY}.
+ * <p>Must work whether the player is in the foreground or already in background
+ * (e.g. YouTube Premium "Background play"). State is process-wide: alarm / FGS /
+ * QuizActivity may each call {@link #pauseForQuiz}; a second call must not clear
+ * the "was playing" latch or the unlock path would skip {@code MEDIA_PLAY}.
  */
 public final class MediaGate {
     private static final String TAG = AlarmScheduler.TAG;
+
+    /** Retry offsets — background YouTube often ignores the first MEDIA_PAUSE. */
+    private static final long[] PAUSE_RETRY_MS = { 0L, 80L, 200L, 450L, 900L, 1600L };
+    /**
+     * PLAY after restore: YouTube's activity must be frontmost; Premium BG play
+     * and cold-ish task restores often ignore the first one or two keys.
+     */
+    private static final long[] PLAY_RETRY_MS = { 0L, 350L, 800L, 1400L, 2200L };
 
     private static final Object LOCK = new Object();
     private static AudioManager audioManager;
@@ -28,6 +37,8 @@ public final class MediaGate {
     private static boolean heldFocus;
     private static boolean shouldResume;
     private static final Handler handler = new Handler(Looper.getMainLooper());
+    private static int pauseGeneration;
+    private static int playGeneration;
 
     public void pauseForQuiz(Context ctx) {
         Context app = ctx.getApplicationContext();
@@ -36,6 +47,7 @@ public final class MediaGate {
         AppPrefs prefs = new AppPrefs(app);
         boolean resumeLatch;
         boolean focusHeld;
+        final int gen;
         synchronized (LOCK) {
             audioManager = am;
             // Latch sticky across duplicate pauses (AlarmReceiver then QuizActivity).
@@ -44,15 +56,25 @@ public final class MediaGate {
                 prefs.setMediaWasPlaying(true);
             }
             requestExclusiveTransientFocusLocked();
+            // If music is still active after focus, keep latching — Premium BG play
+            // may duck briefly then keep going until MEDIA_PAUSE lands.
+            if (am.isMusicActive()) {
+                shouldResume = true;
+                prefs.setMediaWasPlaying(true);
+            }
             resumeLatch = shouldResume;
             focusHeld = heldFocus;
+            pauseGeneration++;
+            gen = pauseGeneration;
+            // Cancel any in-flight PLAY from a prior session.
+            playGeneration++;
         }
-        // Explicit pause helps players that only duck on focus loss (YouTube, etc.)
+        // Immediate pause before the activity finishes drawing — helps collapse
+        // YouTube's minimized/PiP audio path as early as AlarmReceiver/FGS.
         dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-        // Slim: one key event is enough — skip the delayed duplicate.
-        if (PerformanceMode.allowRichMotion(prefs)) {
-            handler.postDelayed(() -> dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE), 180);
-        }
+        // Burst MEDIA_PAUSE — foreground YT usually stops on the first; background
+        // Premium playback often needs several tries after focus is held.
+        schedulePauseBurst(gen, prefs);
         if (PerformanceMode.verboseLog(prefs)) {
             Log.i(TAG, "media pause for quiz wasPlaying=" + resumeLatch + " focus=" + focusHeld);
         }
@@ -64,6 +86,32 @@ public final class MediaGate {
                     .message(resumeLatch ? "was_playing" : "idle")
                     .build());
         } catch (Exception ignored) {}
+    }
+
+    private void schedulePauseBurst(int gen, AppPrefs prefs) {
+        boolean rich = PerformanceMode.allowRichMotion(prefs);
+        long[] delays = rich ? PAUSE_RETRY_MS : new long[] { 0L, 200L, 600L };
+        for (long delay : delays) {
+            handler.postDelayed(() -> {
+                synchronized (LOCK) {
+                    if (gen != pauseGeneration) return;
+                }
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
+                // Re-assert latch if audio is still flowing mid-burst.
+                AudioManager am;
+                synchronized (LOCK) {
+                    am = audioManager;
+                }
+                if (am != null && am.isMusicActive()) {
+                    synchronized (LOCK) {
+                        shouldResume = true;
+                    }
+                    try {
+                        prefs.setMediaWasPlaying(true);
+                    } catch (Exception ignored) {}
+                }
+            }, delay);
+        }
     }
 
     public void resumeAfterQuiz() {
@@ -81,9 +129,19 @@ public final class MediaGate {
                 }
             }
         }
+        // Invalidate in-flight pause retries so they don't pause right after we resume.
+        final int playGen;
+        synchronized (LOCK) {
+            pauseGeneration++;
+            playGeneration++;
+            playGen = playGeneration;
+        }
+        // Give ForegroundApp.restore a beat to bring YouTube (or similar) forward
+        // before we abandon focus + send MEDIA_PLAY.
         handler.postDelayed(() -> {
             boolean play;
             synchronized (LOCK) {
+                if (playGen != playGeneration) return;
                 play = shouldResume;
                 if (!play && app != null && new AppPrefs(app).wasMediaPlaying()) {
                     play = true;
@@ -94,31 +152,56 @@ public final class MediaGate {
                 // Abandon focus first so the previous player is eligible to resume
                 abandonFocus();
                 if (play) {
-                    handler.postDelayed(() -> {
-                        dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
-                        // YouTube often needs a second PLAY once its activity is frontmost.
-                        handler.postDelayed(() -> dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY), 450);
-                        Log.i(TAG, "media resume after quiz");
-                    }, 250);
+                    for (long delay : PLAY_RETRY_MS) {
+                        handler.postDelayed(() -> {
+                            synchronized (LOCK) {
+                                if (playGen != playGeneration) return;
+                            }
+                            dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
+                        }, 400 + delay);
+                    }
+                    Log.i(TAG, "media resume after quiz");
+                    try {
+                        if (app != null) {
+                            Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
+                                            System.currentTimeMillis(),
+                                            net.clevertree.quizgate.core.DiagnosticsStore.KIND_MEDIA)
+                                    .mediaFocus(false)
+                                    .message("resume_play")
+                                    .build());
+                        }
+                    } catch (Exception ignored) {}
                 }
             } finally {
-                synchronized (LOCK) {
-                    shouldResume = false;
-                }
-                if (app != null) {
+                // Keep sticky latch until the PLAY burst finishes so a duplicate
+                // resumeAfterQuiz(onStop+onDestroy) can still see wasMediaPlaying.
+                final boolean clearLatch = play;
+                handler.postDelayed(() -> {
+                    synchronized (LOCK) {
+                        if (playGen == playGeneration) {
+                            shouldResume = false;
+                        }
+                    }
+                    if (clearLatch && app != null) {
+                        new AppPrefs(app).setMediaWasPlaying(false);
+                    }
+                }, clearLatch ? 400L + PLAY_RETRY_MS[PLAY_RETRY_MS.length - 1] + 200L : 0L);
+                if (!clearLatch && app != null) {
                     new AppPrefs(app).setMediaWasPlaying(false);
                 }
             }
-        }, 350);
+        }, 550);
     }
 
     private void requestExclusiveTransientFocusLocked() {
         if (audioManager == null) return;
         if (heldFocus && focusRequest != null) return;
         try {
+            // USAGE_MEDIA: YouTube / ExoPlayer treat this as a real contender and
+            // pause more reliably than ASSISTANCE_SONIFICATION (esp. background play).
             AudioAttributes attrs = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build();
             focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
                     .setAudioAttributes(attrs)
@@ -166,7 +249,7 @@ public final class MediaGate {
         long now = SystemClock.uptimeMillis();
         try {
             am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-            am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+            am.dispatchMediaKeyEvent(new KeyEvent(now + 1, now + 1, KeyEvent.ACTION_UP, keyCode, 0));
         } catch (Exception e) {
             Log.e(TAG, "media key " + keyCode, e);
         }

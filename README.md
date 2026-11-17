@@ -112,6 +112,6 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
 - Leave without answering → bypass (no reopen), logged as skipped
-- YouTube / music: soft-pause when the quiz opens (exclusive audio focus + media pause); resume after unlock (best-effort). **Usage access** required to return to the prior app after the session
+- YouTube / music: soft-pause when the quiz opens (exclusive audio focus + media pause); resume after unlock (best-effort). On API 31+ the quiz window also uses `setHideOverlayWindows` so foreign overlays stay off the gate (system PiP cannot be force-closed by third-party apps — expanding it leaves the quiz and counts as bypass). **Usage access** required to return to the prior app after the session
 - Success / error transitions use random images from the device gallery when permitted
 - Performance: **Auto** (default) uses full UX when healthy; switches to **Slim** on weak device, low battery, or battery saver — see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)
