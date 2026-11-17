@@ -8,7 +8,6 @@ import android.os.Looper;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -25,9 +24,11 @@ import java.util.List;
  *   <li>{@link Window#setHideOverlayWindows(boolean)} (API 31+) hides other apps'
  *       {@code TYPE_APPLICATION_OVERLAY} windows while we are focused (not system PiP).</li>
  *   <li>Immersive sticky + high-priority fullscreen layout so the quiz owns the display.</li>
- *   <li>Always reserve a modest bottom-end band (stats bar / margins) for the usual
- *       system-overlay / PiP corner. Layout is <em>not</em> gated on detection —
- *       pinned-task probes are diagnostics-only. System PiP cannot be force-closed.</li>
+ *   <li>Always lift critical quiz controls (digit pad / answers / T/F) above the usual
+ *       bottom-end overlay/PiP band via symmetric bottom inset. Horizontal padding stays
+ *       balanced so the main column stays centered. Stats may sit in that corner.
+ *       Layout is <em>not</em> gated on detection — pinned-task probes are diagnostics-only.
+ *       System PiP cannot be force-closed.</li>
  * </ol>
  *
  * <p>Does not add a new Appear-on-top requirement; {@code SYSTEM_ALERT_WINDOW} remains
@@ -37,11 +38,13 @@ public final class OverlayGate {
     private static final String TAG = AlarmScheduler.TAG;
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
     /**
-     * Modest permanent reserve for the usual bottom-end overlay/PiP corner.
-     * Floors + small fractions — enough for stats/margins, not enough to crush the pad.
+     * Permanent bottom clearance so critical controls sit above the usual overlay/PiP
+     * band. Landscape needs a taller reserve (short side); portrait uses a lighter floor.
+     * No end inset — that shoved the whole column off-center.
      */
-    private static final int CORNER_PAD_BOTTOM_DP = 112;
-    private static final int CORNER_PAD_END_DP = 96;
+    private static final int CORNER_PAD_BOTTOM_PORTRAIT_DP = 120;
+    /** Landscape PiP is short-side tall — leave ~40% so keys sit above the band. */
+    private static final int CORNER_PAD_BOTTOM_LANDSCAPE_DP = 280;
     /** Diagnostics-only rechecks (layout already reserved permanently). */
     private static final long[] PIP_DETECT_RECHECK_MS = { 400L, 900L, 1600L, 2800L };
 
@@ -84,9 +87,9 @@ public final class OverlayGate {
     }
 
     /**
-     * Always reserve the usual bottom-end overlay/PiP corner for quiz chrome
-     * (stats bar margins + modest panel end inset). Detection is diagnostics-only
-     * and never toggles layout. Call after {@code setContentView}.
+     * Lift critical quiz panel content above the usual bottom-end overlay/PiP band.
+     * Pass the quiz panel only — stats stay in the corner (non-critical). Detection is
+     * diagnostics-only and never toggles layout. Call after {@code setContentView}.
      */
     public static void applyPipAvoidance(Activity activity, View... contents) {
         if (activity == null || contents == null || contents.length == 0) return;
@@ -99,7 +102,7 @@ public final class OverlayGate {
         String detect = pinned == null ? "unknown" : (pinned ? "pinned" : "clear");
         String msg = "corner_reserve_on:detect=" + detect
                 + (mediaRisk ? ":media_risk" : "")
-                + ":layout=always";
+                + ":layout=bottom_center";
         Log.i(TAG, msg);
         try {
             Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
@@ -213,60 +216,42 @@ public final class OverlayGate {
     }
 
     /**
-     * Permanent bottom-end reserve. Stats bar uses margins only (filled card);
-     * quiz panel gets a modest end inset and leaves bottom height to the layout's
-     * existing stats clearance so the digit pad is not crushed.
+     * Permanent bottom clearance for critical controls. Stats are skipped (may sit under
+     * PiP). Horizontal padding stays at layout baseline so the column remains centered.
      */
     private static void applyCornerReserve(View content) {
+        if (content.getId() == R.id.quiz_stats_bar) {
+            // Non-critical chrome — leave in the bottom-end corner.
+            return;
+        }
         int left = content.getPaddingLeft();
         int top = content.getPaddingTop();
         int right = content.getPaddingRight();
         int bottom = content.getPaddingBottom();
         Object tag = content.getTag(R.id.quiz_panel);
-        // Store baseline paddings + margins once: [pl,pt,pr,pb, ml,mt,mr,mb]
+        // Store baseline paddings once: [pl,pt,pr,pb]
         int[] base = tag instanceof int[] ? (int[]) tag : null;
-        ViewGroup.MarginLayoutParams mlp = null;
-        if (content.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-            mlp = (ViewGroup.MarginLayoutParams) content.getLayoutParams();
-        }
-        if (base == null) {
-            base = new int[] {
-                    left, top, right, bottom,
-                    mlp != null ? mlp.leftMargin : 0,
-                    mlp != null ? mlp.topMargin : 0,
-                    mlp != null ? mlp.rightMargin : 0,
-                    mlp != null ? mlp.bottomMargin : 0
-            };
+        if (base == null || base.length < 4) {
+            base = new int[] { left, top, right, bottom };
             content.setTag(R.id.quiz_panel, base);
         }
-        boolean marginOnly = content.getId() == R.id.quiz_stats_bar;
-        int[] pads = cornerPadsPx(content);
-        int extraEnd = pads[0];
-        int extraBottom = pads[1];
-        boolean rtl = content.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-        if (marginOnly) {
-            if (mlp != null) {
-                int mLeft = base[4] + (rtl ? extraEnd : 0);
-                int mRight = base[6] + (rtl ? 0 : extraEnd);
-                int mBottom = Math.max(base[7], extraBottom);
-                mlp.setMargins(mLeft, base[5], mRight, mBottom);
-                content.setLayoutParams(mlp);
-            }
-            return;
-        }
-        // Panel: end inset only — bottom clearance stays at layout paddingBottom (stats).
-        int newLeft = base[0] + (rtl ? extraEnd : 0);
-        int newRight = base[2] + (rtl ? 0 : extraEnd);
-        content.setPadding(newLeft, base[1], newRight, base[3]);
+        int extraBottom = cornerBottomPx(content);
+        // Symmetric L/R — only raise the floor so pad/answers clear the overlay band.
+        content.setPadding(base[0], base[1], base[2], Math.max(base[3], extraBottom));
     }
 
-    /** @return [endPx, bottomPx] sized for a modest tablet overlay corner. */
-    private static int[] cornerPadsPx(View v) {
+    /** Bottom px sized to clear a typical tablet PiP / mini-player band. */
+    private static int cornerBottomPx(View v) {
         android.util.DisplayMetrics dm = v.getResources().getDisplayMetrics();
-        // ~10% end / 12% bottom — clears typical mini-player corner without crushing keys.
-        int end = Math.max(dp(v, CORNER_PAD_END_DP), Math.round(dm.widthPixels * 0.10f));
-        int bottom = Math.max(dp(v, CORNER_PAD_BOTTOM_DP), Math.round(dm.heightPixels * 0.12f));
-        return new int[] { end, bottom };
+        boolean landscape = dm.widthPixels > dm.heightPixels;
+        int shortSide = Math.min(dm.widthPixels, dm.heightPixels);
+        // Landscape uses height (short side): measured YouTube PiP tops ~37–40% up.
+        // Portrait: lighter band — pad already sits well above typical PiP.
+        float frac = landscape ? 0.42f : 0.16f;
+        int floorDp = landscape ? CORNER_PAD_BOTTOM_LANDSCAPE_DP : CORNER_PAD_BOTTOM_PORTRAIT_DP;
+        int base = Math.max(dp(v, floorDp), Math.round(shortSide * frac));
+        // Small extra gap so key bottoms are not flush with the PiP top edge.
+        return base + (landscape ? dp(v, 12) : 0);
     }
 
     private static int dp(View v, int dp) {

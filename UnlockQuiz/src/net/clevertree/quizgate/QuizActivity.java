@@ -160,9 +160,9 @@ public class QuizActivity extends Activity {
         digitPad = findViewById(R.id.digit_pad);
         quizPanel = findViewById(R.id.quiz_panel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
-        // Always reserve the usual bottom-end overlay/PiP corner (stats/margins);
-        // pause-before-launch is the primary anti-PiP measure — detection is diag-only.
-        OverlayGate.applyPipAvoidance(this, quizPanel, quizStatsBar);
+        // Lift critical controls above the bottom-end overlay/PiP band; stats may sit
+        // in that corner. Pause-before-launch remains the primary anti-PiP measure.
+        OverlayGate.applyPipAvoidance(this, quizPanel);
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);
@@ -465,18 +465,21 @@ public class QuizActivity extends Activity {
     }
 
     private Button styleTrueFalseButton(String mark, int fill, String choice) {
+        boolean land = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        int size = land ? dp(72) : dp(96);
         Button btn = new Button(this);
         btn.setText(mark);
         btn.setAllCaps(false);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, land ? 28 : 36);
         btn.setTextColor(Color.WHITE);
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
         bg.setColor(fill);
         bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
         btn.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(96), dp(96));
-        lp.setMargins(dp(20), dp(12), dp(20), dp(12));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+        lp.setMargins(dp(20), dp(land ? 8 : 12), dp(20), dp(land ? 8 : 12));
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
         btn.setContentDescription(PresentedQuestion.CHOICE_TRUE.equals(choice)
@@ -489,12 +492,26 @@ public class QuizActivity extends Activity {
         // rows: 1 2 3 / 4 5 6 / 7 8 9 / OK 0 Clear
         // OK is leftmost so system YouTube PiP (typically bottom-right) does not
         // cover the primary submit control — setHideOverlayWindows cannot hide PiP.
+        // Landscape: compact keys so the pad fits above the bottom-end PiP band.
+        boolean land = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        int keyH = land ? dp(48) : dp(68);
+        int keySp = land ? 22 : 28;
+        int clearSp = land ? 15 : 18;
+        int keyMargin = land ? dp(4) : dp(6);
         int[][] rows = {
                 {1, 2, 3},
                 {4, 5, 6},
                 {7, 8, 9},
                 {-2, 0, -1} // -2 enter/OK, -1 clear
         };
+        // Cap width and center — full-bleed landscape keys stretch into the PiP corner.
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int padW = Math.min(screenW - dp(48), dp(land ? 520 : 720));
+        LinearLayout.LayoutParams padLp = new LinearLayout.LayoutParams(
+                padW, LinearLayout.LayoutParams.WRAP_CONTENT);
+        padLp.gravity = Gravity.CENTER_HORIZONTAL;
+        digitPad.setLayoutParams(padLp);
         for (int[] row : rows) {
             LinearLayout line = new LinearLayout(this);
             line.setOrientation(LinearLayout.HORIZONTAL);
@@ -505,15 +522,15 @@ public class QuizActivity extends Activity {
             for (int key : row) {
                 Button btn = new Button(this);
                 btn.setAllCaps(false);
-                btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
+                btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, keySp);
                 btn.setTextColor(Color.parseColor("#1A3A4A"));
                 GradientDrawable bg = new GradientDrawable();
-                bg.setCornerRadius(dp(16));
+                bg.setCornerRadius(dp(land ? 12 : 16));
                 bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
                 bg.setColor(Color.WHITE);
                 btn.setBackground(bg);
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(68), 1f);
-                lp.setMargins(dp(6), dp(6), dp(6), dp(6));
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, keyH, 1f);
+                lp.setMargins(keyMargin, keyMargin, keyMargin, keyMargin);
                 btn.setLayoutParams(lp);
                 if (key >= 0) {
                     btn.setText(String.valueOf(key));
@@ -525,7 +542,7 @@ public class QuizActivity extends Activity {
                     });
                 } else if (key == -1) {
                     btn.setText("Clear");
-                    btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+                    btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, clearSp);
                     btn.setOnClickListener(v -> {
                         digitAnswer.clear();
                         refreshDigitAnswer();

@@ -18,6 +18,8 @@
         android:layout_height="match_parent"
         android:background="#D9F7F1E8"/>
 
+    <!-- Critical quiz column: centered in the safe area. OverlayGate adds symmetric
+         bottom inset so digit pad / answers / T/F sit above the bottom-end PiP band. -->
     <LinearLayout
         android:id="@+id/quiz_panel"
         android:layout_width="match_parent"
@@ -27,13 +29,12 @@
         android:paddingRight="24dp"
         android:paddingTop="24dp"
         android:paddingBottom="88dp"
-        android:gravity="center_horizontal">
+        android:gravity="center">
 
         <TextView
             android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
             android:text="@string/header"
             android:textColor="@color/header"
             android:textSize="26sp"
@@ -45,7 +46,7 @@
             android:id="@+id/question_balloon"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="16dp"
             android:orientation="vertical"
             android:gravity="center_horizontal"
             android:paddingLeft="8dp"
@@ -88,8 +89,7 @@
         <LinearLayout
             android:id="@+id/choices"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginTop="16dp"/>
