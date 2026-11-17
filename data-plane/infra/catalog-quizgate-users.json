@@ -1,0 +1,19 @@
+{
+  "schema": "relay.catalog-repo.v1",
+  "repo": "quizgate-users",
+  "description": "QuizGate anonymized per-UUID progress SoT. UUID = capability; batch SI sole tip writer.",
+  "tier": "hosted",
+  "forge_url": "git://iad1.relaygateway.net:9418/quizgate-users.git",
+  "relay_root_commit": "25cc12a8a94da57da28d8e43c84b5da472fc2f97",
+  "publish_branch": "users",
+  "publish_origin": "iad1.relaygateway.net",
+  "signing_keys_source": "repo",
+  "domains": [],
+  "limits": {
+    "allow_binary_files": false,
+    "thin_ipfs_assets": false,
+    "fleet_pin_ipfs": false,
+    "max_ipfs_bytes": 0
+  },
+  "notes": "Merge into relay-master catalog/repos/quizgate-users.json for durable peer authorize. Hot-patched on iad1/ord1/hkg1 2026-11-17. Do not list api.quizgate.app in domains[] (Intake is Caddy → :8791, not park → :8080)."
+}

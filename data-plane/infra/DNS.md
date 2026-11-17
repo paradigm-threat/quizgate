@@ -23,9 +23,11 @@ TLS: terminate on Intake (Caddy/park) for `api.quizgate.app`, or Vercel proxy if
 
 | Name | Type | Value | Notes |
 |------|------|-------|-------|
-| `api` | A | `162.209.124.53` | iad1 — terminate TLS + proxy to Intake `:8791` |
+| `api` | A | `162.209.124.53` | iad1 — Caddy on-demand TLS → Intake `:8791` |
 
-See [`INTAKE_HOST.md`](INTAKE_HOST.md) for the process that must listen once the host is wired.
+Live as of 2026-11-17: Let's Encrypt cert for `api.quizgate.app`; `/health` returns Intake JSON. See [`INTAKE_HOST.md`](INTAKE_HOST.md).
+
+TLS ask allowlist: keep `api.quizgate.app` in `/etc/caddy/on-demand-extra.txt` (survives park regenerations of `parked-domains.txt`). Do **not** add it to Relay catalog `domains[]` (that parks Host → gateway `:8080`).
 
 ## Optional later
 
@@ -36,6 +38,6 @@ See [`INTAKE_HOST.md`](INTAKE_HOST.md) for the process that must listen once the
 ## Verify
 
 ```bash
-dig api.quizgate.app +short
+dig api.quizgate.app +short   # expect 162.209.124.53
 curl -sS https://api.quizgate.app/health
 ```

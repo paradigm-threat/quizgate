@@ -2,7 +2,26 @@
 
 Always-on process for **`https://api.quizgate.app`**.
 
-## Process
+## Live (iad1)
+
+| Piece | Location |
+|-------|----------|
+| Code | `/opt/quizgate/data-plane` |
+| Tip worktree | `/var/quizgate/users` (branch `users`) |
+| Queue / cache | `/var/quizgate/queue`, `/var/quizgate/cache` |
+| systemd | `quizgate-intake.service` (listen `:8791`) |
+| Batch oneshot | `systemctl start quizgate-batch` |
+| Caddy site | `/etc/caddy/Caddyfile.quizgate` → `127.0.0.1:8791` |
+| TLS ask extra | `/etc/caddy/on-demand-extra.txt` (`api.quizgate.app`) |
+
+Verify:
+
+```bash
+curl -sS https://api.quizgate.app/health
+# {"ok":true,"service":"quizgate-intake",...,"tip_writer":"quizgate-batch"}
+```
+
+## Process (local)
 
 ```bash
 cd data-plane
@@ -22,12 +41,14 @@ When `pending` queue depth/age warrants:
 ```bash
 node batch/drain.mjs
 # Spot: set QUIZGATE_BATCH_DECOMMISSION=1 when idle
+# iad1: sudo systemctl start quizgate-batch
 ```
 
 Publish tip after drain (optional):
 
 ```bash
 export QUIZGATE_PUBLISH_REMOTES=git://iad1.relaygateway.net:9418/quizgate-users.git
+# iad1 unit uses git://127.0.0.1:9418/quizgate-users.git
 ```
 
 ## Env
@@ -44,3 +65,7 @@ export QUIZGATE_PUBLISH_REMOTES=git://iad1.relaygateway.net:9418/quizgate-users.
 ## Sole tip writer
 
 **`quizgate-batch`** only. Intake never runs `git commit` on `users/`.
+
+## Peer mesh (ops)
+
+`quizgate-users` must appear in each node's authorized catalog (`catalog/repos/quizgate-users.json` → `/api/config` `authorized_repos`). Hot-patched on iad1/ord1/hkg1 for bring-up; **durable fix**: merge that record into `relay-master` and let catalog sync refresh peers (do **not** put `api.quizgate.app` in `domains[]` — that would park HTTP to gateway `:8080` instead of Intake).

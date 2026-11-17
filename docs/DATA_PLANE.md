@@ -40,4 +40,18 @@ PORT=8791 node intake/server.mjs
 node batch/drain.mjs
 ```
 
-Upload remains **OFF** in the APK until privacy + Play Data safety are updated for production.
+## Production verify
+
+```bash
+dig api.quizgate.app +short
+curl -sS https://api.quizgate.app/health
+UUID=xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+curl -sS -X POST "https://api.quizgate.app/v1/users/$UUID/sync" \
+  -H 'content-type: application/json' \
+  -d "{\"user_uuid\":\"$UUID\",\"today\":{\"asked\":10,\"right\":9,\"wrong\":1,\"skipped\":0},\"curriculumId\":\"basic-math\"}"
+# on iad1:
+sudo systemctl start quizgate-batch
+curl -sS "https://api.quizgate.app/v1/users/$UUID/profile"
+```
+
+Upload remains **OFF** in the APK (`TELEMETRY_UPLOAD_ENABLED = false`) until privacy + Play Data safety are updated for production.
