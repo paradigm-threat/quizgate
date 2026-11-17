@@ -3,6 +3,7 @@ package net.clevertree.quizgate;
 import android.app.AppOpsManager;
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -43,8 +44,23 @@ public final class ForegroundApp {
         }
     }
 
+    /** Package + optional activity class of the last non-QuizGate foreground app. */
+    public static final class Detected {
+        public final String pkg;
+        public final String cls;
+        public Detected(String pkg, String cls) {
+            this.pkg = pkg;
+            this.cls = cls;
+        }
+    }
+
     /** Best-effort: last non-QuizGate, non-launcher package moved to foreground. */
     public static String detect(Context ctx) {
+        Detected d = detectDetailed(ctx);
+        return d == null ? null : d.pkg;
+    }
+
+    public static Detected detectDetailed(Context ctx) {
         if (!hasUsageAccess(ctx)) {
             Log.w(TAG, "usage access missing — cannot detect previous app");
             return null;
@@ -62,7 +78,8 @@ public final class ForegroundApp {
         }
         if (events == null) return null;
         UsageEvents.Event ev = new UsageEvents.Event();
-        String last = null;
+        String lastPkg = null;
+        String lastCls = null;
         while (events.hasNextEvent()) {
             events.getNextEvent(ev);
             int type = ev.getEventType();
@@ -73,20 +90,31 @@ public final class ForegroundApp {
             if (pkg == null) continue;
             if (pkg.equals(ctx.getPackageName())) continue;
             if (isLauncherOrSystemUi(ctx, pkg)) continue;
-            last = pkg;
+            lastPkg = pkg;
+            String cls = ev.getClassName();
+            lastCls = (cls != null && !cls.isEmpty()) ? cls : null;
         }
-        Log.i(TAG, "detected previous app=" + last);
-        return last;
+        Log.i(TAG, "detected previous app=" + lastPkg
+                + (lastCls != null ? ("/" + lastCls) : ""));
+        if (lastPkg == null) return null;
+        return new Detected(lastPkg, lastCls);
     }
 
     public static void captureNow(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         if (!PerformanceMode.allowReturnToApp(prefs)) {
             prefs.setResumePackage(null);
+            prefs.setResumeClass(null);
             return;
         }
-        String pkg = detect(ctx);
-        prefs.setResumePackage(pkg);
+        Detected d = detectDetailed(ctx);
+        if (d == null) {
+            prefs.setResumePackage(null);
+            prefs.setResumeClass(null);
+            return;
+        }
+        prefs.setResumePackage(d.pkg);
+        prefs.setResumeClass(d.cls);
     }
 
     /**
@@ -97,10 +125,13 @@ public final class ForegroundApp {
         AppPrefs prefs = new AppPrefs(ctx);
         if (!PerformanceMode.allowReturnToApp(prefs)) {
             prefs.setResumePackage(null);
+            prefs.setResumeClass(null);
             return false;
         }
         String pkg = prefs.getResumePackage();
+        String cls = prefs.getResumeClass();
         prefs.setResumePackage(null);
+        prefs.setResumeClass(null);
         if (pkg == null || pkg.isEmpty()) {
             Log.i(TAG, "no resume package stored");
             return false;
@@ -109,16 +140,32 @@ public final class ForegroundApp {
             return false;
         }
         try {
-            Intent launch = ctx.getPackageManager().getLaunchIntentForPackage(pkg);
-            if (launch == null) {
-                Log.w(TAG, "no launch intent for " + pkg);
-                return false;
+            Intent launch = null;
+            // Prefer the exact activity that was interrupted (keeps YouTube on the video).
+            if (cls != null && !cls.isEmpty()) {
+                launch = new Intent();
+                launch.setComponent(new ComponentName(pkg, cls));
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                if (ctx.getPackageManager().resolveActivity(launch, 0) == null) {
+                    launch = null;
+                }
             }
-            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                    | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
-                    | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            if (launch == null) {
+                launch = ctx.getPackageManager().getLaunchIntentForPackage(pkg);
+                if (launch == null) {
+                    Log.w(TAG, "no launch intent for " + pkg);
+                    return false;
+                }
+                // Do NOT use RESET_TASK_IF_NEEDED — that can drop YouTube back to Home/root.
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            }
             ctx.startActivity(launch);
-            Log.i(TAG, "restored previous app=" + pkg);
+            Log.i(TAG, "restored previous app=" + pkg
+                    + (cls != null ? ("/" + cls) : ""));
             return true;
         } catch (Exception e) {
             Log.e(TAG, "restore failed pkg=" + pkg, e);

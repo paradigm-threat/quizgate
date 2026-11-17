@@ -277,7 +277,7 @@ public class QuizActivity extends Activity {
         // After unlock, activity is finishing — resume media once we're in background
         if (mediaResumePending || finishing) {
             mediaResumePending = false;
-            mediaGate.resumeAfterQuiz();
+            mediaGate.resumeAfterQuiz(this);
         }
     }
 
@@ -285,7 +285,7 @@ public class QuizActivity extends Activity {
         stopBalloonPulse();
         if (mediaResumePending) {
             mediaResumePending = false;
-            mediaGate.resumeAfterQuiz();
+            mediaGate.resumeAfterQuiz(this);
         }
         handler.removeCallbacksAndMessages(null);
         // Abandoned lock quiz (process death / unfinished) — keep the schedule chain alive.
@@ -1168,7 +1168,9 @@ public class QuizActivity extends Activity {
                 Log.e(AlarmScheduler.TAG, "restore previous app", e);
             }
         } else {
-            new AppPrefs(this).setResumePackage(null);
+            AppPrefs clear = new AppPrefs(this);
+            clear.setResumePackage(null);
+            clear.setResumeClass(null);
         }
         finish();
     }

@@ -163,6 +163,31 @@ public final class AppPrefs {
         }
     }
 
+    /**
+     * Activity class of the remembered app (optional). Helps restore the video /
+     * game screen instead of the package launcher root.
+     */
+    public String getResumeClass() {
+        return sp.getString("resume_class", null);
+    }
+
+    public void setResumeClass(String cls) {
+        if (cls == null || cls.isEmpty()) {
+            sp.edit().remove("resume_class").apply();
+        } else {
+            sp.edit().putString("resume_class", cls).apply();
+        }
+    }
+
+    /** Sticky latch: media was active when the quiz soft-paused it. */
+    public boolean wasMediaPlaying() {
+        return sp.getBoolean("media_was_playing", false);
+    }
+
+    public void setMediaWasPlaying(boolean v) {
+        sp.edit().putBoolean("media_was_playing", v).apply();
+    }
+
     /** Last ScheduleAuth gap prompted (name) — used to avoid Settings spam. */
     public String getLastAuthPromptGap() {
         return sp.getString("auth_prompt_gap", "");
