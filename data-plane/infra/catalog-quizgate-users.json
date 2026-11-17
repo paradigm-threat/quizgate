@@ -15,5 +15,5 @@
     "fleet_pin_ipfs": false,
     "max_ipfs_bytes": 0
   },
-  "notes": "Merge into relay-master catalog/repos/quizgate-users.json for durable peer authorize. Hot-patched on iad1/ord1/hkg1 2026-11-17. Do not list api.quizgate.app in domains[] (Intake is Caddy → :8791, not park → :8080)."
+  "notes": "Canonical copy lives in relay-master catalog/repos/quizgate-users.json (merged e69a36b). Do not list api.quizgate.app in domains[] (Intake is Caddy → :8791, not park → :8080)."
 }

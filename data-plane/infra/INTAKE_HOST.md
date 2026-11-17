@@ -68,4 +68,4 @@ export QUIZGATE_PUBLISH_REMOTES=git://iad1.relaygateway.net:9418/quizgate-users.
 
 ## Peer mesh (ops)
 
-`quizgate-users` must appear in each node's authorized catalog (`catalog/repos/quizgate-users.json` → `/api/config` `authorized_repos`). Hot-patched on iad1/ord1/hkg1 for bring-up; **durable fix**: merge that record into `relay-master` and let catalog sync refresh peers (do **not** put `api.quizgate.app` in `domains[]` — that would park HTTP to gateway `:8080` instead of Intake).
+`quizgate-users` is authorized via **relay-master** `catalog/repos/quizgate-users.json` (`e69a36b`, 2026-11-17) → `/api/config` `authorized_repos` / `catalog_repos`. Keep `domains: []` — do **not** put `api.quizgate.app` in `domains[]` (would park HTTP to gateway `:8080` instead of Intake Caddy → `:8791`).
