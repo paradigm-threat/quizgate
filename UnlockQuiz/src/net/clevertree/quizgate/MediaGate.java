@@ -23,7 +23,8 @@ import android.view.KeyEvent;
  * <p><b>PiP / mini-player:</b> System Picture-in-Picture cannot be force-closed by
  * third-party apps. Pausing <em>before</em> bringing the quiz to the foreground
  * (see {@link #pauseThenSettle}) usually prevents YouTube auto-enter-PiP on task
- * switch. {@link OverlayGate} pads the quiz when a pinned task is still detected.
+ * switch. {@link OverlayGate} always reserves a modest bottom-end band for the
+ * usual overlay corner; pinned-task detection is diagnostics-only.
  */
 public final class MediaGate {
     private static final String TAG = AlarmScheduler.TAG;

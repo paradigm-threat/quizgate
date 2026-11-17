@@ -160,8 +160,8 @@ public class QuizActivity extends Activity {
         digitPad = findViewById(R.id.digit_pad);
         quizPanel = findViewById(R.id.quiz_panel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
-        // If system PiP / mini-player still covers the gate, pad panel + stats out of
-        // the usual bottom-end corner (degraded UX — cannot force-close foreign PiP).
+        // Always reserve the usual bottom-end overlay/PiP corner (stats/margins);
+        // pause-before-launch is the primary anti-PiP measure — detection is diag-only.
         OverlayGate.applyPipAvoidance(this, quizPanel, quizStatsBar);
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);

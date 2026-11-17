@@ -87,8 +87,8 @@ Privacy-safe `msg` tokens (no package names):
 | `was_playing` / `idle` | Soft-pause latch at fire |
 | `pre_pause_settle_ms=N:idle` / `:timeout_active` | Alarm path waited for playback to stop before quiz UI |
 | `overlay_hide_on` / `overlay_hide_unsupported` | `setHideOverlayWindows` availability |
-| `pip_pad_on:detect=pinned\|unknown\|clear…` | Degraded UX pad applied (foreign PiP / media risk) |
-| `pip_pad_off:…` / `pip_pad_cleared` | Pad skipped or removed after pinned task dismissed |
+| `corner_reserve_on:detect=…:layout=always` | Permanent bottom-end reserve applied; detect is diag-only |
+| `pip_detect_recheck:detect=…` | Follow-up pinned-task probe (layout unchanged) |
 | `resume_play` | Best-effort MEDIA_PLAY after unlock |
 
 ### Logcat

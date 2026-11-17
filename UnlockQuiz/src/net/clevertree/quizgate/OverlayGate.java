@@ -25,9 +25,9 @@ import java.util.List;
  *   <li>{@link Window#setHideOverlayWindows(boolean)} (API 31+) hides other apps'
  *       {@code TYPE_APPLICATION_OVERLAY} windows while we are focused (not system PiP).</li>
  *   <li>Immersive sticky + high-priority fullscreen layout so the quiz owns the display.</li>
- *   <li>Degraded UX — when a pinned (PiP) task is still detected (or media was active
- *       at fire), pad quiz content away from the usual bottom-end PiP corner so taps
- *       stay usable. System PiP cannot be force-closed by third-party apps.</li>
+ *   <li>Always reserve a modest bottom-end band (stats bar / margins) for the usual
+ *       system-overlay / PiP corner. Layout is <em>not</em> gated on detection —
+ *       pinned-task probes are diagnostics-only. System PiP cannot be force-closed.</li>
  * </ol>
  *
  * <p>Does not add a new Appear-on-top requirement; {@code SYSTEM_ALERT_WINDOW} remains
@@ -36,10 +36,14 @@ import java.util.List;
 public final class OverlayGate {
     private static final String TAG = AlarmScheduler.TAG;
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
-    /** Floor pads; large tablets use a fraction of the display (see {@link #pipPadsPx}). */
-    private static final int PIP_PAD_BOTTOM_DP = 200;
-    private static final int PIP_PAD_END_DP = 180;
-    private static final long[] PIP_RECHECK_MS = { 400L, 900L, 1600L, 2800L };
+    /**
+     * Modest permanent reserve for the usual bottom-end overlay/PiP corner.
+     * Floors + small fractions — enough for stats/margins, not enough to crush the pad.
+     */
+    private static final int CORNER_PAD_BOTTOM_DP = 112;
+    private static final int CORNER_PAD_END_DP = 96;
+    /** Diagnostics-only rechecks (layout already reserved permanently). */
+    private static final long[] PIP_DETECT_RECHECK_MS = { 400L, 900L, 1600L, 2800L };
 
     private OverlayGate() {}
 
@@ -80,24 +84,22 @@ public final class OverlayGate {
     }
 
     /**
-     * Detect foreign PiP / media risk and pad quiz content out of the usual PiP corner.
-     * Call after {@code setContentView}. Pads every non-null view (panel + stats bar).
-     * Schedules light rechecks while the activity is alive.
+     * Always reserve the usual bottom-end overlay/PiP corner for quiz chrome
+     * (stats bar margins + modest panel end inset). Detection is diagnostics-only
+     * and never toggles layout. Call after {@code setContentView}.
      */
     public static void applyPipAvoidance(Activity activity, View... contents) {
         if (activity == null || contents == null || contents.length == 0) return;
         Context app = activity.getApplicationContext();
-        AppPrefs prefs = new AppPrefs(app);
-        Boolean pinned = detectForeignPinnedTask();
-        boolean mediaRisk = prefs.wasMediaPlaying();
-        boolean pad = mediaRisk || Boolean.TRUE.equals(pinned);
         for (View content : contents) {
-            if (content != null) applyPipPadding(content, pad);
+            if (content != null) applyCornerReserve(content);
         }
+        Boolean pinned = detectForeignPinnedTask();
+        boolean mediaRisk = new AppPrefs(app).wasMediaPlaying();
         String detect = pinned == null ? "unknown" : (pinned ? "pinned" : "clear");
-        String msg = pad
-                ? ("pip_pad_on:detect=" + detect + (mediaRisk ? ":media_risk" : ""))
-                : ("pip_pad_off:detect=" + detect);
+        String msg = "corner_reserve_on:detect=" + detect
+                + (mediaRisk ? ":media_risk" : "")
+                + ":layout=always";
         Log.i(TAG, msg);
         try {
             Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
@@ -107,38 +109,27 @@ public final class OverlayGate {
                     .message(msg)
                     .build());
         } catch (Exception ignored) {}
-        // Recheck after pause bursts — pinned task may dismiss once playback stops.
+        // Recheck detection for diagnostics only — layout stays reserved.
         final int[] idx = { 0 };
         final Runnable[] tick = new Runnable[1];
         tick[0] = () -> {
             if (activity.isFinishing() || activity.isDestroyed()) return;
             Boolean again = detectForeignPinnedTask();
-            // Only drop pad when we positively observe no pinned task. Unknown keep pad
-            // for the media-risk session (degraded UX beats blocked digit pad).
-            if (Boolean.FALSE.equals(again)) {
-                for (View content : contents) {
-                    if (content != null) applyPipPadding(content, false);
-                }
-                try {
-                    Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
-                                    System.currentTimeMillis(),
-                                    net.clevertree.quizgate.core.DiagnosticsStore.KIND_MEDIA)
-                            .otherApp(false)
-                            .message("pip_pad_cleared")
-                            .build());
-                } catch (Exception ignored) {}
-                return;
-            }
-            if (Boolean.TRUE.equals(again) || prefs.wasMediaPlaying()) {
-                for (View content : contents) {
-                    if (content != null) applyPipPadding(content, true);
-                }
-            }
-            if (idx[0] < PIP_RECHECK_MS.length) {
-                HANDLER.postDelayed(tick[0], PIP_RECHECK_MS[idx[0]++]);
+            String againDetect = again == null ? "unknown" : (again ? "pinned" : "clear");
+            try {
+                Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
+                                System.currentTimeMillis(),
+                                net.clevertree.quizgate.core.DiagnosticsStore.KIND_MEDIA)
+                        .otherApp(Boolean.TRUE.equals(again)
+                                || new AppPrefs(app).wasMediaPlaying())
+                        .message("pip_detect_recheck:detect=" + againDetect)
+                        .build());
+            } catch (Exception ignored) {}
+            if (idx[0] < PIP_DETECT_RECHECK_MS.length) {
+                HANDLER.postDelayed(tick[0], PIP_DETECT_RECHECK_MS[idx[0]++]);
             }
         };
-        HANDLER.postDelayed(tick[0], PIP_RECHECK_MS[0]);
+        HANDLER.postDelayed(tick[0], PIP_DETECT_RECHECK_MS[0]);
         idx[0] = 1;
     }
 
@@ -146,8 +137,8 @@ public final class OverlayGate {
 
     /**
      * Best-effort: is any task in windowing mode pinned (system PiP)?
-     * {@code null} = API / permission unavailable (do not treat as clear — third-party
-     * apps usually cannot enumerate foreign pinned tasks on modern Android).
+     * {@code null} = API / permission unavailable. Third-party apps usually cannot
+     * enumerate foreign pinned tasks on modern Android — treat as diagnostics only.
      */
     static Boolean detectForeignPinnedTask() {
         if (Build.VERSION.SDK_INT < 29) return null;
@@ -192,7 +183,7 @@ public final class OverlayGate {
         } catch (Throwable t) {
             if (!pipDetectLogged) {
                 pipDetectLogged = true;
-                Log.i(TAG, "pip detect unavailable (using media_risk pad)");
+                Log.i(TAG, "pip detect unavailable (diag only; corner always reserved)");
             }
             return null;
         }
@@ -221,7 +212,12 @@ public final class OverlayGate {
         return null;
     }
 
-    private static void applyPipPadding(View content, boolean on) {
+    /**
+     * Permanent bottom-end reserve. Stats bar uses margins only (filled card);
+     * quiz panel gets a modest end inset and leaves bottom height to the layout's
+     * existing stats clearance so the digit pad is not crushed.
+     */
+    private static void applyCornerReserve(View content) {
         int left = content.getPaddingLeft();
         int top = content.getPaddingTop();
         int right = content.getPaddingRight();
@@ -243,41 +239,33 @@ public final class OverlayGate {
             };
             content.setTag(R.id.quiz_panel, base);
         }
-        // Card-like bottom bars: margins only (padding would inflate the filled background).
         boolean marginOnly = content.getId() == R.id.quiz_stats_bar;
-        if (!on) {
-            content.setPadding(base[0], base[1], base[2], base[3]);
+        int[] pads = cornerPadsPx(content);
+        int extraEnd = pads[0];
+        int extraBottom = pads[1];
+        boolean rtl = content.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+        if (marginOnly) {
             if (mlp != null) {
-                mlp.setMargins(base[4], base[5], base[6], base[7]);
+                int mLeft = base[4] + (rtl ? extraEnd : 0);
+                int mRight = base[6] + (rtl ? 0 : extraEnd);
+                int mBottom = Math.max(base[7], extraBottom);
+                mlp.setMargins(mLeft, base[5], mRight, mBottom);
                 content.setLayoutParams(mlp);
             }
             return;
         }
-        int[] pads = pipPadsPx(content);
-        int extraEnd = pads[0];
-        int extraBottom = pads[1];
-        boolean rtl = content.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-        if (!marginOnly) {
-            int newLeft = base[0] + (rtl ? extraEnd : 0);
-            int newRight = base[2] + (rtl ? 0 : extraEnd);
-            int newBottom = Math.max(base[3], extraBottom);
-            content.setPadding(newLeft, base[1], newRight, newBottom);
-        }
-        if (mlp != null && marginOnly) {
-            int mLeft = base[4] + (rtl ? extraEnd : 0);
-            int mRight = base[6] + (rtl ? 0 : extraEnd);
-            int mBottom = Math.max(base[7], extraBottom);
-            mlp.setMargins(mLeft, base[5], mRight, mBottom);
-            content.setLayoutParams(mlp);
-        }
+        // Panel: end inset only — bottom clearance stays at layout paddingBottom (stats).
+        int newLeft = base[0] + (rtl ? extraEnd : 0);
+        int newRight = base[2] + (rtl ? 0 : extraEnd);
+        content.setPadding(newLeft, base[1], newRight, base[3]);
     }
 
-    /** @return [endPx, bottomPx] sized for tablet PiP footprints. */
-    private static int[] pipPadsPx(View v) {
+    /** @return [endPx, bottomPx] sized for a modest tablet overlay corner. */
+    private static int[] cornerPadsPx(View v) {
         android.util.DisplayMetrics dm = v.getResources().getDisplayMetrics();
-        // ~22% end / 28% bottom clears typical Samsung tablet PiP without crushing the pad.
-        int end = Math.max(dp(v, PIP_PAD_END_DP), Math.round(dm.widthPixels * 0.22f));
-        int bottom = Math.max(dp(v, PIP_PAD_BOTTOM_DP), Math.round(dm.heightPixels * 0.28f));
+        // ~10% end / 12% bottom — clears typical mini-player corner without crushing keys.
+        int end = Math.max(dp(v, CORNER_PAD_END_DP), Math.round(dm.widthPixels * 0.10f));
+        int bottom = Math.max(dp(v, CORNER_PAD_BOTTOM_DP), Math.round(dm.heightPixels * 0.12f));
         return new int[] { end, bottom };
     }
 
