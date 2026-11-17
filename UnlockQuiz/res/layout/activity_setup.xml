@@ -239,6 +239,16 @@
             android:gravity="center"/>
 
         <TextView
+            android:id="@+id/setup_schedule_health"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/setup_schedule_health_none"
+            android:textColor="@color/header"
+            android:textSize="13sp"
+            android:gravity="center"/>
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"

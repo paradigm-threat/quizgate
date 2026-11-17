@@ -54,6 +54,15 @@ public final class AppPrefs {
         sp.edit().putLong("next_alarm_at", ms).apply();
     }
 
+    /** Wall-clock ms of the last interval/morning alarm fire (0 = never). */
+    public long lastFiredAt() {
+        return sp.getLong("last_fired_at", 0L);
+    }
+
+    public void setLastFiredAt(long ms) {
+        sp.edit().putLong("last_fired_at", Math.max(0L, ms)).apply();
+    }
+
     /** "digit_pad" (default) or "multiple_choice" for math questions. */
     public String getMathEntryMode() {
         return sp.getString("math_entry", "digit_pad");

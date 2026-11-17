@@ -516,17 +516,8 @@ public class SetupActivity extends Activity {
         scheduleHealth.setText(getString(R.string.setup_schedule_health_line, lastLabel, nextLabel));
     }
 
-    private static String formatClock(long ms) {
-        java.text.DateFormat fmt = android.text.format.DateFormat.getTimeFormat(
-                // Activity context unavailable in static helper — use default locale pattern
-                null);
-        // DateFormat.getTimeFormat(null) NPE on some OEMs — fall back to java.text
-        try {
-            return new java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
-                    .format(new java.util.Date(ms));
-        } catch (Exception e) {
-            return String.valueOf(ms);
-        }
+    private String formatClock(long ms) {
+        return android.text.format.DateFormat.getTimeFormat(this).format(new java.util.Date(ms));
     }
 
     private void refreshWidgetButton() {
