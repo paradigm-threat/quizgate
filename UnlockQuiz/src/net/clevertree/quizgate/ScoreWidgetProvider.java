@@ -38,6 +38,12 @@ public class ScoreWidgetProvider extends AppWidgetProvider {
         } catch (Exception ignored) {}
     }
 
+    /** Mid-quiz refreshes honor slim mode (session-end callers use {@link #refreshAll}). */
+    public static void refreshAllOnAnswer(Context context) {
+        if (PerformanceMode.isSlim(context)) return;
+        refreshAll(context);
+    }
+
     /** True when at least one QuizGate score widget is hosted on a launcher. */
     public static boolean isPinned(Context context) {
         try {

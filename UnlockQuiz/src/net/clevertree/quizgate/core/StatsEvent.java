@@ -15,13 +15,21 @@ public final class StatsEvent {
     public final long latencyMs;
     public final String curriculumId;
     public final String sessionType;
+    /** True for adb_/prime_/seed sessions — excluded from day rollups. */
+    public final boolean demo;
 
     public StatsEvent(long ts, String sessionId, String type, String questionId, String choice, int missStreak) {
-        this(ts, sessionId, type, questionId, choice, missStreak, -1L, "", "");
+        this(ts, sessionId, type, questionId, choice, missStreak, -1L, "", "", false);
     }
 
     public StatsEvent(long ts, String sessionId, String type, String questionId, String choice,
                       int missStreak, long latencyMs, String curriculumId, String sessionType) {
+        this(ts, sessionId, type, questionId, choice, missStreak, latencyMs, curriculumId, sessionType, false);
+    }
+
+    public StatsEvent(long ts, String sessionId, String type, String questionId, String choice,
+                      int missStreak, long latencyMs, String curriculumId, String sessionType,
+                      boolean demo) {
         this.ts = ts;
         this.sessionId = sessionId == null ? "" : sessionId;
         this.type = type == null ? "" : type;
@@ -31,6 +39,7 @@ public final class StatsEvent {
         this.latencyMs = latencyMs;
         this.curriculumId = curriculumId == null ? "" : curriculumId;
         this.sessionType = sessionType == null ? "" : sessionType;
+        this.demo = demo;
     }
 
     public String toJsonLine() {
@@ -51,6 +60,7 @@ public final class StatsEvent {
             sb.append(",\"session_type\":\"")
                     .append(JsonUtil.esc(TelemetryRedaction.safeToken(sessionType))).append('"');
         }
+        if (demo) sb.append(",\"demo\":true");
         sb.append('}');
         return sb.toString();
     }

@@ -142,9 +142,12 @@ public class QuizActivity extends Activity {
                         | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         setContentView(R.layout.activity_quiz);
         prefs = new AppPrefs(this);
-        // Capture previous app if alarm path missed it (e.g. Test quiz / ADB)
-        if (prefs.getResumePackage() == null) {
+        // Capture previous app if alarm path missed it (e.g. Test quiz / ADB).
+        // Slim skips usage-stats return-to-app entirely.
+        if (PerformanceMode.allowReturnToApp(prefs) && prefs.getResumePackage() == null) {
             ForegroundApp.captureNow(this);
+        } else if (!PerformanceMode.allowReturnToApp(prefs)) {
+            restorePreviousApp = false;
         }
         // Pause YouTube / music / game audio while the quiz is up
         mediaGate.pauseForQuiz(this);
@@ -198,7 +201,7 @@ public class QuizActivity extends Activity {
                     prefs.getResumePackage() != null, "path=activity_visible"));
         }
         playMode = TRIGGER_PLAY.equals(trigger);
-        if (playMode) {
+        if (playMode || !PerformanceMode.allowReturnToApp(prefs)) {
             restorePreviousApp = false;
         }
         if (getIntent() != null && getIntent().hasExtra("interval_ms")) {
@@ -286,6 +289,14 @@ public class QuizActivity extends Activity {
             mediaGate.resumeAfterQuiz();
         }
         handler.removeCallbacksAndMessages(null);
+        // Abandoned lock quiz (process death / unfinished) — keep the schedule chain alive.
+        if (!playMode && !finishing && prefs != null && prefs.isArmed()) {
+            try {
+                AlarmScheduler.ensureNextInterval(this, "on_destroy");
+            } catch (Exception e) {
+                Log.e(AlarmScheduler.TAG, "ensure on destroy", e);
+            }
+        }
         super.onDestroy();
     }
 
@@ -345,7 +356,9 @@ public class QuizActivity extends Activity {
         hideTransitionOverlayImmediate();
         currentAnswered = false;
         refreshQuizDayStats();
-        startBalloonPulse(questionBalloon, BALLOON_INFLATED, 3);
+        if (PerformanceMode.allowRichMotion(prefs)) {
+            startBalloonPulse(questionBalloon, BALLOON_INFLATED, 3);
+        }
     }
 
     private void refreshQuizDayStats() {
@@ -577,9 +590,13 @@ public class QuizActivity extends Activity {
         transitionTitle.setText(R.string.success_title);
         preparePhotoBackground(true);
         fadeInTransition(() -> {
-            startPhotoFlash();
-            burstConfetti();
-            startBalloonPulse(transitionMessage, BALLOON_SUCCESS_INFLATED, 2);
+            boolean party = PerformanceMode.allowRichMotion(prefs);
+            if (party) {
+                startPhotoFlash();
+                burstConfetti();
+                startBalloonPulse(transitionMessage, BALLOON_SUCCESS_INFLATED, 2);
+            }
+            long holdMs = PerformanceMode.successHoldMs(prefs);
             if (playMode) {
                 showPlayChoiceChrome(R.string.play_success_prompt);
                 // Finite party, then idle so taps/dumps aren't blocked by looping anims
@@ -589,7 +606,7 @@ public class QuizActivity extends Activity {
                     stopPhotoFlash();
                     stopBalloonPulse();
                 };
-                handler.postDelayed(successEndTick, SUCCESS_HOLD_MS);
+                handler.postDelayed(successEndTick, holdMs);
                 return;
             }
             if (successEndTick != null) handler.removeCallbacks(successEndTick);
@@ -599,7 +616,7 @@ public class QuizActivity extends Activity {
                 stopBalloonPulse();
                 fadeOutTransition(this::finishSession);
             };
-            handler.postDelayed(successEndTick, SUCCESS_HOLD_MS);
+            handler.postDelayed(successEndTick, holdMs);
         });
     }
 
@@ -857,6 +874,16 @@ public class QuizActivity extends Activity {
         quizPanel.animate().cancel();
         transitionOverlay.animate().cancel();
         transitionOverlay.setVisibility(View.VISIBLE);
+        if (!PerformanceMode.allowRichMotion(prefs)) {
+            transitionOverlay.setAlpha(1f);
+            quizPanel.setAlpha(0.15f);
+            photoOverlay.setScaleX(1f);
+            photoOverlay.setScaleY(1f);
+            transitionMessage.setScaleX(1f);
+            transitionMessage.setScaleY(1f);
+            if (after != null) after.run();
+            return;
+        }
         transitionOverlay.setAlpha(0f);
         photoOverlay.setScaleX(1f);
         photoOverlay.setScaleY(1f);
@@ -894,6 +921,12 @@ public class QuizActivity extends Activity {
         stopPhotoFlash();
         photoOverlay.animate().cancel();
         photoOverlayB.animate().cancel();
+        if (!PerformanceMode.allowRichMotion(prefs)) {
+            hideTransitionOverlayImmediate();
+            quizPanel.setAlpha(1f);
+            if (after != null) after.run();
+            return;
+        }
         transitionOverlay.animate()
                 .alpha(0f)
                 .setDuration(FADE_MS)
@@ -950,6 +983,7 @@ public class QuizActivity extends Activity {
 
     private void startPhotoFlash() {
         stopPhotoFlash();
+        if (!PerformanceMode.allowRichMotion(prefs)) return;
         if (successPhotos.isEmpty()) return;
         photoFlashTick = new Runnable() {
             @Override public void run() {
@@ -993,6 +1027,7 @@ public class QuizActivity extends Activity {
     }
 
     private void burstConfetti() {
+        if (!PerformanceMode.allowRichMotion(prefs)) return;
         confettiLayer.removeAllViews();
         confettiLayer.setVisibility(View.VISIBLE);
         int w = transitionOverlay.getWidth();
@@ -1031,6 +1066,7 @@ public class QuizActivity extends Activity {
     }
 
     private void bumpCountdown() {
+        if (!PerformanceMode.allowRichMotion(prefs)) return;
         transitionCountdown.animate().cancel();
         transitionCountdown.setScaleX(0.55f);
         transitionCountdown.setScaleY(0.55f);
@@ -1047,6 +1083,7 @@ public class QuizActivity extends Activity {
     }
 
     private void bumpMessagePlate() {
+        if (!PerformanceMode.allowRichMotion(prefs)) return;
         transitionMessage.animate().cancel();
         transitionMessage.setRotation(0f);
         transitionMessage.animate()
@@ -1117,11 +1154,15 @@ public class QuizActivity extends Activity {
                 trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                 null, outcome));
         ScoreWidgetProvider.refreshAll(this);
+        // Slim defers JSONL compaction to session end (no mid-answer rewrite storms).
+        if (PerformanceMode.isSlim(prefs)) {
+            Diag.compactLocal(this);
+        }
         if (!playMode) {
             AlarmScheduler.scheduleAfterSessionEnd(this);
         }
         // Bring YouTube / game / whatever back before we disappear
-        if (restorePreviousApp) {
+        if (restorePreviousApp && PerformanceMode.allowReturnToApp(prefs)) {
             try {
                 ForegroundApp.restore(this);
             } catch (Exception e) {
@@ -1144,9 +1185,11 @@ public class QuizActivity extends Activity {
         }
         String sessionType = playMode ? "play" : "lock";
         String curriculumId = prefs.getActiveCurriculumId();
+        String trigger = session != null ? session.getTrigger() : "";
+        boolean demo = StatsStore.isDemoTrigger(trigger);
         try {
             stats.appendEvent(new StatsEvent(now, session.getSessionId(), type, qid, choice, streak,
-                    latency, curriculumId, sessionType), TimeZone.getDefault());
+                    latency, curriculumId, sessionType, demo), TimeZone.getDefault());
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats event", e);
             Diag.nonFatal(this, "stats_event", e);
@@ -1165,7 +1208,7 @@ public class QuizActivity extends Activity {
         }
         if ("shown".equals(type) || "correct".equals(type) || "wrong".equals(type) || "skipped".equals(type)) {
             refreshQuizDayStats();
-            ScoreWidgetProvider.refreshAll(this);
+            ScoreWidgetProvider.refreshAllOnAnswer(this);
         }
     }
 

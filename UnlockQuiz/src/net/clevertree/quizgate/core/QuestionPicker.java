@@ -25,8 +25,7 @@ public final class QuestionPicker {
             Question q = catalog.byId(preferredFirstId);
             if (q != null) return q;
         }
-        List<Question> all = catalog.all();
-        return all.get(random.nextInt(all.size()));
+        return pickWeighted(catalog.all());
     }
 
     public Question nextDifferent(String excludeId) {
@@ -35,6 +34,30 @@ public final class QuestionPicker {
             if (!q.id.equals(excludeId)) pool.add(q);
         }
         if (pool.isEmpty()) return catalog.byId(excludeId);
-        return pool.get(random.nextInt(pool.size()));
+        return pickWeighted(pool);
+    }
+
+    /** Uniform among equal weights; lower {@link Question#weight} stays rarer as the pool grows. */
+    Question pickWeighted(List<Question> pool) {
+        if (pool == null || pool.isEmpty()) {
+            throw new IllegalStateException("empty question pool");
+        }
+        long total = 0L;
+        for (Question q : pool) total += q.weight;
+        if (total <= 0L) return pool.get(random.nextInt(pool.size()));
+        long ticket = nextLong(total);
+        long acc = 0L;
+        for (Question q : pool) {
+            acc += q.weight;
+            if (ticket < acc) return q;
+        }
+        return pool.get(pool.size() - 1);
+    }
+
+    private long nextLong(long bound) {
+        if (bound <= 0L) return 0L;
+        if (bound <= Integer.MAX_VALUE) return random.nextInt((int) bound);
+        // Rare: huge weight sums — fall back to rejection sampling via doubles.
+        return (long) (random.nextDouble() * bound);
     }
 }

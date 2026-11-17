@@ -32,15 +32,18 @@ public final class Diag {
     }
 
     public static StatsStore stats(Context ctx) {
-        return new StatsStore(statsDir(ctx));
+        return new StatsStore(statsDir(ctx), PerformanceMode.compactEvery(ctx));
     }
 
     public static DiagnosticsStore diagnostics(Context ctx) {
-        return new DiagnosticsStore(statsDir(ctx));
+        AppPrefs prefs = new AppPrefs(ctx);
+        return new DiagnosticsStore(statsDir(ctx), PerformanceMode.compactEvery(ctx),
+                PerformanceMode.mirrorScheduleToBreadcrumbs(prefs));
     }
 
     public static void breadcrumb(Context ctx, DiagBreadcrumb b) {
         try {
+            if (!PerformanceMode.allowOptionalBreadcrumbs(new AppPrefs(ctx))) return;
             diagnostics(ctx).appendBreadcrumb(b);
         } catch (Exception e) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "breadcrumb failed", e);
@@ -49,9 +52,26 @@ public final class Diag {
 
     public static void schedule(Context ctx, DiagnosticsStore.ScheduleEvent e) {
         try {
+            if (e != null && !PerformanceMode.recordScheduleKind(new AppPrefs(ctx), e.kind)) {
+                return;
+            }
             diagnostics(ctx).appendScheduleEvent(e);
         } catch (Exception e2) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "schedule event failed", e2);
+        }
+    }
+
+    /** Compact stats + diagnostics rings (slim: call on session end only). */
+    public static void compactLocal(Context ctx) {
+        try {
+            stats(ctx).compact();
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "stats compact failed", e);
+        }
+        try {
+            diagnostics(ctx).compact();
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "diag compact failed", e);
         }
     }
 

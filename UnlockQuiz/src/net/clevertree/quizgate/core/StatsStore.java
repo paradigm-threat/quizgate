@@ -33,13 +33,22 @@ public final class StatsStore {
     private boolean migrated;
 
     public StatsStore(File dir) {
+        this(dir, 32);
+    }
+
+    /**
+     * @param compactEvery appends before opportunistic JSONL compaction
+     *                     (slim profiles use a high value and compact on session end)
+     */
+    public StatsStore(File dir, int compactEvery) {
         if (!dir.exists()) dir.mkdirs();
         this.dir = dir;
         this.eventsFile = new File(dir, "events.jsonl");
         this.sessionsFile = new File(dir, "sessions.jsonl");
         this.daysFile = new File(dir, "days.jsonl");
-        this.eventsLog = new BoundedJsonl(eventsFile, MAX_EVENT_LINES, MAX_EVENT_BYTES);
-        this.sessionsLog = new BoundedJsonl(sessionsFile, MAX_SESSION_LINES, MAX_SESSION_BYTES);
+        int every = Math.max(1, compactEvery);
+        this.eventsLog = new BoundedJsonl(eventsFile, MAX_EVENT_LINES, MAX_EVENT_BYTES, every);
+        this.sessionsLog = new BoundedJsonl(sessionsFile, MAX_SESSION_LINES, MAX_SESSION_BYTES, every);
     }
 
     public File getDir() { return dir; }
@@ -53,12 +62,21 @@ public final class StatsStore {
 
     public synchronized void appendEvent(StatsEvent e, TimeZone zone) throws IOException {
         eventsLog.append(e.toJsonLine());
-        if (e.ts > 0 && isDayCountedType(e.type)) {
+        // Demo/seed traffic (adb_/prime_) stays in events but does not inflate day cards.
+        if (e.ts > 0 && isDayCountedType(e.type) && !e.demo) {
             upsertDayFromEvent(e.ts, zone == null ? TimeZone.getDefault() : zone, e.type);
         }
     }
 
+    /** ADB/dev/seed triggers — kept in raw logs, excluded from day rollups. */
+    public static boolean isDemoTrigger(String trigger) {
+        if (trigger == null || trigger.isEmpty()) return false;
+        return trigger.startsWith("adb_") || trigger.startsWith("prime_")
+                || "debug".equals(trigger) || "seed".equals(trigger);
+    }
+
     public synchronized void appendSession(QuizSession session) throws IOException {
+        boolean demo = isDemoTrigger(session.getTrigger());
         String line = "{\"session_id\":\"" + JsonUtil.esc(session.getSessionId()) + "\""
                 + ",\"trigger\":\"" + JsonUtil.esc(TelemetryRedaction.safeToken(session.getTrigger())) + "\""
                 + ",\"started_at\":" + session.getStartedAt()
@@ -67,6 +85,7 @@ public final class StatsStore {
                 + ",\"wrong_count\":" + session.getMissStreak()
                 + ",\"questions_shown\":" + toJsonArray(session.getQuestionsShown())
                 + ",\"duration_ms\":" + session.durationMs()
+                + (demo ? ",\"demo\":true" : "")
                 + "}";
         sessionsLog.append(line);
     }

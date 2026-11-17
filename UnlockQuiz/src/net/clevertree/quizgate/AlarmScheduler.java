@@ -56,6 +56,62 @@ public final class AlarmScheduler {
                 + " " + authNote);
     }
 
+    /**
+     * Re-arm the next interval immediately when an alarm fires while the device
+     * is on. Survives abandoned / never-started quizzes (Home kill, incomplete
+     * session). Power-off gaps are expected — {@link BootReceiver} re-arms on boot.
+     * Does <em>not</em> mark the day cleared (morning gate still applies).
+     */
+    public static void scheduleAfterFire(Context ctx) {
+        AppPrefs prefs = new AppPrefs(ctx);
+        if (!prefs.isArmed()) return;
+        long now = new SystemClock().nowMillis();
+        prefs.setLastFiredAt(now);
+        Scheduler base = scheduler(ctx);
+        long next = base.nextAfterUnlock(now);
+        scheduleInterval(ctx, next);
+        prefs.setNextAlarmAt(next);
+        scheduleMorning(ctx, base.nextMorningAlarm(now));
+        String authNote = "after_fire " + ScheduleAuth.snapshot(ctx).compactNote();
+        try {
+            Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_SCHEDULED, "interval",
+                    "lock", next, prefs.getIntervalMs(), prefs.getJitterMs(), null, authNote));
+        } catch (Throwable t) {
+            Log.w(TAG, "after_fire diag", t);
+        }
+        Log.i(TAG, "rescheduled after fire next=" + next + " " + authNote);
+    }
+
+    /**
+     * Safety net when a lock quiz is destroyed without {@link #scheduleAfterSessionEnd}.
+     * No-ops if a future interval is already armed (e.g. from {@link #scheduleAfterFire}).
+     */
+    public static void ensureNextInterval(Context ctx, String reason) {
+        AppPrefs prefs = new AppPrefs(ctx);
+        if (!prefs.isArmed()) return;
+        long now = new SystemClock().nowMillis();
+        long next = prefs.nextAlarmAt();
+        if (next > now + 30_000L) {
+            Log.i(TAG, "ensureNextInterval skip reason=" + reason + " next=" + next);
+            return;
+        }
+        Scheduler base = scheduler(ctx);
+        long scheduled = base.nextAfterUnlock(now);
+        scheduleInterval(ctx, scheduled);
+        prefs.setNextAlarmAt(scheduled);
+        scheduleMorning(ctx, base.nextMorningAlarm(now));
+        String note = "ensure_" + (reason == null ? "abandon" : reason);
+        try {
+            Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_SCHEDULED, "interval",
+                    "lock", scheduled, prefs.getIntervalMs(), prefs.getJitterMs(), null, note));
+        } catch (Throwable t) {
+            Log.w(TAG, "ensure diag", t);
+        }
+        Log.i(TAG, "ensureNextInterval reason=" + reason + " next=" + scheduled);
+    }
+
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         long now = new SystemClock().nowMillis();

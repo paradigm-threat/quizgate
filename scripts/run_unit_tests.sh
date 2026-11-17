@@ -29,6 +29,10 @@ echo "== TelemetryRedactionTest =="
 java -cp "$OUT" TelemetryRedactionTest
 echo "== DigitAnswerTest =="
 java -cp "$OUT" DigitAnswerTest
+echo "== QuestionPickerTest =="
+java -cp "$OUT" QuestionPickerTest
+echo "== PerfPolicyTest =="
+java -cp "$OUT" PerfPolicyTest
 echo "== CurriculumParserTest =="
 java -cp "$OUT" CurriculumParserTest "$ROOT/UnlockQuiz/assets/curricula/basic-math"
 echo "ALL UNIT TESTS PASSED"

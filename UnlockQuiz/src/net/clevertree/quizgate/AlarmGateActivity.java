@@ -55,6 +55,13 @@ public class AlarmGateActivity extends Activity {
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_FIRED, trigger,
                 "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                 null, "path=alarm_gate"));
+        if (!AlarmReceiver.ACTION_MORNING.equals(action)) {
+            AlarmScheduler.scheduleAfterFire(this);
+        } else {
+            prefs.setLastFiredAt(now);
+            net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(this);
+            AlarmScheduler.scheduleMorning(this, sched.nextMorningAlarm(now));
+        }
         ForegroundApp.captureNow(this);
         try {
             new MediaGate().pauseForQuiz(this);
@@ -73,7 +80,7 @@ public class AlarmGateActivity extends Activity {
             startActivity(quiz);
             Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
                     System.currentTimeMillis(), TimeZone.getDefault(),
-                    DiagnosticsStore.KIND_LAUNCH_OK, trigger, "lock",
+                    DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, "lock",
                     prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                     null, "path=alarm_gate"));
             Log.i(AlarmScheduler.TAG, "alarm gate started QuizActivity trigger=" + trigger);

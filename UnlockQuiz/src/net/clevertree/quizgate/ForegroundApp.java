@@ -80,8 +80,13 @@ public final class ForegroundApp {
     }
 
     public static void captureNow(Context ctx) {
+        AppPrefs prefs = new AppPrefs(ctx);
+        if (!PerformanceMode.allowReturnToApp(prefs)) {
+            prefs.setResumePackage(null);
+            return;
+        }
         String pkg = detect(ctx);
-        new AppPrefs(ctx).setResumePackage(pkg);
+        prefs.setResumePackage(pkg);
     }
 
     /**
@@ -90,6 +95,10 @@ public final class ForegroundApp {
      */
     public static boolean restore(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
+        if (!PerformanceMode.allowReturnToApp(prefs)) {
+            prefs.setResumePackage(null);
+            return false;
+        }
         String pkg = prefs.getResumePackage();
         prefs.setResumePackage(null);
         if (pkg == null || pkg.isEmpty()) {

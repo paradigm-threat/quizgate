@@ -397,6 +397,31 @@
             android:textColor="@color/header"
             android:textSize="15sp"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/setup_perf_label"
+            android:textColor="@color/header"
+            android:textSize="14sp"
+            android:gravity="center"/>
+
+        <Spinner
+            android:id="@+id/perf_mode_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="6dp"/>
+
+        <TextView
+            android:id="@+id/setup_perf_detail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/setup_perf_balanced_detail"
+            android:textColor="@color/header"
+            android:textSize="13sp"
+            android:gravity="center"/>
+
         <Button
             android:id="@+id/btn_sync_now"
             android:layout_width="match_parent"

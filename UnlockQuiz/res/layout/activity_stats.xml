@@ -38,6 +38,15 @@
         android:textSize="18sp"/>
 
     <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:text="@string/stats_demo_excluded_note"
+        android:textColor="@color/header"
+        android:textSize="13sp"/>
+
+    <TextView
         android:id="@+id/stats_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

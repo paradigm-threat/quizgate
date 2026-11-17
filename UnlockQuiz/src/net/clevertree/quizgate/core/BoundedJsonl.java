@@ -33,6 +33,11 @@ public final class BoundedJsonl {
         this.compactEvery = Math.max(1, compactEvery);
     }
 
+    /** How many appends between opportunistic compact passes. */
+    public int compactEvery() {
+        return compactEvery;
+    }
+
     public File file() { return file; }
 
     public synchronized void append(String line) throws IOException {

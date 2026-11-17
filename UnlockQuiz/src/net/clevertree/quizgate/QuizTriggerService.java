@@ -16,20 +16,22 @@ import java.util.TimeZone;
  * Posts the FSI notification via {@link QuizLaunch} and sends the PendingIntent.
  */
 public class QuizTriggerService extends Service {
-    private static final long STOP_AFTER_MS = 8_000L;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         String trigger = intent != null ? intent.getStringExtra(QuizActivity.EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
-        ForegroundApp.captureNow(this);
-        try {
-            new MediaGate().pauseForQuiz(this);
-        } catch (Exception e) {
-            Log.e(AlarmScheduler.TAG, "FGS media pause", e);
-        }
-
         AppPrefs prefs = new AppPrefs(this);
+        // Balanced: reinforce capture + media pause. Slim: AlarmReceiver already did
+        // the essential pause; skip extra usage-stats / media work in FGS.
+        if (!PerformanceMode.isSlim(prefs)) {
+            ForegroundApp.captureNow(this);
+            try {
+                new MediaGate().pauseForQuiz(this);
+            } catch (Exception e) {
+                Log.e(AlarmScheduler.TAG, "FGS media pause", e);
+            }
+        }
         long now = System.currentTimeMillis();
         Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger,
@@ -38,9 +40,10 @@ public class QuizTriggerService extends Service {
 
         boolean ok = QuizLaunch.launchFromService(this, trigger);
         if (ok) {
+            // PendingIntent.send success ≠ QuizActivity started (was mislabeled launch_ok).
             Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
                     System.currentTimeMillis(), TimeZone.getDefault(),
-                    DiagnosticsStore.KIND_LAUNCH_OK, trigger, "lock",
+                    DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, "lock",
                     prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                     null, "path=fgs_fsi_send"));
             Log.i(AlarmScheduler.TAG, "FGS FSI send ok trigger=" + trigger);
@@ -54,6 +57,7 @@ public class QuizTriggerService extends Service {
         }
 
         final int sid = startId;
+        long stopAfter = PerformanceMode.fgsStopAfterMs(this);
         handler.postDelayed(() -> {
             try {
                 stopForeground(Service.STOP_FOREGROUND_DETACH);
@@ -61,7 +65,7 @@ public class QuizTriggerService extends Service {
                 try { stopForeground(false); } catch (Exception ignored2) {}
             }
             stopSelf(sid);
-        }, STOP_AFTER_MS);
+        }, stopAfter);
         return START_NOT_STICKY;
     }
 

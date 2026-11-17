@@ -5,9 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.DiagnosticsStore;
+
+import java.util.TimeZone;
+
 /**
  * Reschedule after reboot or clock/timezone changes.
- * {@link PackageReplacedReceiver} handles {@link Intent#ACTION_MY_PACKAGE_REPLACED}.
+ * AlarmManager alarms do not survive power-off; this re-arms when the device
+ * comes back. {@link PackageReplacedReceiver} handles {@link Intent#ACTION_MY_PACKAGE_REPLACED}.
  */
 public class BootReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent intent) {
@@ -25,6 +30,15 @@ public class BootReceiver extends BroadcastReceiver {
             Log.i(AlarmScheduler.TAG, "boot: not armed, skip action=" + action);
             ScheduleAuth.log(context, "boot_skip", action, 0, 0, -1);
             return;
+        }
+        long now = System.currentTimeMillis();
+        try {
+            Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_ARM, "boot",
+                    "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, "action=" + action));
+        } catch (Throwable t) {
+            Log.w(AlarmScheduler.TAG, "boot diag", t);
         }
         AlarmScheduler.armAll(context);
         ScoreWidgetProvider.refreshAll(context);

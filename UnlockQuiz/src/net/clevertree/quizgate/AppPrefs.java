@@ -185,4 +185,20 @@ public final class AppPrefs {
     public void setNotificationDeniedOnce(boolean v) {
         sp.edit().putBoolean("notif_denied_once", v).apply();
     }
+
+    /**
+     * {@link PerformanceMode#BALANCED} (default) or {@link PerformanceMode#SLIM}.
+     * Slim never disables exact alarms or boot re-arm.
+     */
+    public String getPerformanceMode() {
+        return PerformanceMode.normalize(sp.getString("performance_mode", PerformanceMode.BALANCED));
+    }
+
+    public void setPerformanceMode(String mode) {
+        sp.edit().putString("performance_mode", PerformanceMode.normalize(mode)).apply();
+    }
+
+    public boolean isSlimPerformance() {
+        return PerformanceMode.isSlim(this);
+    }
 }

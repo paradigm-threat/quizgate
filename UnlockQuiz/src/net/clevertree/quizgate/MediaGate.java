@@ -28,13 +28,20 @@ public final class MediaGate {
         Context app = ctx.getApplicationContext();
         audioManager = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
         if (audioManager == null) return;
+        AppPrefs prefs = new AppPrefs(app);
         shouldResume = audioManager.isMusicActive();
         requestExclusiveTransientFocus();
         // Explicit pause helps players that only duck on focus loss (YouTube, etc.)
         dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE);
-        handler.postDelayed(() -> dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE), 180);
-        Log.i(TAG, "media pause for quiz wasPlaying=" + shouldResume + " focus=" + heldFocus);
+        // Slim: one key event is enough — skip the delayed duplicate.
+        if (PerformanceMode.allowRichMotion(prefs)) {
+            handler.postDelayed(() -> dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE), 180);
+        }
+        if (PerformanceMode.verboseLog(prefs)) {
+            Log.i(TAG, "media pause for quiz wasPlaying=" + shouldResume + " focus=" + heldFocus);
+        }
         try {
+            // Diag.breadcrumb no-ops optional detail in slim.
             Diag.breadcrumb(app, net.clevertree.quizgate.core.DiagBreadcrumb.builder(
                             System.currentTimeMillis(),
                             net.clevertree.quizgate.core.DiagnosticsStore.KIND_MEDIA)

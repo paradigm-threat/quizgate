@@ -46,6 +46,14 @@ public class AlarmReceiver extends BroadcastReceiver {
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_FIRED, trigger,
                 "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                 null, "path=broadcast"));
+        // Re-arm before launch so an abandoned / never-started quiz cannot kill the chain.
+        if (!ACTION_MORNING.equals(action)) {
+            AlarmScheduler.scheduleAfterFire(context);
+        } else {
+            prefs.setLastFiredAt(now);
+            net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
+            AlarmScheduler.scheduleMorning(context, sched.nextMorningAlarm(now));
+        }
         ForegroundApp.captureNow(context);
         try {
             new MediaGate().pauseForQuiz(context);

@@ -40,19 +40,31 @@ public final class DiagnosticsStore {
     private final BoundedJsonl breadcrumbs;
     private final BoundedJsonl schedule;
     private final BoundedJsonl exceptions;
+    private final boolean mirrorScheduleToBreadcrumbs;
     private final List<String> memoryBreadcrumbs = new ArrayList<>();
     private final List<String> memoryExceptions = new ArrayList<>();
 
     public DiagnosticsStore(File statsDir) {
+        this(statsDir, 32, true);
+    }
+
+    /**
+     * @param compactEvery appends before opportunistic compaction
+     * @param mirrorScheduleToBreadcrumbs when false (slim), schedule JSONL still
+     *        records fires/arms but skips the dual-write into breadcrumbs
+     */
+    public DiagnosticsStore(File statsDir, int compactEvery, boolean mirrorScheduleToBreadcrumbs) {
         if (!statsDir.exists()) statsDir.mkdirs();
         this.diagDir = new File(statsDir, "diagnostics");
         if (!diagDir.exists()) diagDir.mkdirs();
+        int every = Math.max(1, compactEvery);
+        this.mirrorScheduleToBreadcrumbs = mirrorScheduleToBreadcrumbs;
         this.breadcrumbs = new BoundedJsonl(new File(diagDir, "breadcrumbs.jsonl"),
-                MAX_BREADCRUMBS, MAX_BREADCRUMB_BYTES);
+                MAX_BREADCRUMBS, MAX_BREADCRUMB_BYTES, every);
         this.schedule = new BoundedJsonl(new File(diagDir, "schedule.jsonl"),
-                MAX_SCHEDULE, MAX_SCHEDULE_BYTES);
+                MAX_SCHEDULE, MAX_SCHEDULE_BYTES, every);
         this.exceptions = new BoundedJsonl(new File(diagDir, "exceptions.jsonl"),
-                MAX_EXCEPTIONS, MAX_EXCEPTION_BYTES);
+                MAX_EXCEPTIONS, MAX_EXCEPTION_BYTES, every);
     }
 
     public File getDiagDir() { return diagDir; }
@@ -68,6 +80,7 @@ public final class DiagnosticsStore {
 
     public synchronized void appendScheduleEvent(ScheduleEvent e) throws IOException {
         schedule.append(e.toJsonLine());
+        if (!mirrorScheduleToBreadcrumbs) return;
         DiagBreadcrumb.Builder b = DiagBreadcrumb.builder(e.ts, e.kind)
                 .trigger(e.trigger)
                 .sessionType(e.sessionType)

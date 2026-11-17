@@ -56,7 +56,9 @@ public final class QuizLaunch {
         if (overlay) {
             try {
                 app.startActivity(quiz);
-                log(app, System.currentTimeMillis(), DiagnosticsStore.KIND_LAUNCH_OK, trigger, prefs,
+                // startActivity returning is not proof the quiz UI ran — QuizActivity
+                // logs launch_ok with path=activity_visible when onCreate reaches the quiz.
+                log(app, System.currentTimeMillis(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, prefs,
                         "path=overlay_direct");
                 Log.i(AlarmScheduler.TAG, "QuizLaunch overlay direct start ok trigger=" + trigger);
                 return;

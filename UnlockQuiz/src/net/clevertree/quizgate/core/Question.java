@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 
 public final class Question {
+    public static final int DEFAULT_WEIGHT = 1;
+
     public final String id;
     public final String type;
     public final String spoken;
@@ -12,9 +14,16 @@ public final class Question {
     public final List<String> choices;
     public final String correct;
     public final List<String> labels;
+    /** Relative pick weight (≥1). Lower = rarer as the pool grows. */
+    public final int weight;
 
     public Question(String id, String type, String spoken, String symbolic,
                     List<String> choices, String correct, List<String> labels) {
+        this(id, type, spoken, symbolic, choices, correct, labels, DEFAULT_WEIGHT);
+    }
+
+    public Question(String id, String type, String spoken, String symbolic,
+                    List<String> choices, String correct, List<String> labels, int weight) {
         this.id = id;
         this.type = type;
         this.spoken = spoken;
@@ -22,6 +31,7 @@ public final class Question {
         this.choices = Collections.unmodifiableList(choices);
         this.correct = correct;
         this.labels = labels == null ? null : Collections.unmodifiableList(labels);
+        this.weight = Math.max(1, weight);
     }
 
     public boolean isCorrect(String choice) {
@@ -49,6 +59,7 @@ public final class Question {
         if (correct == null || !choices.contains(correct)) {
             throw new IllegalStateException(id + " correct not in choices: " + correct + " " + choices);
         }
+        if (weight < 1) throw new IllegalStateException(id + " weight must be ≥1");
         if ("math".equals(type)) {
             if (symbolic == null || symbolic.isEmpty()) {
                 throw new IllegalStateException(id + " math needs symbolic");

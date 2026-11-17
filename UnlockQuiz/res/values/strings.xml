@@ -76,6 +76,11 @@
     <string name="setup_window_label">Next quiz between</string>
     <string name="setup_minutes_label">Minutes jar</string>
     <string name="setup_sync_label">Auto-sync curricula (Wi‑Fi only)</string>
+    <string name="setup_perf_label">Performance</string>
+    <string name="setup_perf_balanced">Balanced (recommended)</string>
+    <string name="setup_perf_slim">Lean / low-end</string>
+    <string name="setup_perf_balanced_detail">Full quiz polish: return-to-app, animations, and richer on-device diagnostics. Best for typical tablets.</string>
+    <string name="setup_perf_slim_detail">Saves battery and CPU on older devices. Keeps quizzes on schedule. Turns off return-to-app, party animations, mid-quiz widget refresh, and extra diagnostic detail.</string>
     <string name="setup_curriculum_label">Curriculum</string>
     <string name="setup_tier_label">Tier / age band</string>
     <string name="setup_sync_now">Sync now</string>

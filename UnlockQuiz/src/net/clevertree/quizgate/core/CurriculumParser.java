@@ -57,9 +57,10 @@ public final class CurriculumParser {
             String correct = str(obj, "correct");
             List<String> choices = strArray(obj, "choices");
             List<String> labels = obj.contains("\"labels\"") ? strArray(obj, "labels") : null;
+            int weight = intOpt(obj, "weight", Question.DEFAULT_WEIGHT);
             // Catalog byId uses Question.id — prefer legacyId for ADB force_qid compatibility
             String catalogId = legacy != null ? legacy : id;
-            questions.add(new Question(catalogId, type, spoken, symbolic, choices, correct, labels));
+            questions.add(new Question(catalogId, type, spoken, symbolic, choices, correct, labels, weight));
             meta.add(new CurriculumPack.ItemMeta(strOpt(obj, "tier", ""), legacy));
         }
     }

@@ -32,7 +32,8 @@ import java.util.List;
 import java.util.TimeZone;
 
 public class SetupActivity extends Activity {
-    private static final long COUNTDOWN_TICK_MS = 30_000L;
+    private static final long COUNTDOWN_TICK_BALANCED_MS = 30_000L;
+    private static final long COUNTDOWN_TICK_SLIM_MS = 60_000L;
 
     private TextView status;
     private TextView minutesJar;
@@ -47,6 +48,8 @@ public class SetupActivity extends Activity {
     private CheckBox syncEnabled;
     private Spinner curriculumSpinner;
     private Spinner tierSpinner;
+    private Spinner perfModeSpinner;
+    private TextView perfDetail;
     private TextView intervalValue;
     private TextView jitterValue;
     private TextView windowValue;
@@ -55,12 +58,15 @@ public class SetupActivity extends Activity {
     private View reqCard;
     private final List<CurriculumPack> packList = new ArrayList<>();
     private boolean suppressSpinner;
+    private boolean suppressPerfSpinner;
     private boolean skipAuthWarn;
     private final Handler countdownHandler = new Handler(Looper.getMainLooper());
     private final Runnable countdownTick = new Runnable() {
         @Override public void run() {
             refreshCountdown();
-            countdownHandler.postDelayed(this, COUNTDOWN_TICK_MS);
+            long tick = PerformanceMode.isSlim(SetupActivity.this)
+                    ? COUNTDOWN_TICK_SLIM_MS : COUNTDOWN_TICK_BALANCED_MS;
+            countdownHandler.postDelayed(this, tick);
         }
     };
 
@@ -80,6 +86,8 @@ public class SetupActivity extends Activity {
         syncEnabled = findViewById(R.id.sync_enabled);
         curriculumSpinner = findViewById(R.id.curriculum_spinner);
         tierSpinner = findViewById(R.id.tier_spinner);
+        perfModeSpinner = findViewById(R.id.perf_mode_spinner);
+        perfDetail = findViewById(R.id.setup_perf_detail);
         intervalValue = findViewById(R.id.setup_interval_value);
         jitterValue = findViewById(R.id.setup_jitter_value);
         windowValue = findViewById(R.id.setup_window_value);
@@ -96,6 +104,7 @@ public class SetupActivity extends Activity {
             prefs.setSyncEnabled(checked);
             if (checked) CurriculumIndexClient.syncIfEnabled(this);
         });
+        bindPerfModeSpinner();
         syncNow.setOnClickListener(v -> {
             if (!prefs.isSyncEnabled()) {
                 Toast.makeText(this, "Enable auto-sync first", Toast.LENGTH_SHORT).show();
@@ -125,6 +134,41 @@ public class SetupActivity extends Activity {
         refreshScheduleLabels();
         refreshStatus();
         CurriculumIndexClient.syncIfEnabled(this);
+    }
+
+    private void bindPerfModeSpinner() {
+        if (perfModeSpinner == null) return;
+        AppPrefs prefs = new AppPrefs(this);
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.setup_perf_balanced));
+        labels.add(getString(R.string.setup_perf_slim));
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item, labels);
+        suppressPerfSpinner = true;
+        perfModeSpinner.setAdapter(adapter);
+        perfModeSpinner.setSelection(prefs.isSlimPerformance() ? 1 : 0);
+        refreshPerfDetail(prefs.isSlimPerformance());
+        perfModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (suppressPerfSpinner) return;
+                boolean slim = position == 1;
+                String mode = slim ? PerformanceMode.SLIM : PerformanceMode.BALANCED;
+                AppPrefs p = new AppPrefs(SetupActivity.this);
+                if (!mode.equals(p.getPerformanceMode())) {
+                    p.setPerformanceMode(mode);
+                }
+                refreshPerfDetail(slim);
+                countdownHandler.removeCallbacks(countdownTick);
+                countdownHandler.post(countdownTick);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        suppressPerfSpinner = false;
+    }
+
+    private void refreshPerfDetail(boolean slim) {
+        if (perfDetail == null) return;
+        perfDetail.setText(slim ? R.string.setup_perf_slim_detail : R.string.setup_perf_balanced_detail);
     }
 
     private void bumpInterval(int steps) {

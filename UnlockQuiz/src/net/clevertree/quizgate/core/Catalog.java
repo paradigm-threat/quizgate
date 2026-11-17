@@ -80,7 +80,25 @@ public final class Catalog {
         if (obj.contains("\"labels\"")) {
             labels = strArray(obj, "labels");
         }
-        return new Question(id, type, spoken, symbolic, choices, correct, labels);
+        int weight = intOpt(obj, "weight", Question.DEFAULT_WEIGHT);
+        return new Question(id, type, spoken, symbolic, choices, correct, labels, weight);
+    }
+
+    private static int intOpt(String obj, String key, int def) {
+        String needle = "\"" + key + "\"";
+        int k = obj.indexOf(needle);
+        if (k < 0) return def;
+        int colon = obj.indexOf(':', k + needle.length());
+        int p = colon + 1;
+        while (p < obj.length() && Character.isWhitespace(obj.charAt(p))) p++;
+        int end = p;
+        while (end < obj.length() && (Character.isDigit(obj.charAt(end)) || obj.charAt(end) == '-')) end++;
+        if (end == p) return def;
+        try {
+            return Integer.parseInt(obj.substring(p, end));
+        } catch (NumberFormatException e) {
+            return def;
+        }
     }
 
     private static String str(String obj, String key) {
