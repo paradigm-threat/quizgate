@@ -19,11 +19,11 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 
 | Area | Default / fact |
 |------|----------------|
-| Schedule | 30±15 min → fire window 15–45 min while interactive; quiet 20:00–07:00; morning 07:00. Screen off cancels alarms + sets `pending_screen_lock`; wake opens Hard quiz (no idle RTC wake) |
-| Re-arm | Boot / `MY_PACKAGE_REPLACED` / `TIME_SET` only while interactive and not pending; else pend lock |
+| Schedule | 60±15 min → fire window 45–75 min while interactive; quiet 20:00–07:00; morning 07:00. Screen off cancels alarms + sets `pending_screen_lock`; wake opens Hard quiz (no idle RTC wake) |
+| Re-arm | Boot / `MY_PACKAGE_REPLACED` / `TIME_SET` / wake-skip (grace or !pending) via `armWhileInteractive` only while interactive and not pending; else pend lock |
 | Gate mode | Hard-only: Accessibility confine during active scheduled lock; Home/Back never bypass. Widget/Setup `TRIGGER_PLAY` is unlocked practice |
-| Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks wake/reintercept relaunch; pending cleared; FSI notif cancelled. Next quiz only after normal interval or a later screen-off→wake past grace |
-| Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch, not Soft Arm-critical |
+| Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks wake/reintercept relaunch; pending cleared; FSI notif cancelled. Screen-off during grace cancels alarms but does not pend; wake restores schedule (no second jail). Next quiz only after normal interval or a later screen-off→wake past grace |
+| Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
 | Stats | `files/stats/` capped JSONL; day rollups 90d; upload OFF |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |

@@ -17,7 +17,7 @@ import android.util.Log;
 import java.util.List;
 
 /**
- * Remember the app under the soft gate and bring it back after unlock so the
+ * Remember the app under the Hard lock and bring it back after unlock so the
  * child does not have to hunt through Recents.
  */
 public final class ForegroundApp {

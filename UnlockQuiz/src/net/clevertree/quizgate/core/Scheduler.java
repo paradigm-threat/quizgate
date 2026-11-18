@@ -8,12 +8,12 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Quiet hours 20:00–07:00 local: no interval alarms.
  * Morning gate at 07:00.
- * Soft interval = base interval ± jitter (default 30m ± 15m → next fire in 15–45m).
+ * Soft interval = base interval ± jitter (default 60m ± 15m → next fire in 45–75m).
  */
 public final class Scheduler {
     public static final int QUIET_START_HOUR = 20;
     public static final int MORNING_HOUR = 7;
-    public static final long DEFAULT_INTERVAL_MS = 30L * 60L * 1000L;
+    public static final long DEFAULT_INTERVAL_MS = 60L * 60L * 1000L;
     public static final long DEFAULT_JITTER_MS = 15L * 60L * 1000L;
     public static final long MIN_DELAY_MS = 5L * 60L * 1000L;
     public static final long MIN_INTERVAL_MS = 15L * 60L * 1000L;

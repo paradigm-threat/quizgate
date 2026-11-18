@@ -36,6 +36,15 @@ public final class ScreenLockPolicy {
         return armed && interactive && !pending;
     }
 
+    /**
+     * When wake skips launching a quiz, restore the interactive schedule if screen-off
+     * may have cancelled alarms (unlock grace, or no pending lock).
+     * Do not re-arm while a real pending wake-lock is waiting outside grace.
+     */
+    public static boolean shouldRearmScheduleOnWakeSkip(boolean inUnlockGrace, boolean pending) {
+        return inUnlockGrace || !pending;
+    }
+
     /** Alarm fire while screen off: skip launch, keep pending, cancel wake chain. */
     public static boolean shouldSkipFireWhileOff(boolean interactive) {
         return !interactive;

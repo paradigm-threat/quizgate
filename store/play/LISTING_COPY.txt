@@ -18,10 +18,10 @@ FULL DESCRIPTION (max 4000 characters)
 --------------------------------------------------------------------------------
 QuizGate helps kids earn tablet time by answering short math quizzes.
 
-Correct answers bank minutes. Soft reminders ask for a quick round on your schedule (default about every half hour, with a little randomness) plus a morning check-in. Parents stay in control — forever free, with no ads and no in-app purchases.
+Correct answers bank minutes. Scheduled Hard quizzes ask for a quick round on your schedule (default about every hour, ±15 minutes) plus a morning check-in. One correct answer unlocks; quizzes do not stack. Parents stay in control — forever free, with no ads and no in-app purchases.
 
 How it works
-• Soft gate: a short quiz before the next stretch of screen time
+• Hard lock: Accessibility keeps the scheduled quiz on screen until unlock (practice from the widget stays free)
 • Minutes jar: finish a round to bank time; skip early and nothing is earned
 • Local stats: see today’s asked / right / wrong / skipped on the home screen
 • Photos: use your family’s gallery pictures as backdrops, or kid-friendly defaults
@@ -34,10 +34,11 @@ Built for families
 • Closed-loop SI helps curate curriculum packs; parents decide what runs
 
 Permissions (why we ask)
-• Notifications & exact alarms — soft quiz reminders on your schedule
+• Notifications & exact alarms — scheduled quizzes on your 60±15 + morning window
+• Accessibility — confine only while a Hard lock is active (not a screen reader)
 • Photos — optional quiz backdrops from this device
 • Usage access (optional) — pause media during a quiz and return to the app your child was just using
-• Battery unrestricted — so reminders stay reliable on some devices
+• Battery unrestricted — so the schedule stays reliable on some devices
 
 QuizGate is open source. Privacy policy: https://quizgate.app/privacy
 

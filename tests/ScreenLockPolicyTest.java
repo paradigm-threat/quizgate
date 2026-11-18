@@ -29,6 +29,15 @@ public class ScreenLockPolicyTest {
         Assert.isTrue(!ScreenLockPolicy.shouldArmSchedule(false, true, false),
                 "disarmed → no arm");
 
+        Assert.isTrue(ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(true, false),
+                "grace + !pending → rearm after cancelled alarms");
+        Assert.isTrue(ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(true, true),
+                "grace + pending cleared path → rearm");
+        Assert.isTrue(ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(false, false),
+                "!pending wake skip → rearm");
+        Assert.isTrue(!ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(false, true),
+                "pending outside grace → wait for wake launch, no rearm");
+
         Assert.isTrue(ScreenLockPolicy.shouldSkipFireWhileOff(false), "off → skip fire");
         Assert.isTrue(!ScreenLockPolicy.shouldSkipFireWhileOff(true), "on → allow fire");
 

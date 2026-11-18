@@ -118,10 +118,14 @@ public final class ScreenLockGate {
             // Just unlocked — drop stale pending; do not open another jail.
             prefs.setPendingScreenLock(false);
             Log.i(AlarmScheduler.TAG, "wake during unlock grace — pending cleared, no launch");
-            return;
         }
         if (!ScreenLockPolicy.shouldLaunchOnWake(
                 prefs.isArmed(), prefs.isPendingScreenLock(), hardActive, inGrace)) {
+            // Screen-off during grace cancels alarms; restore 60±15 while interactive.
+            if (ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(
+                    inGrace, prefs.isPendingScreenLock())) {
+                AlarmScheduler.armWhileInteractive(app);
+            }
             return;
         }
         long prev = lastWakeAt.get();

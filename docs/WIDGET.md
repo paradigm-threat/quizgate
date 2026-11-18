@@ -16,4 +16,4 @@ After a quiz or stats change, `ScoreWidgetProvider.refreshAll()` redraws placed 
 
 ## Next-quiz countdown (no widget required)
 
-Setup shows **Next quiz in ~N min** from `AppPrefs.nextAlarmAt()` (set by `AlarmScheduler`). The line refreshes about every 30s while Setup is open. Arm scheduling first; leave the interval at the default **30 ± 15** unless briefly testing.
+Setup shows **Next quiz in ~N min** from `AppPrefs.nextAlarmAt()` (set by `AlarmScheduler`). The line refreshes about every 30s while Setup is open. Arm scheduling first; leave the interval at the default **60 ± 15** unless briefly testing.
