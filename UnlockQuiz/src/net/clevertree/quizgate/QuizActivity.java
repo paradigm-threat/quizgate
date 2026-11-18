@@ -85,6 +85,8 @@ public class QuizActivity extends Activity {
     private boolean finishing;
     private boolean inTransition;
     private boolean mediaResumePending;
+    /** Lock exit prep started during success/fail celebration (schedule/grace/restore). */
+    private boolean unlockExitPrepared;
     /** Wall clock when current question was shown (for latency_ms). */
     private long questionShownAt;
 
@@ -296,6 +298,7 @@ public class QuizActivity extends Activity {
         session = new QuizSession(UUID.randomUUID().toString(), trigger, clock.nowMillis(), picker,
                 roundSize, activePack.maxWrong, activePack.consolingUnlock);
         finishing = false;
+        unlockExitPrepared = false;
         inTransition = false;
         currentAnswered = false;
         String sessionType = playMode ? "play" : "lock";
@@ -310,7 +313,7 @@ public class QuizActivity extends Activity {
     @Override protected void onStop() {
         super.onStop();
         // After unlock, activity is finishing — resume media once we're in background
-        if (mediaResumePending || finishing) {
+        if (mediaResumePending || finishing || unlockExitPrepared) {
             mediaResumePending = false;
             mediaGate.resumeAfterQuiz(this);
         } else if (!playMode && HardGate.isHardLockActive(this)) {
@@ -713,6 +716,8 @@ public class QuizActivity extends Activity {
         applyErrorStyle();
         transitionTitle.setText(R.string.fail_title);
         preparePhotoBackground(false);
+        // Prep leave during the fail overlay so countdown end only has to finish().
+        if (!playMode) prepareUnlockExit();
         fadeInTransition(() -> {
             if (playMode) {
                 showPlayChoiceChrome(R.string.play_fail_prompt);
@@ -720,7 +725,8 @@ public class QuizActivity extends Activity {
             }
             startFailPulse();
             // Leave on the fail overlay — never fade back to the question before exit.
-            startCountdown(FAIL_COUNTDOWN_SEC, R.string.retry_in, true, this::finishSession);
+            startCountdown(FAIL_COUNTDOWN_SEC, R.string.retry_in, true,
+                    this::completeUnlockExit);
         });
     }
 
@@ -730,6 +736,8 @@ public class QuizActivity extends Activity {
         applySuccessStyle();
         transitionTitle.setText(R.string.success_title);
         preparePhotoBackground(true);
+        // Start grace / schedule / restore immediately so teardown overlaps the party.
+        if (!playMode) prepareUnlockExit();
         fadeInTransition(() -> {
             boolean party = PerformanceMode.allowRichMotion(prefs);
             if (party) {
@@ -751,13 +759,10 @@ public class QuizActivity extends Activity {
                 return;
             }
             if (successEndTick != null) handler.removeCallbacks(successEndTick);
+            // Keep party running until the activity is gone — only finish() here.
             successEndTick = () -> {
                 successEndTick = null;
-                stopPhotoFlash();
-                stopBalloonPulse();
-                // Leave while "Great job!" is still up — fadeOut used to restore the
-                // quiz panel and flash the question again before finish().
-                finishSession();
+                completeUnlockExit();
             };
             handler.postDelayed(successEndTick, holdMs);
         });
@@ -1283,81 +1288,129 @@ public class QuizActivity extends Activity {
         finishSession();
     }
 
-    private void finishSession() {
-        if (finishing) return;
-        finishing = true;
-        inTransition = false;
+    /**
+     * Heavy unlock teardown that should overlap the success/fail celebration:
+     * hide quiz under overlay, clear Hard confine + grace, persist stats, re-arm
+     * schedule, and kick return-to-app. Does <em>not</em> call {@link #finish()} or
+     * stop celebration animations.
+     */
+    private void prepareUnlockExit() {
+        if (unlockExitPrepared || playMode) return;
+        unlockExitPrepared = true;
         mediaResumePending = true;
-        stopBalloonPulse();
+
         // Keep success/fail overlay covering the quiz until the activity is gone.
-        // Never restore quizPanel visibility here — that was flashing the question
-        // after unlock.
         if (quizPanel != null) {
             quizPanel.animate().cancel();
             quizPanel.setAlpha(0f);
             quizPanel.setVisibility(View.INVISIBLE);
         }
         if (transitionOverlay != null) {
-            transitionOverlay.animate().cancel();
             transitionOverlay.setVisibility(View.VISIBLE);
             transitionOverlay.setAlpha(1f);
         }
-        // Kill leave-hint / on_stop reintercept posts before hard session clears.
-        handler.removeCallbacksAndMessages(null);
-        successEndTick = null;
+
         QuizLaunch.cancelNotification(this);
         String outcome = session != null && session.getOutcome() != null
                 ? session.getOutcome().name().toLowerCase() : "";
-        if (!playMode) {
-            // Clear pending + grace BEFORE endSession so wake cannot relaunch mid-teardown.
-            long now = clock.nowMillis();
-            prefs.setPendingScreenLock(false);
-            prefs.beginUnlockGrace(now);
-            String reason = outcome.isEmpty() ? "session_end" : outcome;
-            if ("bypass".equals(reason)) reason = "parent_or_bypass";
-            if (prefs.isHardSessionActive()) {
-                HardGate.endSession(this, reason);
-            } else {
-                // Still stamp grace even if hard flag already cleared.
-                Log.i(AlarmScheduler.TAG, "finishSession grace set reason=" + reason);
-            }
+        long now = clock.nowMillis();
+        prefs.setPendingScreenLock(false);
+        prefs.beginUnlockGrace(now);
+        String reason = outcome.isEmpty() ? "session_end" : outcome;
+        if ("bypass".equals(reason)) reason = "parent_or_bypass";
+        if (prefs.isHardSessionActive()) {
+            HardGate.endSession(this, reason);
+        } else {
+            Log.i(AlarmScheduler.TAG, "prepareUnlockExit grace set reason=" + reason);
         }
+
         try {
             if (session != null) stats.appendSession(session);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "stats session", e);
             Diag.nonFatal(this, "stats_session", e);
         }
-        String sessionType = playMode ? "play" : "lock";
+        String sessionType = "lock";
         String trigger = session != null ? session.getTrigger() : "";
         Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
-                clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_ENDED,
+                now, TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_ENDED,
                 trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                 null, outcome));
         ScoreWidgetProvider.refreshAll(this);
-        // Slim defers JSONL compaction to session end (no mid-answer rewrite storms).
         if (PerformanceMode.isSlim(prefs)) {
             Diag.compactLocal(this);
         }
-        if (!playMode) {
-            AlarmScheduler.scheduleAfterSessionEnd(this);
-        }
-        // Bring YouTube / game / whatever back before we disappear.
-        // Delay finish slightly so the restore startActivity wins over the
-        // task underneath (often Home once YouTube has moved into system PiP).
-        if (restorePreviousApp && PerformanceMode.allowReturnToApp(prefs)) {
+        AlarmScheduler.scheduleAfterSessionEnd(this);
+        // Do not ForegroundApp.restore() here — that would steal focus mid-celebration.
+        // Restore runs in completeUnlockExit when the party has had its hold time.
+        Log.i(AlarmScheduler.TAG, "unlock exit prepared during celebration");
+    }
+
+    /**
+     * End the activity after {@link #prepareUnlockExit()} (or do both for bypass).
+     * Celebration animations keep running until the window is destroyed.
+     */
+    private void completeUnlockExit() {
+        if (finishing) return;
+        if (!playMode) prepareUnlockExit();
+        finishing = true;
+        inTransition = false;
+        successEndTick = null;
+        // Do not cancel celebration callbacks here — finish() tears the window down.
+        // Drop only reintercept-style posts by ignoring them via finishing + cleared hard.
+
+        if (!playMode && restorePreviousApp && PerformanceMode.allowReturnToApp(prefs)) {
             try {
                 ForegroundApp.restore(this);
             } catch (Exception e) {
                 Log.e(AlarmScheduler.TAG, "restore previous app", e);
             }
-            handler.postDelayed(this::finish, 220);
+            // Brief beat so restore can win focus while success is still on screen.
+            handler.postDelayed(this::finish, 120);
             return;
         }
         AppPrefs clear = new AppPrefs(this);
         clear.setResumePackage(null);
         clear.setResumeClass(null);
         finish();
+    }
+
+    private void finishSession() {
+        if (finishing) return;
+        if (playMode) {
+            finishing = true;
+            inTransition = false;
+            mediaResumePending = true;
+            stopBalloonPulse();
+            stopPhotoFlash();
+            handler.removeCallbacksAndMessages(null);
+            successEndTick = null;
+            QuizLaunch.cancelNotification(this);
+            try {
+                if (session != null) stats.appendSession(session);
+            } catch (Exception e) {
+                Log.e(AlarmScheduler.TAG, "stats session", e);
+                Diag.nonFatal(this, "stats_session", e);
+            }
+            String outcome = session != null && session.getOutcome() != null
+                    ? session.getOutcome().name().toLowerCase() : "";
+            String trigger = session != null ? session.getTrigger() : "";
+            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                    clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_ENDED,
+                    trigger, "play", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, outcome));
+            ScoreWidgetProvider.refreshAll(this);
+            if (PerformanceMode.isSlim(prefs)) {
+                Diag.compactLocal(this);
+            }
+            AppPrefs clear = new AppPrefs(this);
+            clear.setResumePackage(null);
+            clear.setResumeClass(null);
+            finish();
+            return;
+        }
+        prepareUnlockExit();
+        completeUnlockExit();
     }
 
     private void logPresented(String type, PresentedQuestion presented, String choice, int streak) {
