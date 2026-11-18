@@ -8,7 +8,8 @@ Concise orientation for coding agents. Prefer updating existing docs over adding
 - **GitHub** (`paradigm-threat/quizgate` / `origin` / `github`) is writable again; keep GitLab as source of truth and sync when needed.
 - **CI APK:** GitLab CI is **off** (quota — `.gitlab-ci.yml` `workflow: rules: - when: never`). Prefer **GitHub Actions** (`.github/workflows/ci.yml`) for regression + sideload APK. Play **AAB + release keystore** remain human / not in CI.
 - **Re-enable GitLab CI:** restore the previous `workflow.rules` `if:` triggers documented at the top of `.gitlab-ci.yml`.
-- Site: `site/` → https://quizgate.app (Vercel). Clevertree thank-you lives on https://clevertree.net/thankyou (separate repo).
+- Site: `site/` → https://quizgate.app (Vercel project `quizgate`, rootDirectory `site`). Deploy with `./scripts/deploy_site.sh` from the **repo root** (never `cd site && vercel` — that fails with Root Directory \"site\" does not exist). Keep only root `.vercel/`; do not add `site/.vercel`.
+- Vercel Git: reconnect GitHub Login Connection then `vercel git connect https://github.com/paradigm-threat/quizgate.git --scope clevertrees-projects` for push-to-deploy (GitLab group repos need Pro).
 - Never commit secrets, keystores, pairing codes, or device IPs into docs.
 
 ## Pull before edit

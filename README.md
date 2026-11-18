@@ -12,6 +12,7 @@ Package: `net.clevertree.quizgate`
 - GitHub (secondary / Actions CI): https://github.com/paradigm-threat/quizgate  
 - Clevertree thank-you: https://clevertree.net/thankyou  
 - Vercel team: **clevertrees-projects** · project **quizgate** · root directory `site` · production branch `main` · domain `quizgate.app`
+- Site deploy: `./scripts/deploy_site.sh` (must run from repo root; `cd site && vercel` breaks rootDirectory)
 
 **Team note — remotes:** push/pull **GitLab** first. Site deploys historically expect GitHub → Vercel; if GitHub is unavailable, treat GitLab as source of truth for the app and sync site separately.
 
@@ -38,6 +39,12 @@ Static site in `site/` (seeded from the Website Favicon Themes Kit). Local previ
 
 ```bash
 python3 -m http.server 8000 --directory site
+```
+
+Production deploy (from monorepo root — required because Vercel rootDirectory is `site`):
+
+```bash
+./scripts/deploy_site.sh
 ```
 
 Play Store setup + listing copy: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`store/play/`](store/play/).  
