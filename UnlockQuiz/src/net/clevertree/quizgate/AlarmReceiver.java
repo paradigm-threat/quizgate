@@ -29,6 +29,19 @@ public class AlarmReceiver extends BroadcastReceiver {
         AppPrefs prefs = new AppPrefs(context);
         Log.i(AlarmScheduler.TAG, "alarm broadcast trigger=" + trigger + " action=" + action);
 
+        // Never wake / launch a quiz while the screen is off — pend lock instead.
+        if (net.clevertree.quizgate.core.ScreenLockPolicy.shouldSkipFireWhileOff(
+                ScreenLockGate.isInteractive(context))) {
+            prefs.setPendingScreenLock(true);
+            AlarmScheduler.cancelAllAlarms(context);
+            Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_SKIP_FIRE, trigger,
+                    "lock", 0L, prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, "screen_off"));
+            Log.i(AlarmScheduler.TAG, "alarm skip_fire screen_off trigger=" + trigger);
+            return;
+        }
+
         if (ACTION_MORNING.equals(action)) {
             net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
             if (!sched.needsMorningGate(now, prefs.lastClearedDay())) {

@@ -38,6 +38,8 @@ echo "== PerfPolicyTest =="
 java -cp "$OUT" PerfPolicyTest
 echo "== GatePolicyTest =="
 java -cp "$OUT" GatePolicyTest
+echo "== ScreenLockPolicyTest =="
+java -cp "$OUT" ScreenLockPolicyTest
 echo "== CurriculumParserTest =="
 java -cp "$OUT" CurriculumParserTest "$ROOT/UnlockQuiz/assets/curricula/basic-math"
 echo "ALL UNIT TESTS PASSED"

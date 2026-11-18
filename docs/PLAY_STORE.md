@@ -158,7 +158,7 @@ Source kit also has Lock / Open variants under `B_lock_numbers/` and `C_open_gat
 
 ## 6. Tough sell on Play (read this first)
 
-QuizGate ships a **Hard-only Accessibility lock** for scheduled quizzes. An AccessibilityService confines the quiz during an active lock session (Home/Back do not dismiss). Widget and Setup practice stay unlocked. The app must still **wake the device**, **open over other apps**, and **survive OEM battery managers**.
+QuizGate ships a **Hard-only Accessibility lock** for scheduled quizzes. An AccessibilityService confines the quiz during an active lock session (Home/Back do not dismiss) and observes screen off/on so schedule alarms do not wake a sleeping tablet — power-on opens the Hard quiz instead. Widget and Setup practice stay unlocked. Interval quizzes run only while the device is already interactive. Launch still needs overlay/FSI when BAL blocks, and must survive OEM battery managers.
 
 | Friction | Why it hurts listing / review |
 |----------|--------------------------------|
@@ -180,10 +180,10 @@ Field notes if asked: without Appear on top → schedule may fire but UI may not
 
 | Permission | Why | Critical? |
 |------------|-----|-----------|
-| Exact alarms | Schedule quizzes (30±15 + morning) | Yes — schedule |
+| Exact alarms | Schedule quizzes (30±15 + morning) while interactive | Yes — schedule |
 | `POST_NOTIFICATIONS` + High channel | Alarm cue / FGS / FSI | Yes — cue |
-| Battery unrestricted | OEM reliability for alarms | Yes — schedule |
-| **Accessibility** | Confine quiz during active scheduled lock only | Yes — **Hard confine** |
+| Battery unrestricted | OEM reliability for in-use alarms | Yes — schedule |
+| **Accessibility** | Confine quiz during active lock; screen off/on → pending wake lock | Yes — **Hard confine + screen events** |
 | Appear-on-top / overlay | Launch when BAL blocks background starts | Important (launch) |
 | Full-screen intent | Alarm-style open over lock screen | Important |
 | `PACKAGE_USAGE_STATS` | Return child to previous app after unlock | Important (UX) |

@@ -9,6 +9,7 @@ import android.util.Log;
 
 import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.Scheduler;
+import net.clevertree.quizgate.core.ScreenLockPolicy;
 import net.clevertree.quizgate.core.SystemClock;
 
 import java.util.TimeZone;
@@ -25,9 +26,84 @@ public final class AlarmScheduler {
         return new Scheduler(TimeZone.getDefault(), prefs.getIntervalMs(), prefs.getJitterMs());
     }
 
+    /**
+     * Cancel interval + morning AlarmManager entries and clear next-alarm pref.
+     * Used on screen-off so sleeping devices are never woken by schedule.
+     */
+    public static void cancelAllAlarms(Context ctx) {
+        if (ctx == null) return;
+        Context app = ctx.getApplicationContext();
+        AlarmManager am = (AlarmManager) app.getSystemService(Context.ALARM_SERVICE);
+        cancelOne(am, app, REQ_INTERVAL, AlarmReceiver.ACTION_INTERVAL);
+        cancelOne(am, app, REQ_MORNING, AlarmReceiver.ACTION_MORNING);
+        new AppPrefs(app).setNextAlarmAt(0L);
+        Log.i(TAG, "alarms cancelled (interval+morning)");
+    }
+
+    private static void cancelOne(AlarmManager am, Context ctx, int req, String action) {
+        if (am == null) return;
+        try {
+            Intent broadcast = new Intent(ctx, AlarmReceiver.class).setAction(action);
+            PendingIntent pi = PendingIntent.getBroadcast(ctx, req, broadcast,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            am.cancel(pi);
+            pi.cancel();
+        } catch (Exception e) {
+            Log.w(TAG, "cancel alarm action=" + action, e);
+        }
+        try {
+            Intent show = new Intent(ctx, SetupActivity.class);
+            show.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            PendingIntent showPi = PendingIntent.getActivity(ctx, req + 50, show,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            am.cancel(showPi);
+            showPi.cancel();
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Arm schedule only while the device is interactive and no pending screen lock.
+     * No-ops (cancels any leftover wake alarms) when screen is off or pending.
+     */
+    public static void armWhileInteractive(Context ctx) {
+        if (ctx == null) return;
+        AppPrefs prefs = new AppPrefs(ctx);
+        boolean interactive = ScreenLockGate.isInteractive(ctx);
+        if (!ScreenLockPolicy.shouldArmSchedule(
+                prefs.isArmed(), interactive, prefs.isPendingScreenLock())) {
+            cancelAllAlarms(ctx);
+            Log.i(TAG, "armWhileInteractive skip armed=" + prefs.isArmed()
+                    + " interactive=" + interactive
+                    + " pending=" + prefs.isPendingScreenLock());
+            return;
+        }
+        scheduleArmedWindows(ctx, prefs, "arm_interactive");
+    }
+
     public static void armAll(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         prefs.setArmed(true);
+        boolean interactive = ScreenLockGate.isInteractive(ctx);
+        if (!interactive) {
+            prefs.setPendingScreenLock(true);
+            cancelAllAlarms(ctx);
+            long now = new SystemClock().nowMillis();
+            try {
+                Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
+                        now, TimeZone.getDefault(), DiagnosticsStore.KIND_ARM, "arm",
+                        "lock", 0L, prefs.getIntervalMs(), prefs.getJitterMs(),
+                        null, "arm_screen_off_pending"));
+            } catch (Throwable t) {
+                Log.w(TAG, "arm diag", t);
+            }
+            Log.i(TAG, "armed but screen off — pending lock, no wake alarms");
+            return;
+        }
+        prefs.setPendingScreenLock(false);
+        scheduleArmedWindows(ctx, prefs, "arm");
+    }
+
+    private static void scheduleArmedWindows(Context ctx, AppPrefs prefs, String armReason) {
         long now = new SystemClock().nowMillis();
         Scheduler sched = scheduler(ctx);
         long morningAt = sched.nextMorningAlarm(now);
@@ -36,7 +112,8 @@ public final class AlarmScheduler {
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
         ScheduleAuth.Snapshot auth = ScheduleAuth.snapshot(ctx);
-        String authNote = auth.compactNote() + (auth.exactAlarm ? "" : " mode=inexact");
+        String authNote = auth.compactNote() + (auth.exactAlarm ? "" : " mode=inexact")
+                + " reason=" + armReason;
         try {
             Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
                     now, TimeZone.getDefault(), DiagnosticsStore.KIND_ARM, "arm",
@@ -61,10 +138,22 @@ public final class AlarmScheduler {
      * is on. Survives abandoned / never-started quizzes (Home kill, incomplete
      * session). Power-off gaps are expected — {@link BootReceiver} re-arms on boot.
      * Does <em>not</em> mark the day cleared (morning gate still applies).
+     * Skips scheduling (sets pending) if the screen is off.
      */
     public static void scheduleAfterFire(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         if (!prefs.isArmed()) return;
+        if (ScreenLockPolicy.shouldSkipFireWhileOff(ScreenLockGate.isInteractive(ctx))) {
+            prefs.setPendingScreenLock(true);
+            cancelAllAlarms(ctx);
+            Log.i(TAG, "after_fire screen off — pending, no re-arm");
+            return;
+        }
+        if (prefs.isPendingScreenLock()) {
+            cancelAllAlarms(ctx);
+            Log.i(TAG, "after_fire pending screen lock — no re-arm");
+            return;
+        }
         long now = new SystemClock().nowMillis();
         prefs.setLastFiredAt(now);
         Scheduler base = scheduler(ctx);
@@ -90,6 +179,12 @@ public final class AlarmScheduler {
     public static void ensureNextInterval(Context ctx, String reason) {
         AppPrefs prefs = new AppPrefs(ctx);
         if (!prefs.isArmed()) return;
+        if (!ScreenLockPolicy.shouldArmSchedule(
+                prefs.isArmed(), ScreenLockGate.isInteractive(ctx), prefs.isPendingScreenLock())) {
+            cancelAllAlarms(ctx);
+            Log.i(TAG, "ensureNextInterval skip reason=" + reason + " (not interactive or pending)");
+            return;
+        }
         long now = new SystemClock().nowMillis();
         long next = prefs.nextAlarmAt();
         if (next > now + 30_000L) {
@@ -114,9 +209,18 @@ public final class AlarmScheduler {
 
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
+        // Unlock / consoling / parent override clears the wake-pending latch.
+        prefs.setPendingScreenLock(false);
         long now = new SystemClock().nowMillis();
         Scheduler base = scheduler(ctx);
         prefs.setLastClearedDay(base.dayKey(now));
+
+        if (!ScreenLockGate.isInteractive(ctx)) {
+            prefs.setPendingScreenLock(true);
+            cancelAllAlarms(ctx);
+            Log.i(TAG, "session end while screen off — pending again");
+            return;
+        }
 
         long delay;
         long jitterUsed;

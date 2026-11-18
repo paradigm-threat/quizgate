@@ -27,9 +27,9 @@ Onboarding asks Auto / Performance / Slim (default Auto). Later: **Parents** →
 
 | Cost center | What we found | Performance | Slim |
 |-------------|---------------|-------------|------|
-| Wake locks | No app-held `PARTIAL_WAKE_LOCK`; wakes from AlarmManager | exact / setAlarmClock | same (required) |
-| Exact alarms | Required for 30±15 reliability | on | on |
-| Boot / replace / time re-arm | `BootReceiver` + `PackageReplacedReceiver` | on | on |
+| Wake locks | No app-held `PARTIAL_WAKE_LOCK`; schedule uses setAlarmClock only while interactive — screen-off cancels alarms (no idle wake) | interactive exact / setAlarmClock | same |
+| Exact alarms | Required for in-use 30±15 reliability | on (cancelled while screen off) | on (cancelled while screen off) |
+| Boot / replace / time re-arm | `BootReceiver` + `PackageReplacedReceiver` — interactive only; else `pending_screen_lock` | on | on |
 | FGS duration | `QuizTriggerService` after FSI send | ~8 s | ~2.5 s |
 | Usage-stats / return-to-app | `ForegroundApp.detect` scans ~60 s of events | on when granted | off (no scan) |
 | Media focus | Transient exclusive + pause key | focus + delayed retry pause | focus + single pause |

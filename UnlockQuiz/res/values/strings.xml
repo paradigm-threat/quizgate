@@ -73,7 +73,7 @@
     <string name="setup_req_usage_toast">Turn on Usage access to return to the last app</string>
     <string name="setup_gate_reliability_none">Lock: fires — · open — · reintercept — · unlock —</string>
     <string name="setup_gate_reliability_line">Lock: fires %1$d · open %2$d · reintercept %3$d · unlock %4$d</string>
-    <string name="a11y_service_description">QuizGate lock: while a quiz lock is active, keeps the quiz on screen if the child switches away. Used only during an active lock session. Not a screen reader. Does not read passwords, messages, or other apps\' content. Parents can end a lock from the quiz (long-press the question) or Setup. Widget and Setup practice quizzes are unlocked and do not use this confine.</string>
+    <string name="a11y_service_description">QuizGate lock: while a quiz lock is active, keeps the quiz on screen if the child switches away. Also notices screen off/on so the schedule does not wake a sleeping tablet and a lock quiz can appear on wake. Used only while Armed / during an active lock. Not a screen reader. Does not read passwords, messages, or other apps\' content. Parents can end a lock from the quiz (long-press the question) or Setup. Widget and Setup practice quizzes are unlocked and do not use this confine.</string>
     <string name="setup_req_widget_title">Home score widget</string>
     <string name="setup_req_widget_detail">Optional. Long-press home → Widgets → QuizGate → Today\'s score — or tap Add below.</string>
     <string name="setup_auth_critical_title">Required settings still off</string>

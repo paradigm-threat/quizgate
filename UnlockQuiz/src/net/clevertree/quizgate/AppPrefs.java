@@ -265,6 +265,19 @@ public final class AppPrefs {
     }
 
     /**
+     * Screen turned off while Armed — next wake must show Hard quiz.
+     * Interval/morning alarms stay cancelled until unlock clears this.
+     */
+    public boolean isPendingScreenLock() {
+        return sp.getBoolean("pending_screen_lock", false);
+    }
+
+    public void setPendingScreenLock(boolean pending) {
+        // commit(): Accessibility screen-off/on and BootReceiver must see this immediately.
+        sp.edit().putBoolean("pending_screen_lock", pending).commit();
+    }
+
+    /**
      * User preference: {@link PerformanceMode#PERFORMANCE}, {@link PerformanceMode#SLIM},
      * or {@link PerformanceMode#AUTO} (default). Never disables exact alarms / boot re-arm.
      */

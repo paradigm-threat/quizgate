@@ -19,8 +19,8 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 
 | Area | Default / fact |
 |------|----------------|
-| Schedule | 30±15 min → fire window 15–45 min; quiet 20:00–07:00; morning 07:00 |
-| Re-arm | Boot, `MY_PACKAGE_REPLACED`, `TIME_SET` / timezone change |
+| Schedule | 30±15 min → fire window 15–45 min while interactive; quiet 20:00–07:00; morning 07:00. Screen off cancels alarms + sets `pending_screen_lock`; wake opens Hard quiz (no idle RTC wake) |
+| Re-arm | Boot / `MY_PACKAGE_REPLACED` / `TIME_SET` only while interactive and not pending; else pend lock |
 | Gate mode | Hard-only: Accessibility confine during active scheduled lock; Home/Back never bypass. Widget/Setup `TRIGGER_PLAY` is unlocked practice |
 | Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch, not Soft Arm-critical |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |

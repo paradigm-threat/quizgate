@@ -1,6 +1,6 @@
 # QuizGate
 
-Clevertree quiz lock for young kids: every half hour (±15m → next fire in **15–45 min**) + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). Widget and Setup practice stay unlocked. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+Clevertree quiz lock for young kids: every half hour (±15m → next fire in **15–45 min**) while the tablet is already in use + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). **Screen off** cancels schedule alarms (no idle wake); **power on** opens the Hard quiz. Widget and Setup practice stay unlocked. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
@@ -108,7 +108,7 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 
 ## Behavior
 
-- Schedule: default **30±15 min**; morning alarm; re-arm on boot, app update (`MY_PACKAGE_REPLACED`), and time/timezone change
+- Schedule: default **30±15 min** while interactive; morning alarm; screen-off cancels alarms + pending lock; wake opens Hard quiz; re-arm after unlock / boot / app update / time change only while interactive
 - Header: “Please answer this question”
 - Curriculum: bundled **basic-math v3** — addition under 10 + sparse subtraction (~5 items / ~20% pool); math asks randomly as fill-in (`equation`) or Pickles-style **True/False** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
 - Math: spoken + `2 + 5 = _` (digit pad by default)

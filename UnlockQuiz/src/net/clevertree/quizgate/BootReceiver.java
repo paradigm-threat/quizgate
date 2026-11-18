@@ -12,7 +12,9 @@ import java.util.TimeZone;
 /**
  * Reschedule after reboot or clock/timezone changes.
  * AlarmManager alarms do not survive power-off; this re-arms when the device
- * comes back. {@link PackageReplacedReceiver} handles {@link Intent#ACTION_MY_PACKAGE_REPLACED}.
+ * comes back — but only while interactive. If still asleep / pending, set
+ * pending screen lock and do not schedule RTC wake alarms.
+ * {@link PackageReplacedReceiver} handles {@link Intent#ACTION_MY_PACKAGE_REPLACED}.
  */
 public class BootReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent intent) {
@@ -32,16 +34,30 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
         long now = System.currentTimeMillis();
+        boolean interactive = ScreenLockGate.isInteractive(context);
+        String note = "action=" + action + " interactive=" + interactive;
+        if (!interactive) {
+            prefs.setPendingScreenLock(true);
+            AlarmScheduler.cancelAllAlarms(context);
+            note += " pending_screen_lock";
+        }
         try {
             Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
                     now, TimeZone.getDefault(), DiagnosticsStore.KIND_ARM, "boot",
                     "lock", prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
-                    null, "action=" + action));
+                    null, note));
         } catch (Throwable t) {
             Log.w(AlarmScheduler.TAG, "boot diag", t);
         }
-        AlarmScheduler.armAll(context);
+        if (interactive && !prefs.isPendingScreenLock()) {
+            AlarmScheduler.armWhileInteractive(context);
+        } else if (interactive && prefs.isPendingScreenLock()) {
+            // Booted / time changed while interactive with a prior pending lock — open quiz.
+            ScreenLockGate.onWake(context, "boot_" + action);
+        } else {
+            Log.i(AlarmScheduler.TAG, "boot: screen off — pending, no wake alarms action=" + action);
+        }
         ScoreWidgetProvider.refreshAll(context);
-        Log.i(AlarmScheduler.TAG, "boot: rescheduled action=" + action);
+        Log.i(AlarmScheduler.TAG, "boot: handled action=" + action);
     }
 }

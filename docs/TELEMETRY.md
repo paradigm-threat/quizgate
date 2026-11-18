@@ -53,10 +53,11 @@ SharedPreferences (including optional resume package) are **excluded** from back
 
 `ts`, `tz`, `tz_offset_min`, `kind`:
 
-- `arm` — scheduling armed
-- `alarm_scheduled` — next alarm window set
+- `arm` — scheduling armed (note may include `arm_screen_off_pending` / `arm_interactive`)
+- `alarm_scheduled` — next alarm window set (interactive only)
 - `alarm_fired` — OS alarm delivered
-- `skip_fire` — morning skipped (already cleared)
+- `skip_fire` — morning skipped, or `note=screen_off` / `screen_off_pending` when schedule cancelled on sleep
+- `launch_attempt` — includes wake-to-lock (`trigger=wake`, `note=wake_lock …`)
 - `quiz_started` / `quiz_ended` — session bounds
 - `perf_mode` — Auto performance↔slim switch (reason codes + stats in `note`)
 

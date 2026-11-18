@@ -31,6 +31,19 @@ public class AlarmGateActivity extends Activity {
         AppPrefs prefs = new AppPrefs(this);
         Log.i(AlarmScheduler.TAG, "alarm gate trigger=" + trigger + " action=" + action);
 
+        if (net.clevertree.quizgate.core.ScreenLockPolicy.shouldSkipFireWhileOff(
+                ScreenLockGate.isInteractive(this))) {
+            prefs.setPendingScreenLock(true);
+            AlarmScheduler.cancelAllAlarms(this);
+            Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
+                    now, TimeZone.getDefault(), DiagnosticsStore.KIND_SKIP_FIRE, trigger,
+                    "lock", 0L, prefs.getIntervalMs(), prefs.getJitterMs(),
+                    null, "screen_off"));
+            Log.i(AlarmScheduler.TAG, "alarm gate skip_fire screen_off trigger=" + trigger);
+            finish();
+            return;
+        }
+
         if (AlarmReceiver.ACTION_MORNING.equals(action)) {
             net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(this);
             if (!sched.needsMorningGate(now, prefs.lastClearedDay())) {

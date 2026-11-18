@@ -31,7 +31,13 @@ public class PackageReplacedReceiver extends BroadcastReceiver {
             Log.w(AlarmScheduler.TAG, "package replaced diag", t);
         }
         if (prefs.isArmed()) {
-            AlarmScheduler.armAll(context);
+            // Re-arm only while interactive; otherwise pend lock (no idle wake).
+            if (ScreenLockGate.isInteractive(context) && !prefs.isPendingScreenLock()) {
+                AlarmScheduler.armWhileInteractive(context);
+            } else {
+                prefs.setPendingScreenLock(true);
+                AlarmScheduler.cancelAllAlarms(context);
+            }
         }
         ScoreWidgetProvider.refreshAll(context);
         try {
