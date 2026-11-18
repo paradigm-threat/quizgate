@@ -29,8 +29,8 @@ public final class PerformanceMode {
 
     public static final long FGS_STOP_BALANCED_MS = PerfPolicy.FGS_STOP_PERFORMANCE_MS;
     public static final long FGS_STOP_SLIM_MS = PerfPolicy.FGS_STOP_SLIM_MS;
-    public static final long SUCCESS_HOLD_BALANCED_MS = 2_000L;
-    public static final long SUCCESS_HOLD_SLIM_MS = 700L;
+    public static final long SUCCESS_HOLD_BALANCED_MS = 1_000L;
+    public static final long SUCCESS_HOLD_SLIM_MS = 350L;
     public static final int COMPACT_EVERY_BALANCED = PerfPolicy.COMPACT_EVERY_PERFORMANCE;
     public static final int COMPACT_EVERY_SLIM = PerfPolicy.COMPACT_EVERY_SLIM;
 
