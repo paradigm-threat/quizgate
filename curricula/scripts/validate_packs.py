@@ -17,7 +17,10 @@ def validate_pack(pack_dir: Path) -> None:
     sha = hashlib.sha256(raw).hexdigest()
     expected = manifest.get("contentSha256", "")
     if expected and expected != sha:
-        raise SystemExit(f"{pack_dir.name}: contentSha256 mismatch {expected} != {sha}")
+        raise SystemExit(
+            f"{pack_dir.name}: contentSha256 mismatch {expected} != {sha} "
+            f"(size={len(raw)}). Fix: python3 curricula/scripts/sync_pack_hashes.py"
+        )
     items = curriculum.get("items") or []
     if not items:
         raise SystemExit(f"{pack_dir.name}: empty items")

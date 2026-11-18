@@ -118,7 +118,7 @@ Help: https://support.google.com/googleplay/android-developer/answer/9845334
 
 | Item | Status |
 |------|--------|
-| Sideload **APK** (CI artifact) | Ready — GitLab CI (primary) builds `QuizGate.apk`; GitHub Actions when available |
+| Sideload **APK** (CI artifact) | Ready — **GitHub Actions** builds/uploads `QuizGate.apk` (GitLab CI off for quota) |
 | Play **AAB** + release keystore | **Not ready** — human Gradle/bundletool + Play App Signing; keep keystore out of git |
 | `targetSdk` 34 | Current manifest target |
 | Privacy URL live | Yes |

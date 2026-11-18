@@ -12,7 +12,7 @@ https://quizgate.app/privacy
 Clevertree thank-you page (post-download / signup, separate site):
 https://clevertree.net/thankyou
 
-App source of truth: **GitLab** `clevertree/quizgate` (GitHub may be suspended). CI APK from GitLab; Play AAB + release keystore remain manual.
+App source of truth: **GitLab** `clevertree/quizgate` (sync to GitHub). Sideload **CI APK** from **GitHub Actions** (GitLab CI disabled for quota); Play AAB + release keystore remain manual.
 
 ---
 
