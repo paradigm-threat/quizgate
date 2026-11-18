@@ -42,6 +42,12 @@ public final class QuizLaunch {
         if (trigger == null || trigger.isEmpty()) trigger = "interval";
         long now = System.currentTimeMillis();
         AppPrefs prefs = new AppPrefs(app);
+        // Never stack a new Hard quiz in the post-unlock grace window.
+        if (prefs.inUnlockGrace(now)) {
+            Log.i(AlarmScheduler.TAG, "QuizLaunch blocked by unlock grace trigger=" + trigger);
+            log(app, now, DiagnosticsStore.KIND_SKIP_FIRE, trigger, prefs, "unlock_grace");
+            return;
+        }
 
         HardGate.startSession(app);
         ensureChannel(app);

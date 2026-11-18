@@ -46,11 +46,16 @@ public final class HardGate {
     public static void endSession(Context ctx, String reason) {
         if (ctx == null) return;
         AppPrefs prefs = new AppPrefs(ctx);
+        long now = System.currentTimeMillis();
+        // Always clear pending + start grace so wake cannot stack another jail.
+        prefs.setPendingScreenLock(false);
+        prefs.beginUnlockGrace(now);
+        QuizLaunch.cancelNotification(ctx);
         if (!prefs.isHardSessionActive()) return;
         prefs.setHardSessionActive(false);
         String note = reason == null || reason.isEmpty() ? "ended" : reason;
         Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
-                System.currentTimeMillis(), TimeZone.getDefault(),
+                now, TimeZone.getDefault(),
                 DiagnosticsStore.KIND_HARD_UNLOCK, "hard", "lock",
                 prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
                 null, note));
@@ -61,10 +66,13 @@ public final class HardGate {
     public static void bringQuizToFront(Context ctx, String trigger) {
         if (ctx == null) return;
         Context app = ctx.getApplicationContext();
+        AppPrefs prefs = new AppPrefs(app);
+        long now = System.currentTimeMillis();
+        // Never reintercept during post-unlock grace (prevents jail→jail).
+        if (prefs.inUnlockGrace(now)) return;
         // Race: session may have cleared (unlock / parent / play) between a11y event and here.
         if (!isHardLockActive(app)) return;
 
-        long now = System.currentTimeMillis();
         long prev = lastReinterceptAt.get();
         if (now - prev < REINTERCEPT_DEBOUNCE_MS) return;
         if (!lastReinterceptAt.compareAndSet(prev, now)) {
@@ -74,14 +82,15 @@ public final class HardGate {
         }
 
         // Re-check after debounce window — unlock may have won the race.
+        if (prefs.inUnlockGrace(System.currentTimeMillis())) return;
         if (!isHardLockActive(app)) return;
 
         String trig = trigger == null || trigger.isEmpty() ? "hard_reintercept" : trigger;
-        AppPrefs prefs = new AppPrefs(app);
         try {
             Intent quiz = QuizLaunch.quizIntent(app, "interval");
             quiz.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             // Final race check immediately before launch.
+            if (prefs.inUnlockGrace(System.currentTimeMillis())) return;
             if (!isHardLockActive(app)) return;
             app.startActivity(quiz);
             Diag.schedule(app, new DiagnosticsStore.ScheduleEvent(

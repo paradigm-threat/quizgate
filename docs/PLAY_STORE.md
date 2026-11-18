@@ -158,7 +158,7 @@ Source kit also has Lock / Open variants under `B_lock_numbers/` and `C_open_gat
 
 ## 6. Tough sell on Play (read this first)
 
-QuizGate ships a **Hard-only Accessibility lock** for scheduled quizzes. An AccessibilityService confines the quiz during an active lock session (Home/Back do not dismiss) and observes screen off/on so schedule alarms do not wake a sleeping tablet — power-on opens the Hard quiz instead. Widget and Setup practice stay unlocked. Interval quizzes run only while the device is already interactive. Launch still needs overlay/FSI when BAL blocks, and must survive OEM battery managers.
+QuizGate ships a **Hard-only Accessibility lock** for scheduled quizzes. An AccessibilityService confines the quiz during an active lock session (Home/Back do not dismiss) and observes screen off/on so schedule alarms do not wake a sleeping tablet — power-on opens the Hard quiz instead. **One correct answer unlocks** that session; the app must **never** open another Hard quiz immediately after unlock (120s grace + pending cleared). Widget and Setup practice stay unlocked. Interval quizzes run only while the device is already interactive. Launch still needs overlay/FSI when BAL blocks, and must survive OEM battery managers.
 
 | Friction | Why it hurts listing / review |
 |----------|--------------------------------|
@@ -213,7 +213,7 @@ use Accessibility confine.
 ```
 QuizGate is a parent-configured educational quiz lock. No login. Forever free; no ads; no IAP.
 1. Install → onboarding (photos, schedule, performance, lock explainer) → Setup → Arm.
-2. Accessibility confines scheduled quizzes only during an active lock (Home/Back do not dismiss).
+2. Accessibility confines scheduled quizzes only during an active lock (Home/Back do not dismiss). One correct unlocks; never stack a second lock right after.
 3. Also needed: exact alarms, notifications (High “Unlock quiz” channel), battery unrestricted.
    Accessibility is Arm-critical; Appear on top helps open over other apps.
 4. Tap “Test quiz now” or the score widget for unlocked practice. Parent override: long-press the spoken question.

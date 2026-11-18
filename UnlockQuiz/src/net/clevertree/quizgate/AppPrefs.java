@@ -278,6 +278,27 @@ public final class AppPrefs {
     }
 
     /**
+     * Epoch millis until which wake/reintercept must not open a new Hard quiz
+     * (prevents jail→jail right after unlock).
+     */
+    public long getUnlockGraceUntilMs() {
+        return sp.getLong("unlock_grace_until_ms", 0L);
+    }
+
+    public void setUnlockGraceUntilMs(long untilMs) {
+        sp.edit().putLong("unlock_grace_until_ms", Math.max(0L, untilMs)).commit();
+    }
+
+    /** Mark unlock grace from now for {@link net.clevertree.quizgate.core.ScreenLockPolicy#UNLOCK_GRACE_MS}. */
+    public void beginUnlockGrace(long nowMs) {
+        setUnlockGraceUntilMs(nowMs + net.clevertree.quizgate.core.ScreenLockPolicy.UNLOCK_GRACE_MS);
+    }
+
+    public boolean inUnlockGrace(long nowMs) {
+        return net.clevertree.quizgate.core.ScreenLockPolicy.inUnlockGrace(nowMs, getUnlockGraceUntilMs());
+    }
+
+    /**
      * User preference: {@link PerformanceMode#PERFORMANCE}, {@link PerformanceMode#SLIM},
      * or {@link PerformanceMode#AUTO} (default). Never disables exact alarms / boot re-arm.
      */

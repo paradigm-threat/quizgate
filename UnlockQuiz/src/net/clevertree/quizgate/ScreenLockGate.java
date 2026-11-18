@@ -90,9 +90,16 @@ public final class ScreenLockGate {
         Context app = ctx.getApplicationContext();
         AppPrefs prefs = new AppPrefs(app);
         if (!ScreenLockPolicy.shouldPendOnScreenOff(prefs.isArmed())) return;
-        prefs.setPendingScreenLock(true);
-        AlarmScheduler.cancelAllAlarms(app);
         long now = System.currentTimeMillis();
+        // Still cancel wake alarms during grace, but do not pend a new lock until
+        // grace ends — otherwise unlock→screen-off→immediate wake stacks jails.
+        AlarmScheduler.cancelAllAlarms(app);
+        if (prefs.inUnlockGrace(now)) {
+            prefs.setPendingScreenLock(false);
+            Log.i(AlarmScheduler.TAG, "screen_off during unlock grace — alarms cancelled, no pend");
+            return;
+        }
+        prefs.setPendingScreenLock(true);
         Diag.schedule(app, new DiagnosticsStore.ScheduleEvent(
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_SKIP_FIRE, "screen_off",
                 "lock", 0L, prefs.getIntervalMs(), prefs.getJitterMs(),
@@ -104,12 +111,19 @@ public final class ScreenLockGate {
         if (ctx == null) return;
         Context app = ctx.getApplicationContext();
         AppPrefs prefs = new AppPrefs(app);
+        long now = System.currentTimeMillis();
+        boolean inGrace = prefs.inUnlockGrace(now);
         boolean hardActive = HardGate.isHardLockActive(app);
-        if (!ScreenLockPolicy.shouldLaunchOnWake(
-                prefs.isArmed(), prefs.isPendingScreenLock(), hardActive)) {
+        if (inGrace && prefs.isPendingScreenLock()) {
+            // Just unlocked — drop stale pending; do not open another jail.
+            prefs.setPendingScreenLock(false);
+            Log.i(AlarmScheduler.TAG, "wake during unlock grace — pending cleared, no launch");
             return;
         }
-        long now = System.currentTimeMillis();
+        if (!ScreenLockPolicy.shouldLaunchOnWake(
+                prefs.isArmed(), prefs.isPendingScreenLock(), hardActive, inGrace)) {
+            return;
+        }
         long prev = lastWakeAt.get();
         if (now - prev < WAKE_DEBOUNCE_MS) return;
         if (!lastWakeAt.compareAndSet(prev, now)) return;
@@ -134,6 +148,8 @@ public final class ScreenLockGate {
         if (ctx == null) return;
         AppPrefs prefs = new AppPrefs(ctx);
         prefs.setPendingScreenLock(false);
+        prefs.beginUnlockGrace(System.currentTimeMillis());
+        QuizLaunch.cancelNotification(ctx);
         AlarmScheduler.armWhileInteractive(ctx);
     }
 

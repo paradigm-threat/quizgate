@@ -34,6 +34,7 @@ import net.clevertree.quizgate.core.Question;
 import net.clevertree.quizgate.core.QuestionPicker;
 import net.clevertree.quizgate.core.QuizSession;
 import net.clevertree.quizgate.core.RenderFormat;
+import net.clevertree.quizgate.core.ScreenLockPolicy;
 import net.clevertree.quizgate.core.StatsEvent;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
@@ -289,10 +290,9 @@ public class QuizActivity extends Activity {
     }
 
     private void startRound(String trigger) {
-        // ADB / e2e forces single-question rounds for deterministic smoke tests
-        int roundSize = (trigger != null && trigger.startsWith("adb_")) ? 1 : activePack.roundSize;
-        // Practice from the launcher: one question at a time so success can offer "another"
-        if (TRIGGER_PLAY.equals(trigger)) roundSize = 1;
+        // Lock / wake / interval: one correct unlocks — never stack multi-question jails.
+        // Play (widget): also one question so success can offer "another".
+        int roundSize = ScreenLockPolicy.lockRoundSize();
         session = new QuizSession(UUID.randomUUID().toString(), trigger, clock.nowMillis(), picker,
                 roundSize, activePack.maxWrong, activePack.consolingUnlock);
         finishing = false;
@@ -1287,16 +1287,25 @@ public class QuizActivity extends Activity {
         inTransition = false;
         mediaResumePending = true;
         stopBalloonPulse();
-        if (successEndTick != null) {
-            handler.removeCallbacks(successEndTick);
-            successEndTick = null;
-        }
+        // Kill leave-hint / on_stop reintercept posts before hard session clears.
+        handler.removeCallbacksAndMessages(null);
+        successEndTick = null;
+        QuizLaunch.cancelNotification(this);
         String outcome = session != null && session.getOutcome() != null
                 ? session.getOutcome().name().toLowerCase() : "";
-        if (!playMode && prefs.isHardSessionActive()) {
+        if (!playMode) {
+            // Clear pending + grace BEFORE endSession so wake cannot relaunch mid-teardown.
+            long now = clock.nowMillis();
+            prefs.setPendingScreenLock(false);
+            prefs.beginUnlockGrace(now);
             String reason = outcome.isEmpty() ? "session_end" : outcome;
             if ("bypass".equals(reason)) reason = "parent_or_bypass";
-            HardGate.endSession(this, reason);
+            if (prefs.isHardSessionActive()) {
+                HardGate.endSession(this, reason);
+            } else {
+                // Still stamp grace even if hard flag already cleared.
+                Log.i(AlarmScheduler.TAG, "finishSession grace set reason=" + reason);
+            }
         }
         try {
             if (session != null) stats.appendSession(session);

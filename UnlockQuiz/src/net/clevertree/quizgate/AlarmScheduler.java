@@ -210,15 +210,21 @@ public final class AlarmScheduler {
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         // Unlock / consoling / parent override clears the wake-pending latch.
-        prefs.setPendingScreenLock(false);
+        // Do NOT re-pend during unlock grace even if interactive flickers — that
+        // was stacking a second Hard quiz right after the first unlock.
         long now = new SystemClock().nowMillis();
+        prefs.setPendingScreenLock(false);
+        if (!prefs.inUnlockGrace(now)) {
+            prefs.beginUnlockGrace(now);
+        }
         Scheduler base = scheduler(ctx);
         prefs.setLastClearedDay(base.dayKey(now));
 
         if (!ScreenLockGate.isInteractive(ctx)) {
-            prefs.setPendingScreenLock(true);
+            // Screen already off after unlock: keep grace, stay pending for *next*
+            // real wake only after grace expires (onScreenOff will pend again).
             cancelAllAlarms(ctx);
-            Log.i(TAG, "session end while screen off — pending again");
+            Log.i(TAG, "session end while screen off — grace held, no immediate re-pend");
             return;
         }
 

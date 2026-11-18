@@ -1,21 +1,24 @@
 import net.clevertree.quizgate.core.ScreenLockPolicy;
 
 /**
- * JVM unit tests for screen-off pending lock / interactive-only schedule policy.
+ * JVM unit tests for screen-off pending lock / interactive-only schedule /
+ * never-stack unlock grace policy.
  */
 public class ScreenLockPolicyTest {
     public static void main(String[] args) {
         Assert.isTrue(ScreenLockPolicy.shouldPendOnScreenOff(true), "armed → pend on off");
         Assert.isTrue(!ScreenLockPolicy.shouldPendOnScreenOff(false), "disarmed → no pend");
 
-        Assert.isTrue(ScreenLockPolicy.shouldLaunchOnWake(true, true, false),
+        Assert.isTrue(ScreenLockPolicy.shouldLaunchOnWake(true, true, false, false),
                 "armed+pending+no session → launch");
-        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(true, true, true),
+        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(true, true, true, false),
                 "active hard session → no second launch");
-        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(true, false, false),
+        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(true, false, false, false),
                 "no pending → no launch");
-        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(false, true, false),
+        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(false, true, false, false),
                 "disarmed → no launch");
+        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(true, true, false, true),
+                "unlock grace → no wake launch (never stack)");
 
         Assert.isTrue(ScreenLockPolicy.shouldArmSchedule(true, true, false),
                 "armed interactive !pending → arm");
@@ -28,6 +31,22 @@ public class ScreenLockPolicyTest {
 
         Assert.isTrue(ScreenLockPolicy.shouldSkipFireWhileOff(false), "off → skip fire");
         Assert.isTrue(!ScreenLockPolicy.shouldSkipFireWhileOff(true), "on → allow fire");
+
+        Assert.eq(1, ScreenLockPolicy.lockRoundSize(), "lock roundSize is 1");
+        Assert.eq(120_000L, ScreenLockPolicy.UNLOCK_GRACE_MS, "grace 120s");
+
+        long now = 1_000_000L;
+        Assert.isTrue(ScreenLockPolicy.inUnlockGrace(now, now + 1), "inside grace");
+        Assert.isTrue(!ScreenLockPolicy.inUnlockGrace(now, now), "at expiry not in grace");
+        Assert.isTrue(!ScreenLockPolicy.inUnlockGrace(now, 0L), "no grace");
+        Assert.isTrue(!ScreenLockPolicy.inUnlockGrace(now + 200_000L, now + 120_000L),
+                "after grace");
+
+        // Legacy 3-arg overload still blocks when hard active / not pending
+        Assert.isTrue(ScreenLockPolicy.shouldLaunchOnWake(true, true, false),
+                "3-arg launch ok");
+        Assert.isTrue(!ScreenLockPolicy.shouldLaunchOnWake(true, true, true),
+                "3-arg hard active blocks");
 
         System.out.println("ScreenLockPolicyTest OK");
     }
