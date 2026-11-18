@@ -57,8 +57,8 @@ jobs:
 
   ios-stub:
     name: iOS stub
-    # Pin macos-14 — macos-latest (arm64) often queues for capacity; stub is thin.
-    runs-on: macos-14
+    # macos-14 not available on this org's Actions plan; macos-latest works for the stub.
+    runs-on: macos-latest
     needs: [regression]
     steps:
       - uses: actions/checkout@v5
