@@ -99,6 +99,7 @@ public class QuizActivity extends Activity {
     private int balloonCyclesLeft;
     private LinearLayout choices;
     private LinearLayout digitPad;
+    private View btnSkipQuestion;
     private QuizPanView quizPan;
     private View quizPanel;
     private View quizStatsBar;
@@ -169,6 +170,10 @@ public class QuizActivity extends Activity {
         questionBalloon = findViewById(R.id.question_balloon);
         choices = findViewById(R.id.choices);
         digitPad = findViewById(R.id.digit_pad);
+        btnSkipQuestion = findViewById(R.id.btn_skip_question);
+        if (btnSkipQuestion != null) {
+            btnSkipQuestion.setOnClickListener(v -> onSkipQuestion());
+        }
         quizPan = findViewById(R.id.quiz_pan);
         quizPanel = findViewById(R.id.quiz_panel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
@@ -422,10 +427,35 @@ public class QuizActivity extends Activity {
         quizPanel.setAlpha(1f);
         hideTransitionOverlayImmediate();
         currentAnswered = false;
+        setSkipEnabled(true);
         refreshQuizDayStats();
         if (PerformanceMode.allowRichMotion(prefs)) {
             startBalloonPulse(questionBalloon, BALLOON_INFLATED, 3);
         }
+    }
+
+    /** Skip counts in stats, then immediately shows another ask (soft easier-format bias). */
+    private void onSkipQuestion() {
+        if (session == null || session.isEnded() || finishing || inTransition || currentAnswered) {
+            return;
+        }
+        PresentedQuestion cur = session.getCurrent();
+        if (cur == null) return;
+        setSkipEnabled(false);
+        setDigitPadEnabled(false);
+        logPresented("skipped", cur, "", session.getMissStreak());
+        currentAnswered = true;
+        PresentedQuestion next = session.skip();
+        currentAnswered = false;
+        bindQuestion(next);
+        logPresented("shown", next, "", session.getMissStreak());
+    }
+
+    private void setSkipEnabled(boolean enabled) {
+        if (btnSkipQuestion == null) return;
+        btnSkipQuestion.setEnabled(enabled);
+        btnSkipQuestion.setClickable(enabled);
+        btnSkipQuestion.setAlpha(enabled ? 0.72f : 0.35f);
     }
 
     private void refreshQuizDayStats() {
@@ -700,6 +730,7 @@ public class QuizActivity extends Activity {
     private void onChoice(String choice) {
         if (session.isEnded() || finishing || inTransition) return;
         PresentedQuestion q = session.getCurrent();
+        setSkipEnabled(false);
         QuizSession.AnswerResult result = session.answer(choice, clock.nowMillis());
         currentAnswered = true;
         if (result == QuizSession.AnswerResult.CORRECT_UNLOCK

@@ -47,6 +47,8 @@ Catalog items stay **one logical question** (operands + op + correct result). Th
 - **`true_false`** — show a full equation (`1 + 2 = 4`); child taps ✓ / ✗. At ask time the RHS is either the correct result (True) or a small integer offset (False). Own UI — not the digit pad.
 - **`choice`** — same blank equation prompt; always show shuffled catalog `choices` (one correct). Ignores digit-pad pref for that ask.
 
+**Skip:** every ask shows a Skip control. It logs `skipped`, then immediately presents another catalog item. After a skip the picker soft-biases toward easier formats (`true_false` / `choice`) and a different op-kind when the pool allows — still randomized so consecutive skips can land on yes/no again (no fixed ladder).
+
 Optional per-item `formats` overrides are reserved for later; basic-math relies on the math defaults above. Stats may log `render_format` on quiz events (token only).
 
 ### Roadmap (not implemented)

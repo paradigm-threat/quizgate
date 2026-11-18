@@ -40,7 +40,80 @@ public class QuestionPickerTest {
             Assert.eq(RenderFormat.EQUATION, forced.first().format, "preferFirst → equation");
         }
 
+        testSkipFormatBias();
+        testSkipOpKindAndForcedFormat();
+        testConsecutiveSkipsCanRepeatEasyFormat();
         System.out.println("QuestionPickerTest OK add=" + add + " sub=" + sub);
+    }
+
+    private static void testSkipFormatBias() {
+        Question add = new Question("a1", "math", "one plus one", "1 + 1 = _",
+                Arrays.asList("1", "2", "3"), "2", null, 2);
+        Question sub = new Question("s1", "math", "two minus one", "2 - 1 = _",
+                Arrays.asList("0", "1", "2"), "1", null, 1);
+        Catalog catalog = new Catalog(Arrays.asList(add, sub));
+        QuestionPicker picker = new QuestionPicker(catalog, new Random(7L));
+
+        int easy = 0;
+        int differentFmt = 0;
+        int n = 200;
+        RenderFormat prev = RenderFormat.EQUATION;
+        for (int i = 0; i < n; i++) {
+            PresentedQuestion p = picker.nextAfterSkip(add, prev);
+            if (p.format == RenderFormat.TRUE_FALSE || p.format == RenderFormat.CHOICE) easy++;
+            if (p.format != prev) differentFmt++;
+            prev = p.format;
+        }
+        Assert.isTrue(easy > n * 0.55, "post-skip should favor easy formats easy=" + easy);
+        Assert.isTrue(differentFmt > n * 0.4, "often changes format different=" + differentFmt);
+        // Still allows same easy format again (no permanent ladder).
+        Assert.isTrue(differentFmt < n, "must allow some format repeats");
+    }
+
+    private static void testSkipOpKindAndForcedFormat() {
+        Assert.eq("add", QuestionPicker.opKind(math("a", "1 + 2 = _")), "add");
+        Assert.eq("subtract", QuestionPicker.opKind(math("s", "5 - 2 = _")), "sub");
+        Assert.eq("multiply", QuestionPicker.opKind(math("m", "2 × 3 = _")), "mul");
+
+        Question add = math("a1", "1 + 1 = _");
+        Question mul = math("m1", "2 × 2 = _");
+        Catalog catalog = new Catalog(Arrays.asList(add, mul));
+        QuestionPicker picker = new QuestionPicker(catalog, new Random(11L));
+        int differentOp = 0;
+        for (int i = 0; i < 100; i++) {
+            PresentedQuestion p = picker.nextAfterSkip(add, RenderFormat.EQUATION);
+            if ("multiply".equals(QuestionPicker.opKind(p.question))) differentOp++;
+        }
+        Assert.isTrue(differentOp > 40, "soft prefer other op after skip got=" + differentOp);
+
+        QuestionPicker forced = new QuestionPicker(catalog, new Random(3L))
+                .preferFormat(RenderFormat.EQUATION);
+        for (int i = 0; i < 30; i++) {
+            Assert.eq(RenderFormat.EQUATION,
+                    forced.nextAfterSkip(add, RenderFormat.TRUE_FALSE).format,
+                    "forced format wins after skip");
+        }
+    }
+
+    private static void testConsecutiveSkipsCanRepeatEasyFormat() {
+        Question a = math("a1", "1 + 1 = _");
+        Question b = math("b1", "2 + 2 = _");
+        Catalog catalog = new Catalog(Arrays.asList(a, b));
+        QuestionPicker picker = new QuestionPicker(catalog, new Random(99L));
+        int tfThenTf = 0;
+        for (int i = 0; i < 150; i++) {
+            PresentedQuestion p1 = picker.nextAfterSkip(a, RenderFormat.EQUATION);
+            PresentedQuestion p2 = picker.nextAfterSkip(p1.question, p1.format);
+            if (p1.format == RenderFormat.TRUE_FALSE && p2.format == RenderFormat.TRUE_FALSE) {
+                tfThenTf++;
+            }
+        }
+        Assert.isTrue(tfThenTf > 0, "consecutive skips may both be yes/no (no fixed ladder)");
+    }
+
+    private static Question math(String id, String symbolic) {
+        return new Question(id, "math", "spoken " + id, symbolic,
+                Arrays.asList("1", "2", "3"), "2", null, 1);
     }
 
     private static Question q(String id, int weight) {

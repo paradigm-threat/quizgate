@@ -84,6 +84,19 @@ public final class QuizSession {
         return AnswerResult.WRONG_CONTINUE;
     }
 
+    /**
+     * Child skip → next question (stats: skipped). Does not raise miss streak /
+     * consoling; soft format bias lives in {@link QuestionPicker#nextAfterSkip}.
+     */
+    public PresentedQuestion skip() {
+        ensureOpen();
+        PresentedQuestion prev = current;
+        current = picker.nextAfterSkip(prev == null ? null : prev.question,
+                prev == null ? null : prev.format);
+        questionsShown.add(current.id());
+        return current;
+    }
+
     public void bypass(long now) {
         if (ended) return;
         end(SessionOutcome.BYPASS, now);

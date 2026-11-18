@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">QuizGate</string>
     <string name="header">Please answer this question</string>
+    <string name="quiz_skip">Skip</string>
+    <string name="quiz_skip_cd">Skip this question and try another</string>
     <string name="choice_true">True</string>
     <string name="choice_false">False</string>
     <string name="choice_true_mark">✓</string>

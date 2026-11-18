@@ -48,6 +48,32 @@ public final class QuestionPicker {
         return present(q);
     }
 
+    /**
+     * After a child skip: different catalog item when possible, soft bias toward
+     * easier ask formats ({@link RenderFormat#TRUE_FALSE}/{@link RenderFormat#CHOICE})
+     * and a different op-kind — never a fixed sequence.
+     */
+    public PresentedQuestion nextAfterSkip(Question previous, RenderFormat previousFormat) {
+        String excludeId = previous == null ? "" : previous.id;
+        String prevOp = opKind(previous);
+        List<Question> pool = new ArrayList<>();
+        List<Question> differentOp = new ArrayList<>();
+        for (Question q : catalog.all()) {
+            if (q.id.equals(excludeId)) continue;
+            pool.add(q);
+            if (!opKind(q).equals(prevOp)) differentOp.add(q);
+        }
+        List<Question> use = pool;
+        if (!differentOp.isEmpty() && random.nextInt(100) < 65) {
+            use = differentOp;
+        }
+        Question q = use.isEmpty()
+                ? (previous != null ? previous : pickWeighted(catalog.all()))
+                : pickWeighted(use);
+        RenderFormat format = chooseFormatAfterSkip(q, previousFormat);
+        return MathPresentation.present(q, format, random);
+    }
+
     PresentedQuestion present(Question q) {
         RenderFormat format = chooseFormat(q);
         return MathPresentation.present(q, format, random);
@@ -61,6 +87,49 @@ public final class QuestionPicker {
         if (allowed.isEmpty()) return RenderFormat.EQUATION;
         if (allowed.size() == 1) return allowed.get(0);
         return allowed.get(random.nextInt(allowed.size()));
+    }
+
+    /**
+     * Soft post-skip format mix (approx): prefer easy + different, sometimes easy
+     * again, sometimes any different, rarely full random including previous.
+     */
+    RenderFormat chooseFormatAfterSkip(Question q, RenderFormat previousFormat) {
+        if (forcedFormat != null) return forcedFormat;
+        if (preferredFirstId != null) return RenderFormat.EQUATION;
+        List<RenderFormat> allowed = new ArrayList<>(RenderFormat.allowedFor(q));
+        if (allowed.isEmpty()) return RenderFormat.EQUATION;
+        if (allowed.size() == 1) return allowed.get(0);
+
+        List<RenderFormat> easy = new ArrayList<>();
+        List<RenderFormat> easyDifferent = new ArrayList<>();
+        List<RenderFormat> anyDifferent = new ArrayList<>();
+        for (RenderFormat f : allowed) {
+            boolean easyFmt = f == RenderFormat.TRUE_FALSE || f == RenderFormat.CHOICE;
+            if (easyFmt) easy.add(f);
+            if (f != previousFormat) anyDifferent.add(f);
+            if (easyFmt && f != previousFormat) easyDifferent.add(f);
+        }
+        int roll = random.nextInt(100);
+        if (roll < 55 && !easyDifferent.isEmpty()) {
+            return easyDifferent.get(random.nextInt(easyDifferent.size()));
+        }
+        if (roll < 75 && !easy.isEmpty()) {
+            return easy.get(random.nextInt(easy.size()));
+        }
+        if (roll < 90 && !anyDifferent.isEmpty()) {
+            return anyDifferent.get(random.nextInt(anyDifferent.size()));
+        }
+        return allowed.get(random.nextInt(allowed.size()));
+    }
+
+    /** Coarse math family from symbolic text — add / subtract / multiply / other. */
+    public static String opKind(Question q) {
+        if (q == null || q.symbolic == null) return "other";
+        String s = q.symbolic;
+        if (s.indexOf('×') >= 0 || s.contains(" x ") || s.contains(" X ")) return "multiply";
+        if (s.indexOf('-') >= 0) return "subtract";
+        if (s.indexOf('+') >= 0) return "add";
+        return "other";
     }
 
     /** Uniform among equal weights; lower {@link Question#weight} stays rarer as the pool grows. */

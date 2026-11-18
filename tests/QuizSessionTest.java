@@ -16,6 +16,9 @@ public class QuizSessionTest {
         testThreeWrong(c);
         testBypass(c);
         testNoRepeatAfterWrong(c);
+        testSkipDoesNotRaiseMissStreak(c);
+        testSkipThenWrongsStillConsoling(c);
+        testMultipleSkipsStayOpen(c);
         System.out.println("QuizSessionTest OK");
     }
 
@@ -63,7 +66,53 @@ public class QuizSessionTest {
         Assert.isTrue(!first.equals(s.getCurrent().id()) || c.size() == 1, "different after wrong");
     }
 
+    private static void testSkipDoesNotRaiseMissStreak(Catalog c) {
+        // Unforced formats so skip path uses nextAfterSkip.
+        QuestionPicker free = new QuestionPicker(c, new Random(9L));
+        QuizSession s = new QuizSession("s5", "play", 1000L, free);
+        String first = s.getCurrent().id();
+        Assert.eq(0, s.getMissStreak(), "start streak");
+        PresentedQuestion next = s.skip();
+        Assert.eq(0, s.getMissStreak(), "skip is not a miss");
+        Assert.eq(SessionOutcome.IN_PROGRESS, s.getOutcome(), "still open after skip");
+        Assert.isTrue(next != null, "next after skip");
+        Assert.isTrue(!first.equals(next.id()) || c.size() == 1, "different id after skip");
+        Assert.isTrue(s.getQuestionsShown().size() >= 2, "shown list grew");
+    }
+
+    /** Skips must not burn consoling budget — three wrongs still unlock. */
+    private static void testSkipThenWrongsStillConsoling(Catalog c) {
+        QuizSession s = new QuizSession("s6", "interval", 1000L, picker(c, 21L));
+        s.skip();
+        s.skip();
+        Assert.eq(0, s.getMissStreak(), "skips leave streak at 0");
+        for (int i = 0; i < 2; i++) {
+            Assert.eq(QuizSession.AnswerResult.WRONG_CONTINUE,
+                    s.answer(wrongChoice(s.getCurrent()), 2000L + i), "wrong " + i);
+        }
+        Assert.eq(QuizSession.AnswerResult.WRONG_CONSOLING,
+                s.answer(wrongChoice(s.getCurrent()), 3000L), "consoling after 3 wrongs");
+        Assert.eq(3, s.getMissStreak(), "streak counts wrongs only");
+        Assert.eq(SessionOutcome.CONSOLING_UNLOCK, s.getOutcome(), "consoling");
+    }
+
+    private static void testMultipleSkipsStayOpen(Catalog c) {
+        QuestionPicker free = new QuestionPicker(c, new Random(33L));
+        QuizSession s = new QuizSession("s7", "play", 1000L, free);
+        for (int i = 0; i < 5; i++) {
+            String prev = s.getCurrent().id();
+            PresentedQuestion n = s.skip();
+            Assert.eq(SessionOutcome.IN_PROGRESS, s.getOutcome(), "open after skip " + i);
+            Assert.eq(0, s.getMissStreak(), "streak still 0");
+            Assert.isTrue(!prev.equals(n.id()) || c.size() == 1, "id change " + i);
+        }
+        Assert.isTrue(s.getQuestionsShown().size() >= 6, "all skips recorded in shown");
+    }
+
     private static String wrongChoice(PresentedQuestion q) {
+        if (q.isTrueFalse()) {
+            return q.statementTrue ? PresentedQuestion.CHOICE_FALSE : PresentedQuestion.CHOICE_TRUE;
+        }
         for (String ch : q.question.choices) {
             if (!q.isCorrect(ch)) return ch;
         }

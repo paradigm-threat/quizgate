@@ -110,6 +110,25 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:visibility="gone"/>
+
+            <!-- Available for every ask format; counts as a skip then shows another. -->
+            <TextView
+                android:id="@+id/btn_skip_question"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="4dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:text="@string/quiz_skip"
+                android:textColor="@color/header"
+                android:textSize="16sp"
+                android:alpha="0.72"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/quiz_skip_cd"/>
         </LinearLayout>
     </net.clevertree.quizgate.QuizPanView>
 

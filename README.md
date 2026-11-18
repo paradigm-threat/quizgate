@@ -119,6 +119,7 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 - Header: “Please answer this question”
 - Curriculum: bundled **basic-math v4** — addition under 10, expanded subtraction, light multiplication; math asks as fill-in (`equation`), Pickles-style **True/False**, or multi-answer **choice** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
 - Math: spoken + `2 + 5 = _` (digit pad by default)
+- **Skip** on every ask → counts as skipped, immediately another question; soft bias toward yes/no or multiple-choice (still varied — no fixed ladder)
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
 - Leave without answering → bypass (no reopen), logged as skipped
