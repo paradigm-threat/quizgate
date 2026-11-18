@@ -719,8 +719,8 @@ public class QuizActivity extends Activity {
                 return;
             }
             startFailPulse();
-            startCountdown(FAIL_COUNTDOWN_SEC, R.string.retry_in, true, () ->
-                    fadeOutTransition(this::finishSession));
+            // Leave on the fail overlay — never fade back to the question before exit.
+            startCountdown(FAIL_COUNTDOWN_SEC, R.string.retry_in, true, this::finishSession);
         });
     }
 
@@ -755,7 +755,9 @@ public class QuizActivity extends Activity {
                 successEndTick = null;
                 stopPhotoFlash();
                 stopBalloonPulse();
-                fadeOutTransition(this::finishSession);
+                // Leave while "Great job!" is still up — fadeOut used to restore the
+                // quiz panel and flash the question again before finish().
+                finishSession();
             };
             handler.postDelayed(successEndTick, holdMs);
         });
@@ -1287,6 +1289,19 @@ public class QuizActivity extends Activity {
         inTransition = false;
         mediaResumePending = true;
         stopBalloonPulse();
+        // Keep success/fail overlay covering the quiz until the activity is gone.
+        // Never restore quizPanel visibility here — that was flashing the question
+        // after unlock.
+        if (quizPanel != null) {
+            quizPanel.animate().cancel();
+            quizPanel.setAlpha(0f);
+            quizPanel.setVisibility(View.INVISIBLE);
+        }
+        if (transitionOverlay != null) {
+            transitionOverlay.animate().cancel();
+            transitionOverlay.setVisibility(View.VISIBLE);
+            transitionOverlay.setAlpha(1f);
+        }
         // Kill leave-hint / on_stop reintercept posts before hard session clears.
         handler.removeCallbacksAndMessages(null);
         successEndTick = null;
