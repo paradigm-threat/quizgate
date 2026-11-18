@@ -47,7 +47,7 @@ SharedPreferences (including optional resume package) are **excluded** from back
 
 ### Quiz event (`events.jsonl`)
 
-`ts`, `session_id`, `type` (`shown`/`correct`/`wrong`/`skipped`/`bypass`/`consoling`), `question_id`, short `choice` (digits/catalog tokens / `true`|`false` only; free-text scrubbed), `miss_streak`, optional `latency_ms`, `curriculum_id`, `session_type` (`play`|`lock`), optional `render_format` (`equation`|`true_false` — ask-time UI, not question text).
+`ts`, `session_id`, `type` (`shown`/`correct`/`wrong`/`skipped`/`bypass`/`consoling`), `question_id`, short `choice` (digits/catalog tokens / `true`|`false` only; free-text scrubbed), `miss_streak`, optional `latency_ms`, `curriculum_id`, `session_type` (`play`|`lock`), optional `render_format` (`equation`|`true_false`|`choice` — ask-time UI, not question text).
 
 ### Schedule (`schedule.jsonl`)
 

@@ -117,7 +117,7 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 
 - Schedule: default **60±15 min** (fire window 45–75) while interactive; morning alarm; minutes jar adds free time on top of that window (never shrinks it); screen-off cancels alarms + pending lock; wake opens Hard quiz; unlock grace blocks stacked wake locks and restores the schedule if screen-off cancelled alarms; re-arm after unlock / boot / app update / time change / grace wake-skip only while interactive
 - Header: “Please answer this question”
-- Curriculum: bundled **basic-math v3** — addition under 10 + sparse subtraction (~5 items / ~20% pool); math asks randomly as fill-in (`equation`) or Pickles-style **True/False** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
+- Curriculum: bundled **basic-math v4** — addition under 10, expanded subtraction, light multiplication; math asks as fill-in (`equation`), Pickles-style **True/False**, or multi-answer **choice** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
 - Math: spoken + `2 + 5 = _` (digit pad by default)
 - Wrong → fade + “Retry in” countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock

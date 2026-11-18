@@ -44,6 +44,11 @@ public final class PresentedQuestion {
         return format == RenderFormat.TRUE_FALSE;
     }
 
+    /** Ask-time multi-answer buttons (ignores digit-pad pref). */
+    public boolean isChoice() {
+        return format == RenderFormat.CHOICE;
+    }
+
     public boolean isCorrect(String choice) {
         if (isTrueFalse()) {
             if (choice == null) return false;

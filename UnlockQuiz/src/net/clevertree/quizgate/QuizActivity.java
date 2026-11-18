@@ -383,7 +383,9 @@ public class QuizActivity extends Activity {
         spoken.setText(presented.spoken);
         digitAnswer = new DigitAnswer();
         boolean trueFalse = presented.isTrueFalse();
-        boolean digitMode = !trueFalse && "math".equals(q.type) && prefs.useDigitPadForMath();
+        boolean choiceFormat = presented.isChoice();
+        boolean digitMode = !trueFalse && !choiceFormat
+                && "math".equals(q.type) && prefs.useDigitPadForMath();
         if (presented.displaySymbolic != null && !presented.displaySymbolic.isEmpty()) {
             symbolicTemplate = trueFalse ? presented.displaySymbolic : q.symbolic;
             symbolic.setVisibility(View.VISIBLE);
@@ -410,6 +412,7 @@ public class QuizActivity extends Activity {
             refreshDigitAnswer();
             buildDigitPad();
         } else {
+            // EQUATION with math_entry=multiple_choice, or RenderFormat.CHOICE
             digitPad.setVisibility(View.GONE);
             digitAnswerView.setVisibility(View.GONE);
             choices.setVisibility(View.VISIBLE);

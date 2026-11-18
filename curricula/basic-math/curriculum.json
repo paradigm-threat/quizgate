@@ -595,6 +595,466 @@
         "choice"
       ],
       "weight": 1
+    },
+    {
+      "id": "bm.k.m26",
+      "legacyId": "m26",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three minus two?",
+      "symbolic": "3 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "1",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m27",
+      "legacyId": "m27",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is four minus one?",
+      "symbolic": "4 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m28",
+      "legacyId": "m28",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five minus one?",
+      "symbolic": "5 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m29",
+      "legacyId": "m29",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five minus three?",
+      "symbolic": "5 - 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "2",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m30",
+      "legacyId": "m30",
+      "tier": "K",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is six minus two?",
+      "symbolic": "6 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m31",
+      "legacyId": "m31",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is six minus three?",
+      "symbolic": "6 - 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m32",
+      "legacyId": "m32",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is eight minus two?",
+      "symbolic": "8 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m33",
+      "legacyId": "m33",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is eight minus four?",
+      "symbolic": "8 - 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m34",
+      "legacyId": "m34",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is nine minus three?",
+      "symbolic": "9 - 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m35",
+      "legacyId": "m35",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is ten minus five?",
+      "symbolic": "10 - 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "5",
+        "6"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m36",
+      "legacyId": "m36",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two times two?",
+      "symbolic": "2 × 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m37",
+      "legacyId": "m37",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two times three?",
+      "symbolic": "2 × 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m38",
+      "legacyId": "m38",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two times four?",
+      "symbolic": "2 × 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "8",
+        "9"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m39",
+      "legacyId": "m39",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is two times five?",
+      "symbolic": "2 × 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "10",
+        "12"
+      ],
+      "correct": "10",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m40",
+      "legacyId": "m40",
+      "tier": "1",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three times three?",
+      "symbolic": "3 × 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "9",
+        "12"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m41",
+      "legacyId": "m41",
+      "tier": "1",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three times two?",
+      "symbolic": "3 × 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m42",
+      "legacyId": "m42",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is one times five?",
+      "symbolic": "1 × 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "5",
+        "6"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.1.m43",
+      "legacyId": "m43",
+      "tier": "1",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is four times two?",
+      "symbolic": "4 × 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "8",
+        "10"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m44",
+      "legacyId": "m44",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is five times one?",
+      "symbolic": "5 × 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "5",
+        "6"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "bm.k.m45",
+      "legacyId": "m45",
+      "tier": "K",
+      "skills": [
+        "multiply_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is three times one?",
+      "symbolic": "3 × 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1
     }
   ]
 }

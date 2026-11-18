@@ -30,21 +30,22 @@ Index: `https://quizgate.app/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
-**basic-math v3:** addition under 10 plus sparse subtraction (~5 items / ~20% of the ~25-item pool, skill `subtract_within_10`) — no color / “which one is red” items (those return in a later pack with chip-only UI, no text labels).
+**basic-math v4:** addition under 10, expanded subtraction (`subtract_within_10`), and light multiplication (`multiply_within_10`) — no color / “which one is red” items (those return in a later pack with chip-only UI, no text labels). Division is deferred; pack is unfinished until that pass, then SI may mark curricula **proficient**.
 
-Optional per-item `weight` (integer ≥1, default 1): `QuestionPicker` uses weighted random selection so rarer skills stay uncommon as the pool grows. basic-math sets addition `weight: 2` and subtraction `weight: 1`.
+Optional per-item `weight` (integer ≥1, default 1): `QuestionPicker` uses weighted random selection so rarer skills stay uncommon as the pool grows. basic-math sets addition `weight: 2` and subtraction/multiplication typically `weight: 1`.
 
 ## Render formats (ask-time)
 
-Catalog items stay **one logical question** (operands + op + correct result). The engine chooses a **render format** when asking — no duplicate rows for True/False vs fill-in.
+Catalog items stay **one logical question** (operands + op + correct result). The engine chooses a **render format** when asking — no duplicate rows for True/False vs fill-in vs multi-answer.
 
 | Type | Default allowed formats (code) |
 |------|--------------------------------|
-| `math` | `equation` · `true_false` |
+| `math` | `equation` · `true_false` · `choice` |
 | other | `equation` (fill / multiple-choice as today) |
 
 - **`equation`** — show `1 + 2 = _`; entry is digit pad or multiple-choice per `math_entry` pref.
 - **`true_false`** — show a full equation (`1 + 2 = 4`); child taps ✓ / ✗. At ask time the RHS is either the correct result (True) or a small integer offset (False). Own UI — not the digit pad.
+- **`choice`** — same blank equation prompt; always show shuffled catalog `choices` (one correct). Ignores digit-pad pref for that ask.
 
 Optional per-item `formats` overrides are reserved for later; basic-math relies on the math defaults above. Stats may log `render_format` on quiz events (token only).
 

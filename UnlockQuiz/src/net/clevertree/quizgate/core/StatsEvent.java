@@ -17,7 +17,7 @@ public final class StatsEvent {
     public final String sessionType;
     /** True for adb_/prime_/seed sessions — excluded from day rollups. */
     public final boolean demo;
-    /** Ask-time render format id ({@code equation}, {@code true_false}); empty if unknown. */
+    /** Ask-time render format id ({@code equation}, {@code true_false}, {@code choice}); empty if unknown. */
     public final String renderFormat;
 
     public StatsEvent(long ts, String sessionId, String type, String questionId, String choice, int missStreak) {

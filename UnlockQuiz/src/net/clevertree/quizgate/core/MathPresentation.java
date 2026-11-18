@@ -20,6 +20,9 @@ public final class MathPresentation {
         if (format == RenderFormat.TRUE_FALSE && "math".equals(q.type)) {
             return trueFalse(q, random);
         }
+        if (format == RenderFormat.CHOICE && "math".equals(q.type)) {
+            return choice(q);
+        }
         return equation(q);
     }
 
@@ -27,6 +30,17 @@ public final class MathPresentation {
         return new PresentedQuestion(
                 q,
                 RenderFormat.EQUATION,
+                q.symbolic,
+                q.spoken,
+                q.correct,
+                true);
+    }
+
+    /** Same prompt as equation; UI always shows catalog multi-answer choices. */
+    public static PresentedQuestion choice(Question q) {
+        return new PresentedQuestion(
+                q,
+                RenderFormat.CHOICE,
                 q.symbolic,
                 q.spoken,
                 q.correct,

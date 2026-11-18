@@ -25,7 +25,26 @@ public class CurriculumParserTest {
         Assert.isTrue(m01 != null, "legacy m01");
         Assert.eq("2", m01.correct, "m01 correct");
         // Formats come from engine defaults — catalog is not duplicated for true/false.
-        Assert.eq(2, RenderFormat.allowedFor(m01).size(), "math formats");
+        Assert.eq(3, RenderFormat.allowedFor(m01).size(), "math formats");
+
+        Question m40 = pack.catalog.byId("m40");
+        Assert.isTrue(m40 != null, "multiply m40");
+        Assert.isTrue(m40.symbolic.contains("×"), "multiply uses × not escaped junk: " + m40.symbolic);
+
+        // Minimal parser must decode JSON unicode escapes (regression: showed "u00d7" on device).
+        String escapedItem = "{"
+                + "\"id\":\"bm.k.esc\",\"legacyId\":\"esc\",\"tier\":\"K\","
+                + "\"skills\":[\"multiply_within_10\"],\"type\":\"math\","
+                + "\"spoken\":\"two times two\","
+                + "\"symbolic\":\"2 \\u00d7 2 = _\","
+                + "\"choices\":[\"3\",\"4\",\"5\"],\"correct\":\"4\",\"weight\":1"
+                + "}";
+        CurriculumPack escaped = CurriculumParser.parse(
+                "{\"id\":\"t\",\"title\":\"t\",\"version\":1,\"ageMin\":4,\"ageMax\":7,\"difficultyRank\":1,\"locale\":\"en\"}",
+                "{\"id\":\"t\",\"title\":\"t\",\"tiers\":[],\"roundSize\":1,\"earnMinutesPerCorrect\":1,"
+                        + "\"wrongBehavior\":\"next\",\"consolingUnlock\":true,\"maxWrong\":3,\"items\":["
+                        + escapedItem + "]}");
+        Assert.eq("2 × 2 = _", escaped.catalog.byId("esc").symbolic, "unicode escape decode");
 
         Assert.isTrue(pack.catalogForTier("K").size() > 0, "tier K");
 

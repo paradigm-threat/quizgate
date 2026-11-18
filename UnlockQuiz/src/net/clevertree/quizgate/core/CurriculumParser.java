@@ -124,16 +124,54 @@ public final class CurriculumParser {
         if (p < obj.length() && obj.startsWith("null", p)) return def;
         int q1 = obj.indexOf('"', colon + 1);
         if (q1 < 0) return def;
+        return readJsonString(obj, q1 + 1, null);
+    }
+
+    /**
+     * Decode a JSON string body starting after the opening quote; supports JSON unicode escapes.
+     * If {@code endOut} is non-null, sets {@code endOut[0]} to the index after the closing quote.
+     */
+    static String readJsonString(String src, int start, int[] endOut) {
         StringBuilder sb = new StringBuilder();
-        for (int i = q1 + 1; i < obj.length(); i++) {
-            char c = obj.charAt(i);
-            if (c == '\\' && i + 1 < obj.length()) {
-                sb.append(obj.charAt(++i));
+        int i = start;
+        for (; i < src.length(); i++) {
+            char c = src.charAt(i);
+            if (c == '"') {
+                i++; // past closing quote
+                break;
+            }
+            if (c == '\\' && i + 1 < src.length()) {
+                char e = src.charAt(++i);
+                if (e == 'u' && i + 4 < src.length()) {
+                    String hex = src.substring(i + 1, i + 5);
+                    try {
+                        sb.append((char) Integer.parseInt(hex, 16));
+                        i += 4;
+                        continue;
+                    } catch (NumberFormatException ignored) {
+                        /* fall through — treat as literal */
+                    }
+                }
+                switch (e) {
+                    case 'n': sb.append('\n'); break;
+                    case 't': sb.append('\t'); break;
+                    case 'r': sb.append('\r'); break;
+                    case 'b': sb.append('\b'); break;
+                    case 'f': sb.append('\f'); break;
+                    case '"':
+                    case '\\':
+                    case '/':
+                        sb.append(e);
+                        break;
+                    default:
+                        sb.append(e);
+                        break;
+                }
                 continue;
             }
-            if (c == '"') break;
             sb.append(c);
         }
+        if (endOut != null && endOut.length > 0) endOut[0] = i;
         return sb.toString();
     }
 
@@ -175,21 +213,13 @@ public final class CurriculumParser {
         String inner = obj.substring(lb + 1, rb);
         List<String> out = new ArrayList<>();
         int i = 0;
+        int[] end = new int[1];
         while (i < inner.length()) {
             while (i < inner.length() && inner.charAt(i) != '"') i++;
             if (i >= inner.length()) break;
             i++;
-            StringBuilder sb = new StringBuilder();
-            while (i < inner.length()) {
-                char c = inner.charAt(i++);
-                if (c == '\\' && i < inner.length()) {
-                    sb.append(inner.charAt(i++));
-                    continue;
-                }
-                if (c == '"') break;
-                sb.append(c);
-            }
-            out.add(sb.toString());
+            out.add(readJsonString(inner, i, end));
+            i = end[0];
         }
         return out;
     }

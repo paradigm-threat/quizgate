@@ -8,12 +8,12 @@
       "ageMax": 7,
       "difficultyRank": 10,
       "locale": "en",
-      "version": 3,
+      "version": 4,
       "minAppVersion": 1,
-      "description": "Addition and light subtraction under 10 \u2014 math only (no color questions).",
-      "contentSha256": "bf1e3da3b9d82e96f728c9040f536842d421a6560504e4b0b57507d4ff45a791",
-      "sizeBytes": 10951,
-      "packUrl": "https://quizgate.app/curricula/packs/basic-math-v3.qgpack",
+      "description": "Addition, subtraction, and light multiplication under 10 \u2014 math only (no color questions).",
+      "contentSha256": "7c8a731edd10f442a4105db02cec1e0b64785df2c75bca624db381689e0f08d7",
+      "sizeBytes": 19500,
+      "packUrl": "https://quizgate.app/curricula/packs/basic-math-v4.qgpack",
       "bundled": true
     }
   ]

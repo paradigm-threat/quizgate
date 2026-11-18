@@ -17,6 +17,7 @@ public class MathPresentationTest {
         testFalseCaseOffsetsRhs();
         testCatalogNotDuplicatedForFormats();
         testAllowedFormatsForMath();
+        testChoicePresentation();
         testRandomCoinFlipMixes();
         System.out.println("MathPresentationTest OK");
     }
@@ -84,21 +85,36 @@ public class MathPresentationTest {
         }
         Assert.isTrue(seen.contains(RenderFormat.EQUATION), "saw equation");
         Assert.isTrue(seen.contains(RenderFormat.TRUE_FALSE), "saw true_false");
+        Assert.isTrue(seen.contains(RenderFormat.CHOICE), "saw choice");
         Assert.eq(1, catalog.all().size(), "no duplicate items after presents");
     }
 
     private static void testAllowedFormatsForMath() {
         Question math = math("m01", "1 + 1 = _", "2");
         List<RenderFormat> allowed = RenderFormat.allowedFor(math);
-        Assert.eq(2, allowed.size(), "math has two formats");
+        Assert.eq(3, allowed.size(), "math has three formats");
         Assert.isTrue(allowed.contains(RenderFormat.EQUATION), "equation");
         Assert.isTrue(allowed.contains(RenderFormat.TRUE_FALSE), "true_false");
+        Assert.isTrue(allowed.contains(RenderFormat.CHOICE), "choice");
 
         Question color = new Question("c1", "color", "which", "",
                 Arrays.asList("red", "blue", "green"), "red", null);
         List<RenderFormat> colorAllowed = RenderFormat.allowedFor(color);
         Assert.eq(1, colorAllowed.size(), "non-math default");
         Assert.eq(RenderFormat.EQUATION, colorAllowed.get(0), "equation only");
+    }
+
+    private static void testChoicePresentation() {
+        Question q = math("m01", "1 + 1 = _", "2");
+        PresentedQuestion p = MathPresentation.choice(q);
+        Assert.eq(RenderFormat.CHOICE, p.format, "format");
+        Assert.isTrue(p.isChoice(), "isChoice");
+        Assert.eq("1 + 1 = _", p.displaySymbolic, "blank symbolic");
+        Assert.eq("2", p.correctChoice, "catalog correct");
+        Assert.isTrue(p.isCorrect("2"), "accept correct");
+        Assert.isTrue(!p.isCorrect("1"), "reject distractor");
+        Assert.eq(q, MathPresentation.present(q, RenderFormat.CHOICE, new Random(1L)).question,
+                "present routes to choice");
     }
 
     private static Question math(String id, String symbolic, String correct) {
