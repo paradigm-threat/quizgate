@@ -58,9 +58,10 @@ jobs:
   ios-stub:
     name: iOS stub
     # macos-14 not available on this org's Actions plan; macos-latest works for the stub.
-    # Soft-fail: macOS runners often sit queued; Android APK + regression are the gate.
+    # Soft-fail + short timeout: macOS runners often sit queued; Android APK + regression are the gate.
     runs-on: macos-latest
     continue-on-error: true
+    timeout-minutes: 8
     needs: [regression]
     steps:
       - uses: actions/checkout@v5
