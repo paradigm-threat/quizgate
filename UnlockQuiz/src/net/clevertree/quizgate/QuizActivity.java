@@ -599,6 +599,8 @@ public class QuizActivity extends Activity {
                         digitAnswer.press(d);
                         refreshDigitAnswer();
                         refreshSymbolic();
+                        // Unlock as soon as the typed digits match (OK still works for wrongs).
+                        maybeAutoSubmitDigit();
                     });
                 } else if (key == -1) {
                     btn.setText("Clear");
@@ -609,6 +611,7 @@ public class QuizActivity extends Activity {
                         refreshSymbolic();
                     });
                 } else {
+                    // Kept for wrong answers / habit; correct answers auto-submit on digit match.
                     btn.setText("OK");
                     bg.setColor(Color.parseColor("#E87A2E"));
                     btn.setTextColor(Color.WHITE);
@@ -649,6 +652,15 @@ public class QuizActivity extends Activity {
         if (symbolicTemplate == null || symbolicTemplate.isEmpty()) return;
         String fill = digitAnswer.isEmpty() ? "_" : digitAnswer.value();
         symbolic.setText(symbolicTemplate.replace("_", fill));
+    }
+
+    /** If the pad already equals the correct value, submit without waiting for OK. */
+    private void maybeAutoSubmitDigit() {
+        if (session == null || session.isEnded() || finishing || inTransition) return;
+        PresentedQuestion q = session.getCurrent();
+        if (q == null || q.correctChoice == null) return;
+        if (!digitAnswer.matches(q.correctChoice)) return;
+        submitDigitAnswer();
     }
 
     private void submitDigitAnswer() {

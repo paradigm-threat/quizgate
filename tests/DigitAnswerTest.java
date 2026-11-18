@@ -34,6 +34,19 @@ public final class DigitAnswerTest {
         d.press(99);
         Assert.isTrue(d.isEmpty(), "invalid digits ignored");
 
+        // Auto-submit path: single correct digit matches immediately (e.g. 2+3=5).
+        d.clear();
+        d.press(5);
+        Assert.isTrue(d.matches("5"), "5 unlocks on first digit");
+        Assert.isTrue(!d.matches("15"), "5 does not match 15");
+
+        // Two-digit correct (e.g. 9+1=10): partial must not match.
+        d.clear();
+        d.press(1);
+        Assert.isTrue(!d.matches("10"), "partial 1 != 10");
+        d.press(0);
+        Assert.isTrue(d.matches("10"), "10 unlocks when complete");
+
         System.out.println("DigitAnswerTest OK");
     }
 }
