@@ -232,10 +232,32 @@ public final class DiagnosticsStore {
     }
 
     /**
-     * Local Soft vs Hard success rates from recent schedule JSONL (no upload).
-     * Soft: launch_ok / alarm_fired (or unlocked quiz_ended vs bypass).
-     * Hard: hard_unlock / (hard_unlock + hard_reintercept) when present, else launch_ok / alarm_fired.
+     * Local Hard lock reliability from recent schedule JSONL (no upload):
+     * fires / launch_ok / reintercept / unlock.
      */
+    public static final class HardReliabilityStats {
+        public final int fired;
+        public final int launchOk;
+        public final int reintercept;
+        public final int unlock;
+
+        public HardReliabilityStats(int fired, int launchOk, int reintercept, int unlock) {
+            this.fired = fired;
+            this.launchOk = launchOk;
+            this.reintercept = reintercept;
+            this.unlock = unlock;
+        }
+
+        /** Launch success percent, or -1 if insufficient data. */
+        public int launchSuccessPct() {
+            if (fired > 0) return Math.min(100, Math.round(100f * launchOk / fired));
+            if (unlock > 0) return 100;
+            return -1;
+        }
+    }
+
+    /** @deprecated Soft A/B removed; use {@link #hardReliabilityStats(int)}. */
+    @Deprecated
     public static final class GateAbStats {
         public final int softFired;
         public final int softLaunchOk;
@@ -246,68 +268,46 @@ public final class DiagnosticsStore {
         public final int hardUnlock;
         public final int hardReintercept;
 
-        public GateAbStats(int softFired, int softLaunchOk, int softUnlocked, int softBypass,
-                           int hardFired, int hardLaunchOk, int hardUnlock, int hardReintercept) {
-            this.softFired = softFired;
-            this.softLaunchOk = softLaunchOk;
-            this.softUnlocked = softUnlocked;
-            this.softBypass = softBypass;
-            this.hardFired = hardFired;
-            this.hardLaunchOk = hardLaunchOk;
-            this.hardUnlock = hardUnlock;
-            this.hardReintercept = hardReintercept;
+        public GateAbStats(HardReliabilityStats hard) {
+            this.softFired = 0;
+            this.softLaunchOk = 0;
+            this.softUnlocked = 0;
+            this.softBypass = 0;
+            this.hardFired = hard.fired;
+            this.hardLaunchOk = hard.launchOk;
+            this.hardUnlock = hard.unlock;
+            this.hardReintercept = hard.reintercept;
         }
 
-        /** Soft success percent, or -1 if insufficient data. */
-        public int softSuccessPct() {
-            if (softFired > 0) return Math.min(100, Math.round(100f * softLaunchOk / softFired));
-            int softEnds = softUnlocked + softBypass;
-            if (softEnds > 0) return Math.min(100, Math.round(100f * softUnlocked / softEnds));
-            return -1;
-        }
+        public int softSuccessPct() { return -1; }
 
-        /** Hard success percent, or -1 if insufficient data. Prefer launch_ok / fired. */
         public int hardSuccessPct() {
-            if (hardFired > 0) {
-                return Math.min(100, Math.round(100f * hardLaunchOk / hardFired));
-            }
-            // No fires yet: if we saw unlocks, treat as success signal for local A/B.
-            if (hardUnlock > 0) return 100;
-            return -1;
+            return new HardReliabilityStats(hardFired, hardLaunchOk, hardReintercept, hardUnlock)
+                    .launchSuccessPct();
         }
     }
 
-    public synchronized GateAbStats gateAbStats(int maxLines) throws IOException {
-        int softFired = 0, softLaunchOk = 0, softUnlocked = 0, softBypass = 0;
-        int hardFired = 0, hardLaunchOk = 0, hardUnlock = 0, hardReintercept = 0;
+    public synchronized HardReliabilityStats hardReliabilityStats(int maxLines) throws IOException {
+        int fired = 0, launchOk = 0, unlock = 0, reintercept = 0;
         int n = Math.max(40, maxLines);
         for (String line : schedule.tail(n)) {
             String kind = JsonUtil.extract(line, "kind");
-            String mode = JsonUtil.extract(line, "gate_mode");
-            boolean hard = "hard".equalsIgnoreCase(mode);
-            boolean soft = "soft".equalsIgnoreCase(mode);
-            // Untagged legacy lines count toward soft (pre-dual-gate path).
-            if (!hard && !soft) soft = true;
             if (KIND_ALARM_FIRED.equals(kind) || "fire".equals(kind)) {
-                if (hard) hardFired++; else softFired++;
+                fired++;
             } else if (KIND_LAUNCH_OK.equals(kind)) {
-                if (hard) hardLaunchOk++; else softLaunchOk++;
+                launchOk++;
             } else if (KIND_HARD_UNLOCK.equals(kind)) {
-                hardUnlock++;
+                unlock++;
             } else if (KIND_HARD_REINTERCEPT.equals(kind)) {
-                hardReintercept++;
-            } else if (KIND_QUIZ_ENDED.equals(kind)) {
-                String note = JsonUtil.extract(line, "note");
-                if ("bypass".equalsIgnoreCase(note)) {
-                    if (soft) softBypass++;
-                } else if ("unlocked".equalsIgnoreCase(note) || "correct".equalsIgnoreCase(note)
-                        || "consoling".equalsIgnoreCase(note)
-                        || "consoling_unlock".equalsIgnoreCase(note)) {
-                    if (soft) softUnlocked++;
-                }
+                reintercept++;
             }
         }
-        return new GateAbStats(softFired, softLaunchOk, softUnlocked, softBypass,
-                hardFired, hardLaunchOk, hardUnlock, hardReintercept);
+        return new HardReliabilityStats(fired, launchOk, reintercept, unlock);
+    }
+
+    /** @deprecated Soft A/B removed; use {@link #hardReliabilityStats(int)}. */
+    @Deprecated
+    public synchronized GateAbStats gateAbStats(int maxLines) throws IOException {
+        return new GateAbStats(hardReliabilityStats(maxLines));
     }
 }

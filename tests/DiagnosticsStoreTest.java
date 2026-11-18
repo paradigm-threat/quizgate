@@ -82,72 +82,54 @@ public class DiagnosticsStoreTest {
                         .filter(l -> l.contains(DiagnosticsStore.KIND_ALARM_FIRED))
                         .findFirst().orElse(""), "kind"), "kind extractable");
 
-        // --- Soft vs Hard gate_mode stamp + A/B rates (fresh store) ---
-        File abDir = Files.createTempDirectory("qg-gate-ab").toFile();
-        DiagnosticsStore ab = new DiagnosticsStore(abDir);
-        DiagnosticsStore.ScheduleEvent softFire = new DiagnosticsStore.ScheduleEvent(
-                now + 10, utc, DiagnosticsStore.KIND_ALARM_FIRED, "interval",
-                "lock", 0, 0, -1, null, "soft_fire");
-        softFire.gateMode = "soft";
-        ab.appendScheduleEvent(softFire);
-        DiagnosticsStore.ScheduleEvent softOk = new DiagnosticsStore.ScheduleEvent(
-                now + 11, utc, DiagnosticsStore.KIND_LAUNCH_OK, "interval",
-                "lock", 0, 0, -1, null, "soft_ok");
-        softOk.gateMode = "soft";
-        ab.appendScheduleEvent(softOk);
+        // --- Hard reliability (fires / launch_ok / reintercept / unlock) ---
+        File hardDir = Files.createTempDirectory("qg-gate-hard").toFile();
+        DiagnosticsStore hardStore = new DiagnosticsStore(hardDir);
         DiagnosticsStore.ScheduleEvent hardFire = new DiagnosticsStore.ScheduleEvent(
                 now + 12, utc, DiagnosticsStore.KIND_ALARM_FIRED, "interval",
                 "lock", 0, 0, -1, null, "hard_fire");
         hardFire.gateMode = "hard";
-        ab.appendScheduleEvent(hardFire);
+        hardStore.appendScheduleEvent(hardFire);
         DiagnosticsStore.ScheduleEvent hardOk = new DiagnosticsStore.ScheduleEvent(
                 now + 13, utc, DiagnosticsStore.KIND_LAUNCH_OK, "interval",
                 "lock", 0, 0, -1, null, "hard_ok");
         hardOk.gateMode = "hard";
-        ab.appendScheduleEvent(hardOk);
+        hardStore.appendScheduleEvent(hardOk);
         DiagnosticsStore.ScheduleEvent hardRi = new DiagnosticsStore.ScheduleEvent(
                 now + 14, utc, DiagnosticsStore.KIND_HARD_REINTERCEPT, "a11y",
                 "lock", 0, 0, -1, null, "path=a11y");
         hardRi.gateMode = "hard";
-        ab.appendScheduleEvent(hardRi);
+        hardStore.appendScheduleEvent(hardRi);
         DiagnosticsStore.ScheduleEvent hardUnlock = new DiagnosticsStore.ScheduleEvent(
                 now + 15, utc, DiagnosticsStore.KIND_HARD_UNLOCK, "hard",
                 "lock", 0, 0, -1, null, "unlocked");
         hardUnlock.gateMode = "hard";
-        ab.appendScheduleEvent(hardUnlock);
+        hardStore.appendScheduleEvent(hardUnlock);
 
-        String stamped = ab.recentSchedule(10).stream()
+        String stamped = hardStore.recentSchedule(10).stream()
                 .filter(l -> l.contains(DiagnosticsStore.KIND_HARD_UNLOCK))
                 .findFirst().orElse("");
         Assert.isTrue(stamped.contains("\"gate_mode\":\"hard\""), "hard_unlock stamps gate_mode");
-        String softLine = ab.recentSchedule(10).stream()
-                .filter(l -> l.contains("soft_ok"))
-                .findFirst().orElse("");
-        Assert.isTrue(softLine.contains("\"gate_mode\":\"soft\""), "soft launch_ok stamps gate_mode");
 
-        DiagnosticsStore.GateAbStats abStats = ab.gateAbStats(40);
-        Assert.eq(1, abStats.softFired, "ab softFired");
-        Assert.eq(1, abStats.softLaunchOk, "ab softLaunchOk");
-        Assert.eq(1, abStats.hardFired, "ab hardFired");
-        Assert.eq(1, abStats.hardLaunchOk, "ab hardLaunchOk");
-        Assert.eq(1, abStats.hardReintercept, "ab hardReintercept");
-        Assert.eq(1, abStats.hardUnlock, "ab hardUnlock");
-        Assert.eq(100, abStats.softSuccessPct(), "soft 1/1 → 100%");
-        Assert.eq(100, abStats.hardSuccessPct(), "hard 1/1 → 100%");
+        DiagnosticsStore.HardReliabilityStats st = hardStore.hardReliabilityStats(40);
+        Assert.eq(1, st.fired, "hard fired");
+        Assert.eq(1, st.launchOk, "hard launchOk");
+        Assert.eq(1, st.reintercept, "hard reintercept");
+        Assert.eq(1, st.unlock, "hard unlock");
+        Assert.eq(100, st.launchSuccessPct(), "1/1 → 100%");
 
-        // Untagged legacy lines count as soft.
+        // Untagged legacy fire still counts toward Hard reliability.
         File legacyDir = Files.createTempDirectory("qg-gate-legacy").toFile();
         DiagnosticsStore legacy = new DiagnosticsStore(legacyDir);
         legacy.appendScheduleEvent(new DiagnosticsStore.ScheduleEvent(
                 now + 20, utc, DiagnosticsStore.KIND_ALARM_FIRED, "interval",
                 "lock", 0, 0, -1, null, "legacy"));
-        DiagnosticsStore.GateAbStats legacyStats = legacy.gateAbStats(20);
-        Assert.eq(1, legacyStats.softFired, "untagged → softFired");
-        Assert.eq(0, legacyStats.hardFired, "untagged not hard");
+        DiagnosticsStore.HardReliabilityStats legacyStats = legacy.hardReliabilityStats(20);
+        Assert.eq(1, legacyStats.fired, "untagged → fired");
+        Assert.eq(0, legacyStats.launchOk, "untagged no launch_ok");
 
         System.out.println("DiagnosticsStoreTest OK day=" + dayKey
                 + " diagBytes=" + diag.approximateSizeBytes()
-                + " softPct=" + abStats.softSuccessPct()
-                + " hardPct=" + abStats.hardSuccessPct());
+                + " hardPct=" + st.launchSuccessPct());
     }
 }

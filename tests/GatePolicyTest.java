@@ -2,7 +2,7 @@ import net.clevertree.quizgate.core.GatePolicy;
 import net.clevertree.quizgate.core.GatePolicy.CriticalGap;
 
 /**
- * JVM unit tests for Soft/Hard gate policy (no Android framework).
+ * JVM unit tests for Hard-only gate policy (no Android framework).
  */
 public class GatePolicyTest {
     public static void main(String[] args) {
@@ -11,49 +11,44 @@ public class GatePolicyTest {
         Assert.eq(GatePolicy.HARD, GatePolicy.normalize(""), "empty → hard");
         Assert.eq(GatePolicy.HARD, GatePolicy.normalize("HARD"), "HARD → hard");
         Assert.eq(GatePolicy.HARD, GatePolicy.normalize("weird"), "unknown → hard");
-        Assert.eq(GatePolicy.SOFT, GatePolicy.normalize("soft"), "soft");
-        Assert.eq(GatePolicy.SOFT, GatePolicy.normalize("SOFT"), "SOFT → soft");
+        Assert.eq(GatePolicy.HARD, GatePolicy.normalize("soft"), "soft migrates → hard");
+        Assert.eq(GatePolicy.HARD, GatePolicy.normalize("SOFT"), "SOFT migrates → hard");
 
         Assert.isTrue(GatePolicy.isHard(null), "null isHard");
         Assert.isTrue(GatePolicy.isHard("hard"), "hard isHard");
-        Assert.isTrue(!GatePolicy.isHard("soft"), "soft !isHard");
-        Assert.isTrue(GatePolicy.isSoft("soft"), "soft isSoft");
+        Assert.isTrue(GatePolicy.isHard("soft"), "legacy soft still isHard");
+        Assert.isTrue(!GatePolicy.isSoft("soft"), "isSoft always false");
         Assert.isTrue(!GatePolicy.isSoft("hard"), "hard !isSoft");
 
-        Assert.isTrue(GatePolicy.isOverlayCritical(false), "soft overlay critical");
-        Assert.isTrue(!GatePolicy.isOverlayCritical(true), "hard overlay not critical");
-        Assert.isTrue(GatePolicy.isAccessibilityCritical(true), "hard a11y critical");
-        Assert.isTrue(!GatePolicy.isAccessibilityCritical(false), "soft a11y not critical");
+        Assert.isTrue(!GatePolicy.isOverlayCritical(false), "overlay never critical");
+        Assert.isTrue(!GatePolicy.isOverlayCritical(true), "overlay never critical (hard)");
+        Assert.isTrue(GatePolicy.isAccessibilityCritical(true), "a11y always critical");
+        Assert.isTrue(GatePolicy.isAccessibilityCritical(false), "a11y critical even if flag false");
 
-        // Soft: Accessibility off must NOT block Arm; overlay off must.
-        Assert.eq(CriticalGap.OVERLAY, GatePolicy.firstCriticalGap(
-                false, true, true, true, true, false, false),
-                "soft: overlay missing is critical even if a11y off");
-        Assert.eq(CriticalGap.NONE, GatePolicy.firstCriticalGap(
-                false, true, true, true, true, false, true),
-                "soft: a11y not required when overlay ok");
-
-        // Hard: Accessibility off blocks; overlay off does not (after a11y ok).
+        // Hard-only: Accessibility off blocks; overlay off does not.
         Assert.eq(CriticalGap.ACCESSIBILITY, GatePolicy.firstCriticalGap(
                 true, true, true, true, true, false, false),
-                "hard: a11y missing is critical");
+                "a11y missing is critical");
+        Assert.eq(CriticalGap.ACCESSIBILITY, GatePolicy.firstCriticalGap(
+                false, true, true, true, true, false, true),
+                "a11y missing critical regardless of hardMode flag");
         Assert.eq(CriticalGap.NONE, GatePolicy.firstCriticalGap(
                 true, true, true, true, true, true, false),
-                "hard: overlay not required for Arm critical");
+                "overlay not required for Arm critical");
 
         // Shared schedule reliability gaps come first.
         Assert.eq(CriticalGap.EXACT_ALARM, GatePolicy.firstCriticalGap(
                 true, false, true, true, true, true, true),
                 "exact first");
         Assert.eq(CriticalGap.NOTIFICATIONS, GatePolicy.firstCriticalGap(
-                false, true, false, true, true, true, true),
+                true, true, false, true, true, true, true),
                 "notif when runtime missing");
         Assert.eq(CriticalGap.NOTIFICATIONS, GatePolicy.firstCriticalGap(
-                false, true, true, false, true, true, true),
+                true, true, true, false, true, true, true),
                 "notif when channel demoted");
         Assert.eq(CriticalGap.BATTERY, GatePolicy.firstCriticalGap(
                 true, true, true, true, false, true, true),
-                "battery before mode grant");
+                "battery before a11y");
 
         System.out.println("GatePolicyTest OK");
     }

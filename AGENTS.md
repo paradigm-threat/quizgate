@@ -21,8 +21,8 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 |------|----------------|
 | Schedule | 30±15 min → fire window 15–45 min; quiet 20:00–07:00; morning 07:00 |
 | Re-arm | Boot, `MY_PACKAGE_REPLACED`, `TIME_SET` / timezone change |
-| Gate mode | Pref `gate_mode` **hard** (default/recommended) \| soft; Hard = Accessibility confine during active lock; Soft = overlay/FSI, Home/Back = bypass |
-| Grants (`ScheduleAuth`) | Soft: exact → notif → battery → **overlay** → FSI → usage. Hard: exact → notif → battery → **Accessibility** → overlay → FSI → usage. Arm hard-blocks critical gaps (Soft: exact/notif/battery/overlay; Hard: exact/notif/battery/a11y) |
+| Gate mode | Hard-only: Accessibility confine during active scheduled lock; Home/Back never bypass. Widget/Setup `TRIGGER_PLAY` is unlocked practice |
+| Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch, not Soft Arm-critical |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
 | Stats | `files/stats/` capped JSONL; day rollups 90d; upload OFF |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |

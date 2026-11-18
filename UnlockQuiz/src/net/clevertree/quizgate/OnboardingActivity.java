@@ -16,8 +16,8 @@ import net.clevertree.quizgate.core.Scheduler;
 
 /**
  * Skippable first-run intro: welcome → photos → schedule → UI placement →
- * performance → gate mode (Hard recommended) → permissions (one ScheduleAuth gap
- * at a time) → Setup.
+ * performance → lock explainer (Accessibility Hard) → permissions (one
+ * ScheduleAuth gap at a time) → Setup.
  */
 public class OnboardingActivity extends Activity {
     private static final int REQ_PHOTOS = 41;
@@ -50,7 +50,6 @@ public class OnboardingActivity extends Activity {
     private String pendingPhotoSource = PhotoLibrary.SOURCE_BUNDLED;
     private String draftUiPlacement = AppPrefs.UI_PLACEMENT_TOP;
     private String draftPerfMode = PerformanceMode.AUTO;
-    private String draftGateMode = GateMode.HARD;
     private long draftIntervalMs = Scheduler.DEFAULT_INTERVAL_MS;
     private long draftJitterMs = Scheduler.DEFAULT_JITTER_MS;
     /** Gap currently shown on the permissions step (NONE when all granted). */
@@ -87,7 +86,6 @@ public class OnboardingActivity extends Activity {
         draftJitterMs = prefs.getJitterMs();
         draftUiPlacement = prefs.getUiPlacement();
         draftPerfMode = prefs.getPerformanceMode();
-        draftGateMode = prefs.getGateMode();
 
         skip.setOnClickListener(v -> finishOnboarding(pendingPhotoSource, true));
         next.setOnClickListener(v -> onNext());
@@ -119,14 +117,6 @@ public class OnboardingActivity extends Activity {
         }
         if (btnSlim != null) {
             btnSlim.setOnClickListener(v -> choosePerfAndContinue(PerformanceMode.SLIM));
-        }
-        View btnHard = findViewById(R.id.btn_onboard_gate_hard);
-        View btnSoft = findViewById(R.id.btn_onboard_gate_soft);
-        if (btnHard != null) {
-            btnHard.setOnClickListener(v -> chooseGateAndContinue(GateMode.HARD));
-        }
-        if (btnSoft != null) {
-            btnSoft.setOnClickListener(v -> chooseGateAndContinue(GateMode.SOFT));
         }
         if (permAllow != null) {
             permAllow.setOnClickListener(v -> allowCurrentPermission());
@@ -164,7 +154,7 @@ public class OnboardingActivity extends Activity {
             // Continue keeps Auto if they didn't tap a button (default).
             choosePerfAndContinue(draftPerfMode);
         } else if (step == STEP_GATE) {
-            chooseGateAndContinue(draftGateMode);
+            chooseGateAndContinue();
         } else if (step == STEP_DONE) {
             finishOnboarding(pendingPhotoSource, false);
         } else {
@@ -203,10 +193,9 @@ public class OnboardingActivity extends Activity {
         showStep();
     }
 
-    private void chooseGateAndContinue(String mode) {
-        draftGateMode = GateMode.normalize(mode);
-        // Persist early so permission walk uses Hard/Soft prompt order.
-        prefs.setGateMode(draftGateMode);
+    private void chooseGateAndContinue() {
+        // Hard-only: persist early so permission walk includes Accessibility.
+        prefs.setGateMode(GateMode.HARD);
         goPermissions();
     }
 
@@ -292,8 +281,9 @@ public class OnboardingActivity extends Activity {
         } else if (step == STEP_GATE) {
             title.setText(R.string.onboard_gate_title);
             body.setText(R.string.onboard_gate_body);
-            if (gateActions != null) gateActions.setVisibility(View.VISIBLE);
-            next.setVisibility(View.GONE);
+            if (gateActions != null) gateActions.setVisibility(View.GONE);
+            next.setVisibility(View.VISIBLE);
+            next.setText(R.string.onboard_continue);
         } else if (step == STEP_PERMISSIONS) {
             showPermissionStep();
         } else if (step == STEP_DONE) {
@@ -421,7 +411,7 @@ public class OnboardingActivity extends Activity {
             prefs.setJitterMs(draftJitterMs);
             prefs.setUiPlacement(draftUiPlacement);
             prefs.setPerformanceMode(draftPerfMode);
-            prefs.setGateMode(draftGateMode);
+            prefs.setGateMode(GateMode.HARD);
         }
         try {
             PerformanceMode.reevaluate(this, "onboarding");

@@ -25,26 +25,20 @@ import java.util.TimeZone;
 
 /**
  * OS authorizations for a fully working QuizGate: exact alarms, notifications
- * (runtime + app toggle + alarm channel), battery exemption, appear-on-top
- * (critical for Soft BAL), Accessibility (critical for Hard confine), full-screen
- * intent, usage stats (return to last app).
+ * (runtime + app toggle + alarm channel), battery exemption, Accessibility
+ * (Arm-critical Hard confine), appear-on-top / full-screen intent (launch helpers),
+ * usage stats (return to last app).
  * Checks + single Settings prompt at a time (90s cooldown).
  *
- * <p>Hard mode (recommended): Accessibility confine during an active lock session.
- * Soft mode: overlay/FSI launch; Home/Back = bypass.
+ * <p>Hard-only: Accessibility confines during an active lock session. Overlay/FSI
+ * remain recommended for opening the quiz, not a Soft Home-bypass product path.
  */
 public final class ScheduleAuth {
     private static final String TAG = AlarmScheduler.TAG;
     private static final long PROMPT_COOLDOWN_MS = 90_000L;
 
-    /** Soft prompt order: schedule reliability first, then launch-critical overlay. */
-    private static final Gap[] PROMPT_ORDER_SOFT = {
-            Gap.EXACT_ALARM, Gap.NOTIFICATIONS, Gap.BATTERY,
-            Gap.OVERLAY, Gap.FULL_SCREEN_INTENT, Gap.USAGE_STATS
-    };
-
-    /** Hard prompt order: Accessibility is the primary confine grant. */
-    private static final Gap[] PROMPT_ORDER_HARD = {
+    /** Hard-only prompt order: Accessibility is the primary confine grant. */
+    private static final Gap[] PROMPT_ORDER = {
             Gap.EXACT_ALARM, Gap.NOTIFICATIONS, Gap.BATTERY,
             Gap.ACCESSIBILITY, Gap.OVERLAY, Gap.FULL_SCREEN_INTENT, Gap.USAGE_STATS
     };
@@ -99,7 +93,7 @@ public final class ScheduleAuth {
                     + " overlay=" + bit(overlay)
                     + " a11y=" + bit(accessibility)
                     + " usage=" + bit(usageStats)
-                    + " gate=" + (hardMode ? "hard" : "soft");
+                    + " gate=hard";
         }
 
         public Gap firstGap() {
@@ -111,7 +105,7 @@ public final class ScheduleAuth {
          * Order matches onboarding / Setup prompts (one at a time).
          */
         public Gap firstRequiredGap() {
-            for (Gap g : promptOrder(hardMode)) {
+            for (Gap g : PROMPT_ORDER) {
                 if (!granted(g)) return g;
             }
             return Gap.NONE;
@@ -179,7 +173,7 @@ public final class ScheduleAuth {
     private ScheduleAuth() {}
 
     static Gap[] promptOrder(boolean hardMode) {
-        return hardMode ? PROMPT_ORDER_HARD : PROMPT_ORDER_SOFT;
+        return PROMPT_ORDER;
     }
 
     public static DiagnosticsStore store(Context ctx) {
@@ -231,8 +225,7 @@ public final class ScheduleAuth {
         }
         boolean usage = ForegroundApp.hasUsageAccess(ctx);
         boolean a11y = GateMode.isAccessibilityEnabled(ctx);
-        boolean hard = GateMode.isHard(ctx);
-        return new Snapshot(ts, exact, batt, notif, channelOk, fsi, overlay, usage, a11y, hard);
+        return new Snapshot(ts, exact, batt, notif, channelOk, fsi, overlay, usage, a11y, true);
     }
 
     public static void log(Context ctx, String kind, String trigger, long nextAlarmAt,
@@ -324,12 +317,10 @@ public final class ScheduleAuth {
             sb.append("\nNotifications: ").append(
                     (s.notifications && s.alarmChannelOk) ? "yes" : "NO — tap row");
         }
-        if (s.hardMode) {
-            sb.append("\nAccessibility (Hard lock): ")
-                    .append(s.accessibility ? "yes" : "NO — tap row");
-        }
+        sb.append("\nAccessibility (Hard lock): ")
+                .append(s.accessibility ? "yes" : "NO — tap row");
         if (Build.VERSION.SDK_INT >= 23) {
-            sb.append("\nAppear on top (required to open over apps): ")
+            sb.append("\nAppear on top (helps open over apps): ")
                     .append(s.overlay ? "yes" : "NO — tap row");
         }
         if (Build.VERSION.SDK_INT >= 34) {
@@ -359,10 +350,8 @@ public final class ScheduleAuth {
             items.add(new CheckItem(Gap.BATTERY, true, s.batteryUnrestricted,
                     R.string.setup_req_battery_title, R.string.setup_req_battery_detail));
         }
-        if (s.hardMode) {
-            items.add(new CheckItem(Gap.ACCESSIBILITY, true, s.accessibility,
-                    R.string.setup_req_a11y_title, R.string.setup_req_a11y_detail));
-        }
+        items.add(new CheckItem(Gap.ACCESSIBILITY, true, s.accessibility,
+                R.string.setup_req_a11y_title, R.string.setup_req_a11y_detail));
         if (Build.VERSION.SDK_INT >= 23) {
             items.add(new CheckItem(Gap.OVERLAY, true, s.overlay,
                     R.string.setup_req_overlay_title, R.string.setup_req_overlay_detail));
@@ -419,16 +408,8 @@ public final class ScheduleAuth {
 
     public static boolean isCritical(Context ctx, Gap gap) {
         if (gap == Gap.EXACT_ALARM || gap == Gap.NOTIFICATIONS || gap == Gap.BATTERY) return true;
-        boolean hard = ctx != null && GateMode.isHard(ctx);
-        if (gap == Gap.OVERLAY) {
-            // Soft: overlay critical. Hard: still useful for launch but Accessibility is critical.
-            // When ctx is null (legacy callers), treat overlay as critical (soft-safe default).
-            return ctx == null || GatePolicy.isOverlayCritical(hard);
-        }
-        if (gap == Gap.ACCESSIBILITY) {
-            // When ctx is null, treat a11y as critical (hard-safe / Play-default path).
-            return ctx == null || GatePolicy.isAccessibilityCritical(hard);
-        }
+        if (gap == Gap.ACCESSIBILITY) return true;
+        // Overlay / FSI / usage: recommended for launch / return-to-app, not Arm-critical.
         return false;
     }
 
@@ -439,8 +420,7 @@ public final class ScheduleAuth {
      */
     public static Gap nextGapAfter(Context ctx, Gap after) {
         boolean past = (after == null || after == Gap.NONE);
-        boolean hard = GateMode.isHard(ctx);
-        for (Gap g : promptOrder(hard)) {
+        for (Gap g : PROMPT_ORDER) {
             if (!past) {
                 if (g == after) past = true;
                 continue;

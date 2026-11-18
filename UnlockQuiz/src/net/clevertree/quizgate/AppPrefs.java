@@ -236,17 +236,22 @@ public final class AppPrefs {
     }
 
     /**
-     * Hard (recommended, Accessibility confine) vs Soft (gentler Home-bypass).
-     * Default {@link net.clevertree.quizgate.core.GatePolicy#DEFAULT} ({@link GateMode#HARD}).
+     * Lock mode is always Hard (Accessibility confine). Legacy {@code soft} prefs
+     * normalize to {@link GateMode#HARD} on read/write.
      */
     public String getGateMode() {
-        return GateMode.normalize(sp.getString("gate_mode",
-                net.clevertree.quizgate.core.GatePolicy.DEFAULT));
+        String raw = sp.getString("gate_mode", GateMode.HARD);
+        String mode = GateMode.normalize(raw);
+        // Migrate soft → hard in place so Setup/diag never see Soft again.
+        if (raw != null && !GateMode.HARD.equals(raw) && !mode.equals(raw)) {
+            sp.edit().putString("gate_mode", mode).commit();
+        }
+        return mode;
     }
 
     public void setGateMode(String mode) {
         // commit(): gate mode must survive immediate force-stop / process death (adb smoke, OEM kills).
-        sp.edit().putString("gate_mode", GateMode.normalize(mode)).commit();
+        sp.edit().putString("gate_mode", GateMode.HARD).commit();
     }
 
     /** Active Hard-gate lock session — Accessibility reopens quiz while true. */

@@ -215,7 +215,7 @@ public class QuizActivity extends Activity {
         if (playMode) {
             // Practice must never activate Hard confine (clear stale session from a prior lock).
             HardGate.clearSessionQuiet(this);
-        } else if (GateMode.isHard(this)) {
+        } else {
             HardGate.startSession(this);
         }
         if (playMode || !PerformanceMode.allowReturnToApp(prefs)) {
@@ -342,15 +342,17 @@ public class QuizActivity extends Activity {
         // Navigating to historic stats is not a Home leave
         if (browsingStats) return;
         if (finishing || inTransition || session == null || session.isEnded()) return;
-        // Hard lock: do not bypass — Accessibility (and a leave-hint belt) reopen quiz.
-        if (!playMode && HardGate.isHardLockActive(this)) {
+        // Lock: do not bypass — Accessibility (and a leave-hint belt) reopen quiz.
+        if (!playMode) {
             restorePreviousApp = false;
             // Belt-and-suspenders when a11y is unbound/slow (Samsung user builds often need a
             // manual Accessibility toggle even after settings put). Debounced in HardGate.
-            handler.postDelayed(() -> HardGate.bringQuizToFront(this, "leave_hint"), 400L);
+            if (HardGate.isHardLockActive(this)) {
+                handler.postDelayed(() -> HardGate.bringQuizToFront(this, "leave_hint"), 400L);
+            }
             return;
         }
-        // Soft: Home / Recents bypass — stay where the child went (usually Home)
+        // Play (widget / Setup practice): Home leaves freely.
         restorePreviousApp = false;
         finishWithBypass();
     }
@@ -361,12 +363,12 @@ public class QuizActivity extends Activity {
             return;
         }
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
-            if (!playMode && HardGate.isHardLockActive(this)) {
-                // Hard: ignore Back; Accessibility keeps the quiz foreground.
+            if (!playMode) {
+                // Lock: ignore Back; Accessibility keeps the quiz foreground.
                 return;
             }
-            // Play mode: just leave. Soft lock: bypass + restore previous app.
-            restorePreviousApp = !playMode;
+            // Play mode: leave freely (no Hard confine).
+            restorePreviousApp = false;
             finishWithBypass();
         } else if (!inTransition) {
             super.onBackPressed();
@@ -823,7 +825,7 @@ public class QuizActivity extends Activity {
         startActivity(i);
         restorePreviousApp = false;
         if (session != null && !session.isEnded()) {
-            if (GateMode.isHard(this) && !playMode) {
+            if (!playMode) {
                 session.bypass(clock.nowMillis());
                 logPresented("bypass", session.getCurrent(), "", session.getMissStreak());
                 finishSession();

@@ -11,11 +11,13 @@ import net.clevertree.quizgate.core.GatePolicy;
 import java.util.List;
 
 /**
- * Hard (recommended: Accessibility confine until unlock) vs Soft (overlay/FSI launch,
- * Home = bypass). Shared schedule + quiz UI; separate confinement and grants.
+ * Hard-only lock: Accessibility confines the quiz during an active lock session.
+ * Soft product mode is removed; legacy prefs normalize to Hard.
  * Pure normalize / critical-gap rules live in {@link GatePolicy}.
  */
 public final class GateMode {
+    /** @deprecated Soft product mode removed; normalize maps soft → {@link #HARD}. */
+    @Deprecated
     public static final String SOFT = GatePolicy.SOFT;
     public static final String HARD = GatePolicy.HARD;
 
@@ -26,15 +28,16 @@ public final class GateMode {
     }
 
     public static boolean isHard(Context ctx) {
-        return GatePolicy.isHard(new AppPrefs(ctx).getGateMode());
+        return true;
     }
 
     public static boolean isHard(String mode) {
         return GatePolicy.isHard(mode);
     }
 
+    /** Soft product mode removed. */
     public static boolean isSoft(Context ctx) {
-        return !isHard(ctx);
+        return false;
     }
 
     /** True when our Accessibility service is enabled for this package. */

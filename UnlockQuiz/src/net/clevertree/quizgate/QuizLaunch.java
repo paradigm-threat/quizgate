@@ -33,9 +33,9 @@ public final class QuizLaunch {
     private QuizLaunch() {}
 
     /**
-     * From {@link AlarmReceiver} after {@link MediaGate#pauseThenSettle}: Soft path uses
-     * FSI notification + overlay/FSI bring-up (BAL-safe). Hard path starts a hard session
-     * and prefers a direct QuizActivity start (Accessibility confines afterward).
+     * From {@link AlarmReceiver} after {@link MediaGate#pauseThenSettle}: always starts a
+     * Hard session, prefers a direct QuizActivity start (Accessibility confines afterward),
+     * then falls back to FSI notification + overlay/FGS reinforce when direct start fails.
      */
     public static void fromAlarm(Context ctx, String trigger) {
         Context app = ctx.getApplicationContext();
@@ -43,25 +43,23 @@ public final class QuizLaunch {
         long now = System.currentTimeMillis();
         AppPrefs prefs = new AppPrefs(app);
 
-        if (GateMode.isHard(app)) {
-            HardGate.startSession(app);
-            ensureChannel(app);
-            Intent quiz = quizIntent(app, trigger);
-            PendingIntent pi = activityPi(app, quiz);
-            Notification n = buildNotification(app, pi);
-            NotificationManager nm = app.getSystemService(NotificationManager.class);
-            if (nm != null) nm.notify(NOTIF_ID, n);
-            log(app, now, DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, prefs, "path=hard_direct");
-            try {
-                app.startActivity(quiz);
-                log(app, System.currentTimeMillis(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger,
-                        prefs, "path=hard_start");
-                Log.i(AlarmScheduler.TAG, "QuizLaunch hard direct start ok trigger=" + trigger);
-                return;
-            } catch (Exception e) {
-                Log.w(AlarmScheduler.TAG, "QuizLaunch hard start failed — soft fallback", e);
-                // Keep hard session; fall through to overlay/FSI/FGS reinforce.
-            }
+        HardGate.startSession(app);
+        ensureChannel(app);
+        Intent quizDirect = quizIntent(app, trigger);
+        PendingIntent piDirect = activityPi(app, quizDirect);
+        Notification nDirect = buildNotification(app, piDirect);
+        NotificationManager nmDirect = app.getSystemService(NotificationManager.class);
+        if (nmDirect != null) nmDirect.notify(NOTIF_ID, nDirect);
+        log(app, now, DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, prefs, "path=hard_direct");
+        try {
+            app.startActivity(quizDirect);
+            log(app, System.currentTimeMillis(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger,
+                    prefs, "path=hard_start");
+            Log.i(AlarmScheduler.TAG, "QuizLaunch hard direct start ok trigger=" + trigger);
+            return;
+        } catch (Exception e) {
+            Log.w(AlarmScheduler.TAG, "QuizLaunch hard start failed — overlay/FSI/FGS fallback", e);
+            // Keep hard session; fall through to overlay/FSI/FGS reinforce.
         }
 
         ensureChannel(app);

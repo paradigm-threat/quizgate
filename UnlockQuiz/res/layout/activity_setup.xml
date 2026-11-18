@@ -253,7 +253,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/setup_gate_ab_none"
+            android:text="@string/setup_gate_reliability_none"
             android:textColor="@color/header"
             android:textSize="13sp"
             android:gravity="center"/>
@@ -475,31 +475,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="@string/setup_ui_placement_top_detail"
-            android:textColor="@color/header"
-            android:textSize="13sp"
-            android:gravity="center"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="@string/setup_gate_label"
-            android:textColor="@color/header"
-            android:textSize="14sp"
-            android:gravity="center"/>
-
-        <Spinner
-            android:id="@+id/gate_mode_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="6dp"/>
-
-        <TextView
-            android:id="@+id/setup_gate_mode_detail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="@string/setup_gate_hard_detail"
             android:textColor="@color/header"
             android:textSize="13sp"
             android:gravity="center"/>

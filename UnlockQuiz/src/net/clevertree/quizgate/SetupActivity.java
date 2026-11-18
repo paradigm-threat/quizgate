@@ -55,12 +55,9 @@ public class SetupActivity extends Activity {
     private Spinner tierSpinner;
     private Spinner uiPlacementSpinner;
     private Spinner perfModeSpinner;
-    private Spinner gateModeSpinner;
     private TextView uiPlacementDetail;
     private TextView perfDetail;
-    private TextView gateModeDetail;
-    private TextView gateAbStats;
-    private boolean suppressGateSpinner;
+    private TextView gateReliabilityStats;
     private TextView intervalValue;
     private TextView jitterValue;
     private TextView windowValue;
@@ -102,11 +99,9 @@ public class SetupActivity extends Activity {
         tierSpinner = findViewById(R.id.tier_spinner);
         uiPlacementSpinner = findViewById(R.id.ui_placement_spinner);
         perfModeSpinner = findViewById(R.id.perf_mode_spinner);
-        gateModeSpinner = findViewById(R.id.gate_mode_spinner);
         uiPlacementDetail = findViewById(R.id.setup_ui_placement_detail);
         perfDetail = findViewById(R.id.setup_perf_detail);
-        gateModeDetail = findViewById(R.id.setup_gate_mode_detail);
-        gateAbStats = findViewById(R.id.setup_gate_ab_stats);
+        gateReliabilityStats = findViewById(R.id.setup_gate_ab_stats);
         intervalValue = findViewById(R.id.setup_interval_value);
         jitterValue = findViewById(R.id.setup_jitter_value);
         windowValue = findViewById(R.id.setup_window_value);
@@ -163,10 +158,9 @@ public class SetupActivity extends Activity {
             addWidget.setOnClickListener(v -> requestHomeWidget());
         }
         bindCurriculumSpinners();
-        // Dev extras (incl. gate_mode) before gate spinner so selection matches prefs
-        // and deferred onItemSelected cannot overwrite Soft→Hard.
         applyDevExtras(getIntent());
-        bindGateModeSpinner();
+        // Hard-only: migrate any legacy soft pref.
+        new AppPrefs(this).setGateMode(GateMode.HARD);
         refreshScheduleLabels();
         refreshStatus();
         CurriculumIndexClient.syncIfEnabled(this);
@@ -258,51 +252,6 @@ public class SetupActivity extends Activity {
             perfDetail.setText(R.string.setup_perf_performance_detail);
         } else {
             perfDetail.setText(R.string.setup_perf_auto_detail);
-        }
-    }
-
-    private void bindGateModeSpinner() {
-        if (gateModeSpinner == null) return;
-        AppPrefs prefs = new AppPrefs(this);
-        // Order: Hard (0, recommended), Soft (1, gentler)
-        List<String> labels = new ArrayList<>();
-        labels.add(getString(R.string.setup_gate_hard));
-        labels.add(getString(R.string.setup_gate_soft));
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item, labels);
-        suppressGateSpinner = true;
-        gateModeSpinner.setAdapter(adapter);
-        String mode = prefs.getGateMode();
-        int sel = GateMode.isHard(mode) ? 0 : 1;
-        gateModeSpinner.setSelection(sel);
-        refreshGateModeDetail(mode);
-        gateModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (suppressGateSpinner) return;
-                String next = position == 1 ? GateMode.SOFT : GateMode.HARD;
-                AppPrefs p = new AppPrefs(SetupActivity.this);
-                if (!next.equals(p.getGateMode())) {
-                    p.setGateMode(next);
-                    if (!GateMode.isHard(next)) {
-                        // Soft: stop any in-flight Hard confine immediately.
-                        HardGate.clearSessionQuiet(SetupActivity.this);
-                    }
-                }
-                refreshGateModeDetail(next);
-                refreshRequirements();
-                refreshStatus();
-            }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
-        });
-        suppressGateSpinner = false;
-    }
-
-    private void refreshGateModeDetail(String mode) {
-        if (gateModeDetail == null) return;
-        if (GateMode.isHard(mode)) {
-            gateModeDetail.setText(R.string.setup_gate_hard_detail);
-        } else {
-            gateModeDetail.setText(R.string.setup_gate_soft_detail);
         }
     }
 
@@ -441,12 +390,10 @@ public class SetupActivity extends Activity {
         if (in.hasExtra("math_entry")) {
             prefs.setMathEntryMode(in.getStringExtra("math_entry"));
         }
-        // Smoke / adb: force Soft vs Hard without UI spinner.
+        // Smoke / adb: gate_mode extra always Hard (Soft product mode removed).
         if (in.hasExtra("gate_mode")) {
-            String mode = GateMode.normalize(in.getStringExtra("gate_mode"));
-            prefs.setGateMode(mode);
-            // Switching modes (or re-asserting Hard for daily prep) must not leave a
-            // stale confine session that yanks the child out of other apps.
+            prefs.setGateMode(GateMode.HARD);
+            // Re-asserting Hard must not leave a stale confine session.
             HardGate.clearSessionQuiet(this);
         }
         if (in.getBooleanExtra("clear_hard_session", false)) {
@@ -500,9 +447,8 @@ public class SetupActivity extends Activity {
     }
 
     /**
-     * Hard-block Arm when mode-critical grants are missing (exact / notif /
-     * battery; Soft: Appear on top; Hard: Accessibility). Without these, alarms
-     * fire but Soft quizzes never open / Hard confine cannot hold.
+     * Hard-block Arm when critical grants are missing (exact / notif / battery /
+     * Accessibility). Without these, alarms fire but confine cannot hold.
      */
     private void showAuthCriticalBlock() {
         String missing = ScheduleAuth.missingCriticalSummary(this);
@@ -777,16 +723,18 @@ public class SetupActivity extends Activity {
     }
 
     private void refreshGateAbStats() {
-        if (gateAbStats == null) return;
+        if (gateReliabilityStats == null) return;
         try {
-            DiagnosticsStore.GateAbStats ab = Diag.diagnostics(this).gateAbStats(200);
-            int softPct = ab.softSuccessPct();
-            int hardPct = ab.hardSuccessPct();
-            String softLabel = softPct < 0 ? "—" : softPct + "%";
-            String hardLabel = hardPct < 0 ? "—" : hardPct + "%";
-            gateAbStats.setText(getString(R.string.setup_gate_ab_line, softLabel, hardLabel));
+            DiagnosticsStore.HardReliabilityStats st =
+                    Diag.diagnostics(this).hardReliabilityStats(200);
+            if (st.fired <= 0 && st.launchOk <= 0 && st.reintercept <= 0 && st.unlock <= 0) {
+                gateReliabilityStats.setText(R.string.setup_gate_reliability_none);
+            } else {
+                gateReliabilityStats.setText(getString(R.string.setup_gate_reliability_line,
+                        st.fired, st.launchOk, st.reintercept, st.unlock));
+            }
         } catch (Exception e) {
-            gateAbStats.setText(R.string.setup_gate_ab_none);
+            gateReliabilityStats.setText(R.string.setup_gate_reliability_none);
         }
     }
 

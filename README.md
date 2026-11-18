@@ -1,6 +1,6 @@
 # QuizGate
 
-Clevertree quiz lock for young kids: every half hour (±15m → next fire in **15–45 min**) + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock (recommended):** Accessibility confines the quiz until unlock / consoling / parent override. **Soft gate (gentler):** Home/Back can dismiss. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+Clevertree quiz lock for young kids: every half hour (±15m → next fire in **15–45 min**) + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). Widget and Setup practice stay unlocked. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
