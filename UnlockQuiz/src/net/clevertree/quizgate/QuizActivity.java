@@ -665,13 +665,33 @@ public class QuizActivity extends Activity {
 
     private void submitDigitAnswer() {
         if (digitAnswer.isEmpty()) return;
+        if (session != null && session.isEnded()) return;
+        if (finishing || inTransition) return;
         String v = digitAnswer.value();
         // Normalize to catalog correct string form
         String choice = v;
         try {
             choice = String.valueOf(Integer.parseInt(v));
         } catch (NumberFormatException ignored) {}
+        // Freeze pad so extra taps cannot double-submit during success.
+        setDigitPadEnabled(false);
         onChoice(choice);
+    }
+
+    private void setDigitPadEnabled(boolean enabled) {
+        if (digitPad == null) return;
+        digitPad.setEnabled(enabled);
+        for (int i = 0; i < digitPad.getChildCount(); i++) {
+            View row = digitPad.getChildAt(i);
+            if (row instanceof LinearLayout) {
+                LinearLayout line = (LinearLayout) row;
+                for (int j = 0; j < line.getChildCount(); j++) {
+                    line.getChildAt(j).setEnabled(enabled);
+                }
+            } else if (row != null) {
+                row.setEnabled(enabled);
+            }
+        }
     }
 
     private void onChoice(String choice) {

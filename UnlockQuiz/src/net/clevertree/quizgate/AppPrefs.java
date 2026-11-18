@@ -143,13 +143,25 @@ public final class AppPrefs {
         setMinutesBalance(getMinutesBalance() + delta);
     }
 
-    /** Consume banked minutes for the next free stretch; returns delay ms to use. */
+    /**
+     * Legacy helper: previously <em>replaced</em> the schedule with jar minutes (too short).
+     * Prefer {@link #takeMinutesBonusMs()} — jar time adds on top of 60±15, never shrinks it.
+     */
     public long consumeMinutesForNextInterval(long fallbackIntervalMs) {
+        long bonus = takeMinutesBonusMs();
+        if (bonus <= 0L) return fallbackIntervalMs;
+        return fallbackIntervalMs + bonus;
+    }
+
+    /**
+     * Clear the minutes jar and return earned free-time ms to add on top of the
+     * normal interval±jitter window. Caps at 3 hours. Returns 0 when empty.
+     */
+    public long takeMinutesBonusMs() {
         int bal = getMinutesBalance();
-        if (bal <= 0) return fallbackIntervalMs;
+        if (bal <= 0) return 0L;
         setMinutesBalance(0);
         long fromJar = bal * 60_000L;
-        // Cap at 3 hours so a huge jar does not skip mornings entirely
         long cap = 3L * 60L * 60L * 1000L;
         return Math.min(fromJar, cap);
     }

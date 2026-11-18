@@ -228,34 +228,33 @@ public final class AlarmScheduler {
             return;
         }
 
-        long delay;
-        long jitterUsed;
-        if (prefs.getMinutesBalance() > 0) {
-            delay = prefs.consumeMinutesForNextInterval(prefs.getIntervalMs());
-            jitterUsed = 0L;
-        } else {
-            delay = prefs.getIntervalMs();
-            jitterUsed = prefs.getJitterMs();
-        }
-        Scheduler sched = new Scheduler(TimeZone.getDefault(), delay, jitterUsed);
+        // Always keep configured interval±jitter (default 60±15). Banked minutes
+        // ADD free time on top — never replace the window with a 2–5 min jar delay.
+        long interval = prefs.getIntervalMs();
+        long jitterUsed = prefs.getJitterMs();
+        long bonusMs = prefs.takeMinutesBonusMs();
+        long delayBase = interval + bonusMs;
+        Scheduler sched = new Scheduler(TimeZone.getDefault(), delayBase, jitterUsed);
         long next = sched.nextAfterUnlock(now);
         scheduleInterval(ctx, next);
         prefs.setNextAlarmAt(next);
         scheduleMorning(ctx, base.nextMorningAlarm(now));
         ScheduleAuth.Snapshot auth = ScheduleAuth.snapshot(ctx);
         String authNote = "after_session " + auth.compactNote()
-                + (auth.exactAlarm ? "" : " mode=inexact");
+                + (auth.exactAlarm ? "" : " mode=inexact")
+                + (bonusMs > 0 ? " jarBonusMs=" + bonusMs : "");
         try {
             Diag.schedule(ctx, new DiagnosticsStore.ScheduleEvent(
                     now, TimeZone.getDefault(), DiagnosticsStore.KIND_ALARM_SCHEDULED, "interval",
-                    "lock", next, delay, jitterUsed, null, authNote));
+                    "lock", next, delayBase, jitterUsed, null, authNote));
         } catch (Throwable t) {
             Log.w(TAG, "session diag", t);
         }
-        ScheduleAuth.log(ctx, DiagnosticsStore.KIND_PERM, "session_end", next, delay, jitterUsed);
+        ScheduleAuth.log(ctx, DiagnosticsStore.KIND_PERM, "session_end", next, delayBase, jitterUsed);
         Log.i(TAG, "rescheduled after session next=" + next
-                + " delayBase=" + delay + " jitter=" + jitterUsed
-                + " sampledWindow=" + Scheduler.formatWindow(delay, jitterUsed)
+                + " delayBase=" + delayBase + " jitter=" + jitterUsed
+                + " jarBonusMs=" + bonusMs
+                + " sampledWindow=" + Scheduler.formatWindow(delayBase, jitterUsed)
                 + " " + auth.compactNote());
     }
 
