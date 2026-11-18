@@ -49,7 +49,7 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           ./scripts/build_apk.sh
       - name: Upload QuizGate.apk
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: QuizGate.apk
           path: build/apk/QuizGate.apk
@@ -57,8 +57,8 @@ jobs:
 
   ios-stub:
     name: iOS stub
-    # macos-latest is fine for the thin stub; arm64 queue notes are capacity-only.
-    runs-on: macos-latest
+    # Pin macos-14 — macos-latest (arm64) often queues for capacity; stub is thin.
+    runs-on: macos-14
     needs: [regression]
     steps:
       - uses: actions/checkout@v5
