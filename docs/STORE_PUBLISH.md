@@ -47,8 +47,8 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
 - **Compete with Pickles on values** (education earns time; no kids accounts; no tracking; no fees) — **on Android**, where Pickles is absent
 - **Not** a Screenwise-style control suite (web filter, device-admin lockdown, IAP-adjacent Play listing) as the product identity
 - Clevertree **forever-free** policy (no ads, no IAP, no paywall — all products)
-- Roadmap differentiators: progressive curriculum packs + anonymous **SI** (Super Intelligence, i.e. AI) batch curation; soft gate now, harder lock later if Android APIs allow
-- Soft half-hour/morning quiz today (basic-math v3: addition + sparse subtraction); gallery/bundled backdrops on-device; optional curriculum sync; Auto/Performance/Slim profiles
+- Roadmap differentiators: progressive curriculum packs + anonymous **SI** (Super Intelligence, i.e. AI) batch curation; **Hard lock (Accessibility confine)** recommended for a real, Play-declarable lock; Soft gate as gentler A/B fallback
+- Half-hour/morning quiz (basic-math v3: addition + sparse subtraction); gallery/bundled backdrops on-device; optional curriculum sync; Auto/Performance/Slim profiles; Soft/Hard gate toggle
 
 ---
 
@@ -78,10 +78,12 @@ Applatch Kids, Kids Focus, BrainKey (monetization unclear), others with trials/I
   1024×500 (kit already has), content rating (IARC), contact email
 - Sensitive permissions story: exact alarms, notifications, battery exemption,
   full-screen intent, overlay, usage stats (return-to-app), optional
-  `READ_MEDIA_IMAGES` — explain in Console; Accessibility only if we later add hard
-  app-intercept (current soft quiz may not need it)
+  `READ_MEDIA_IMAGES`, and **Accessibility for Hard lock** — quiz-confine only
+  during an active lock session (not a screen reader; not full-device monitoring).
+  Soft mode does not require Accessibility. Paste declaration from
+  [`PLAY_STORE.md`](PLAY_STORE.md) §7 into Console.
 - Local diagnostics / Play triage: bounded `files/stats/` + `QuizGateDiag` logcat;
-  upload OFF — see [`TELEMETRY.md`](TELEMETRY.md)
+  upload OFF — see [`TELEMETRY.md`](TELEMETRY.md). Setup shows local Soft vs Hard A/B rates.
 
 **Effort estimate:** ~1–2 weeks calendar if org account already exists and 12 testers
 can be recruited; longer if waiting out the 14-day closed test on a new personal account.

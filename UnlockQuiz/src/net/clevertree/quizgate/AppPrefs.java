@@ -236,6 +236,30 @@ public final class AppPrefs {
     }
 
     /**
+     * Hard (recommended, Accessibility confine) vs Soft (gentler Home-bypass).
+     * Default {@link net.clevertree.quizgate.core.GatePolicy#DEFAULT} ({@link GateMode#HARD}).
+     */
+    public String getGateMode() {
+        return GateMode.normalize(sp.getString("gate_mode",
+                net.clevertree.quizgate.core.GatePolicy.DEFAULT));
+    }
+
+    public void setGateMode(String mode) {
+        // commit(): gate mode must survive immediate force-stop / process death (adb smoke, OEM kills).
+        sp.edit().putString("gate_mode", GateMode.normalize(mode)).commit();
+    }
+
+    /** Active Hard-gate lock session — Accessibility reopens quiz while true. */
+    public boolean isHardSessionActive() {
+        return sp.getBoolean("hard_session_active", false);
+    }
+
+    public void setHardSessionActive(boolean active) {
+        // commit(): AccessibilityService / leave-hint reintercept must see the flag immediately.
+        sp.edit().putBoolean("hard_session_active", active).commit();
+    }
+
+    /**
      * User preference: {@link PerformanceMode#PERFORMANCE}, {@link PerformanceMode#SLIM},
      * or {@link PerformanceMode#AUTO} (default). Never disables exact alarms / boot re-arm.
      */

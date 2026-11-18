@@ -5,7 +5,7 @@
 | Feature | Pickles (iOS) | Screenwise (Android) | QuizGate |
 |---------|---------------|----------------------|----------|
 | Education earns time | Minutes jar | Optional math minutes | Minutes jar (Phase 1) |
-| Hard app lock | Screen Time | Accessibility blocker | Soft gate now; hard lock Phase 2 |
+| Hard app lock | Screen Time | Accessibility blocker | **Hard lock shipped** (Accessibility quiz-confine during active session; Soft as gentler fallback) |
 | Web filter / device admin | No | Yes | **No** (not our identity) |
 | Grade / age tiers | K–5 | Times-tables adaptive | Pack tiers + age bands |
 | No accounts / ads | Yes | Claims free; IAP badge | Forever free, local SoT |

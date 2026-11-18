@@ -51,27 +51,72 @@ dump_has() {
   grep -qF "$needle" "$UI_HOST"
 }
 
+# Soft: Home dismisses (bypass). Hard: Accessibility reintercepts (default product mode).
+# Override: GATE_MODE=soft|hard  (default soft so CI/smoke Home step stays stable without a11y).
+GATE_MODE="${GATE_MODE:-soft}"
+case "$GATE_MODE" in soft|hard) ;; *)
+  echo "GATE_MODE must be soft or hard (got: $GATE_MODE)" >&2
+  exit 1
+  ;;
+esac
+
 echo "Device: $("${ADB[@]}" get-serialno)"
+echo "Gate mode: $GATE_MODE"
 "${ADB[@]}" install -r "$APK"
 
+enable_a11y() {
+  # Samsung may drop the binding after force-stop; re-assert for Hard smoke.
+  local component="$PKG/.QuizGateAccessibilityService"
+  "${ADB[@]}" shell settings put secure enabled_accessibility_services "$component" >/dev/null 2>&1 || true
+  "${ADB[@]}" shell settings put secure accessibility_enabled 1 >/dev/null 2>&1 || true
+}
+
 "${ADB[@]}" shell am force-stop "$PKG"
+if [[ "$GATE_MODE" == "hard" ]]; then
+  enable_a11y
+fi
 "${ADB[@]}" shell am start -n "$PKG/.SetupActivity" \
-  --el interval_ms 120000 --el jitter_ms 0 --ez auto_arm true --es math_entry digit_pad
+  --el interval_ms 120000 --el jitter_ms 0 --ez auto_arm true \
+  --es math_entry digit_pad --es gate_mode "$GATE_MODE"
 sleep 1.5
 
 echo "== Header =="
 "${ADB[@]}" shell am force-stop "$PKG"
+if [[ "$GATE_MODE" == "hard" ]]; then
+  enable_a11y
+fi
 "${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" --es trigger adb_force >/dev/null
 sleep 1.5
 dump_has 'Please answer this question'
 echo "header OK"
 
-echo "== Bypass =="
-"${ADB[@]}" shell input keyevent KEYCODE_HOME
-sleep 2
-SESS=$("${ADB[@]}" shell run-as "$PKG" cat files/stats/sessions.jsonl)
-echo "$SESS" | tail -1 | grep -q '"outcome":"bypass"'
-echo "bypass OK"
+if [[ "$GATE_MODE" == "soft" ]]; then
+  echo "== Soft Home bypass =="
+  "${ADB[@]}" shell input keyevent KEYCODE_HOME
+  sleep 2
+  SESS=$("${ADB[@]}" shell run-as "$PKG" cat files/stats/sessions.jsonl)
+  echo "$SESS" | tail -1 | grep -q '"outcome":"bypass"'
+  echo "bypass OK"
+else
+  echo "== Hard Home reintercept =="
+  enable_a11y
+  "${ADB[@]}" shell input keyevent KEYCODE_HOME
+  sleep 2.5
+  # Quiz must return (confine); session must NOT end as soft bypass.
+  dump_has 'Please answer this question'
+  SCHED=$("${ADB[@]}" shell run-as "$PKG" cat files/stats/diagnostics/schedule.jsonl 2>/dev/null || true)
+  if echo "$SCHED" | grep -q '"kind":"hard_reintercept"'; then
+    echo "hard_reintercept diag OK"
+  else
+    echo "warn: hard_reintercept not yet in schedule.jsonl (UI still confined)" >&2
+  fi
+  if echo "$SCHED" | grep -q '"gate_mode":"hard"'; then
+    echo "gate_mode=hard diag OK"
+  fi
+  # Leave quiz cleanly for later steps (parent-style: force-stop clears UI)
+  "${ADB[@]}" shell am force-stop "$PKG"
+  echo "hard reintercept OK"
+fi
 
 echo "== Digit pad (forced math m01: 1+1=2) =="
 "${ADB[@]}" shell am force-stop "$PKG"
@@ -154,11 +199,19 @@ done
 echo "$SESS" | tail -1 | grep -q '"outcome":"consoling_unlock"'
 
 echo "== Debug alarm broadcast =="
+if [[ "$GATE_MODE" == "hard" ]]; then
+  enable_a11y
+fi
 "${ADB[@]}" shell am broadcast -a net.clevertree.quizgate.ACTION_DEBUG_FIRE -n "$PKG/.AlarmReceiver" >/dev/null
 sleep 2
 dump_has 'Please answer this question'
 echo "alarm receiver OK"
-"${ADB[@]}" shell input keyevent KEYCODE_HOME
+if [[ "$GATE_MODE" == "soft" ]]; then
+  "${ADB[@]}" shell input keyevent KEYCODE_HOME
+else
+  # Hard would reintercept Home; clear for dumpsys section.
+  "${ADB[@]}" shell am force-stop "$PKG"
+fi
 sleep 1
 
 echo "== Battery / exact-alarm status =="

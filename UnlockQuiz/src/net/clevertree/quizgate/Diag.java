@@ -69,6 +69,9 @@ public final class Diag {
             if (e != null && !PerformanceMode.recordScheduleKind(new AppPrefs(ctx), e.kind)) {
                 return;
             }
+            if (e != null && (e.gateMode == null || e.gateMode.isEmpty())) {
+                e.gateMode = new AppPrefs(ctx).getGateMode();
+            }
             diagnostics(ctx).appendScheduleEvent(e);
         } catch (Exception e2) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "schedule event failed", e2);

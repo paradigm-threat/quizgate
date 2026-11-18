@@ -33,15 +33,36 @@ public final class QuizLaunch {
     private QuizLaunch() {}
 
     /**
-     * From {@link AlarmReceiver} after {@link MediaGate#pauseThenSettle}: FSI
-     * notification + overlay/FSI bring-up (BAL-safe). Notification posts first so the
-     * settle window still shows an alarm cue; activity start happens here post-pause.
+     * From {@link AlarmReceiver} after {@link MediaGate#pauseThenSettle}: Soft path uses
+     * FSI notification + overlay/FSI bring-up (BAL-safe). Hard path starts a hard session
+     * and prefers a direct QuizActivity start (Accessibility confines afterward).
      */
     public static void fromAlarm(Context ctx, String trigger) {
         Context app = ctx.getApplicationContext();
         if (trigger == null || trigger.isEmpty()) trigger = "interval";
         long now = System.currentTimeMillis();
         AppPrefs prefs = new AppPrefs(app);
+
+        if (GateMode.isHard(app)) {
+            HardGate.startSession(app);
+            ensureChannel(app);
+            Intent quiz = quizIntent(app, trigger);
+            PendingIntent pi = activityPi(app, quiz);
+            Notification n = buildNotification(app, pi);
+            NotificationManager nm = app.getSystemService(NotificationManager.class);
+            if (nm != null) nm.notify(NOTIF_ID, n);
+            log(app, now, DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger, prefs, "path=hard_direct");
+            try {
+                app.startActivity(quiz);
+                log(app, System.currentTimeMillis(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trigger,
+                        prefs, "path=hard_start");
+                Log.i(AlarmScheduler.TAG, "QuizLaunch hard direct start ok trigger=" + trigger);
+                return;
+            } catch (Exception e) {
+                Log.w(AlarmScheduler.TAG, "QuizLaunch hard start failed — soft fallback", e);
+                // Keep hard session; fall through to overlay/FSI/FGS reinforce.
+            }
+        }
 
         ensureChannel(app);
         Intent quiz = quizIntent(app, trigger);
@@ -161,7 +182,14 @@ public final class QuizLaunch {
             return;
         }
         if (existing != null) {
-            nm.deleteNotificationChannel(CHANNEL);
+            try {
+                nm.deleteNotificationChannel(CHANNEL);
+            } catch (SecurityException e) {
+                // Samsung/Android: cannot delete a channel while an FGS still uses it.
+                // Keep launching with the existing channel rather than aborting the quiz.
+                Log.w(AlarmScheduler.TAG, "QuizLaunch keep channel (FGS holds it)", e);
+                return;
+            }
         }
         NotificationChannel ch = new NotificationChannel(CHANNEL,
                 ctx.getString(R.string.notif_channel), NotificationManager.IMPORTANCE_HIGH);

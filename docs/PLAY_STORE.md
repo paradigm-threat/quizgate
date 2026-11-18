@@ -156,30 +156,67 @@ Source kit also has Lock / Open variants under `B_lock_numbers/` and `C_open_gat
 
 ---
 
-## 6. Permissions story (for Console “sensitive permissions” / review notes)
+## 6. Tough sell on Play (read this first)
 
-| Permission | Why |
-|------------|-----|
-| Exact alarms | Schedule quizzes (30±15 + morning) |
-| `POST_NOTIFICATIONS` | Soft-gate reminder / FGS fallback |
-| Battery unrestricted | OEM reliability for alarms |
-| Full-screen intent | Alarm-style quiz open |
-| Appear-on-top / overlay | Launch when background activity starts are blocked |
-| `PACKAGE_USAGE_STATS` | Return child to previous app after unlock |
-| `READ_MEDIA_IMAGES` | Optional gallery backdrops |
+QuizGate ships **dual lock modes** in one APK. **Hard lock (recommended default)** uses an AccessibilityService to confine the quiz during an active lock session. **Soft gate** remains a gentler A/B fallback (Home/Back can dismiss). Both must still **wake the device**, **open over other apps**, and **survive OEM battery managers**.
 
-Onboarding / Setup prompts these **one at a time** via `ScheduleAuth` (exact → notif → battery → FSI → overlay → usage). Photos stay optional.
+| Friction | Why it hurts listing / review |
+|----------|--------------------------------|
+| **Accessibility declaration** | Hard lock needs a clear, honest Play Accessibility disclosure: quiz-confine only during an active lock — not a screen reader, not full-device monitoring. Peer products (e.g. Solve2Open) already ship this class of grant under Families Policy. |
+| **Many “sensitive” grants** | Exact alarm, notifications, battery, overlay, usage access — each needs a clear Declarations / policy story. Soft mode still leans on Appear on top for launch. |
+| **Appear on top** | Soft mode: launch-critical when BAL blocks background starts. Hard mode: still helps initial open; confinement is Accessibility. |
+| **OEM extras** | Samsung Sleeping / Deep sleeping apps, notification channel importance, Doze — break schedule reliability regardless of Soft/Hard. |
+| **Families / Designed for Families** | Stay honest: parent-configured educational interrupt; no Device Admin; Accessibility is quiz-confine-only; Soft is available as gentler mode. |
+| **Closed-test / org account** | New personal accounts face the 12-tester / 14-day gate; org + D‑U‑N‑S is the path. |
+| **Data safety / privacy** | Upload OFF; anonymous local stats; Console forms must match the live privacy policy. |
 
-We do **not** currently require Accessibility or Device Admin for the soft gate.
+**Expectation:** lead the listing with Hard lock + Accessibility disclosure; Soft is an in-app gentler option. Prefer precise claims over sounding like a full parental-control / MDM suite.
+
+Field notes if asked: Soft without Appear on top → schedule fires but UI may not open (`bal_blocked`). Hard without Accessibility → Arm hard-blocked; confine cannot hold.
 
 ---
 
-## 7. Reviewer notes (paste into “App access” / notes if useful)
+## 7. Permissions story (for Console “sensitive permissions” / review notes)
+
+| Permission | Why | Critical? |
+|------------|-----|-----------|
+| Exact alarms | Schedule quizzes (30±15 + morning) | Yes — schedule |
+| `POST_NOTIFICATIONS` + High channel | Alarm cue / FGS / FSI | Yes — cue |
+| Battery unrestricted | OEM reliability for alarms | Yes — schedule |
+| **Accessibility** (Hard) | Confine quiz during active lock only | Yes — **Hard confine** |
+| Appear-on-top / overlay | Launch when BAL blocks background starts | Yes Soft / Important Hard |
+| Full-screen intent | Alarm-style open over lock screen | Important |
+| `PACKAGE_USAGE_STATS` | Return child to previous app after unlock | Important (UX) |
+| `READ_MEDIA_IMAGES` | Optional gallery backdrops | Optional |
+
+Onboarding / Setup prompts **one at a time** via `ScheduleAuth`. **Hard:** exact → notif → battery → **Accessibility** → overlay → FSI → usage. **Soft:** exact → notif → battery → overlay → FSI → usage (no Accessibility). Arm is **hard-blocked** until mode-critical grants are on. Photos stay optional. No Device Admin.
+
+### Accessibility declaration (paste into Play Console)
 
 ```
-QuizGate is a parent-configured soft quiz gate. No login.
-1. Install → complete or skip onboarding (photos, 30±15 schedule, Auto/Performance/Slim) → Setup → Arm scheduling.
-2. Grant exact alarms, notifications, battery unrestricted, full-screen alerts, appear-on-top, and usage access (return to last app); photos optional.
-3. Tap “Test quiz now” to open a quiz without waiting for an alarm.
-Forever free; no ads; no IAP. Privacy: https://quizgate.app/privacy
+QuizGate uses AccessibilityService only for Hard lock mode during an active
+educational quiz lock session. When a parent-armed lock is active, if the child
+leaves the quiz (Home, Recents, or another app), QuizGate brings the quiz back
+until unlock (correct answer), consoling unlock, or parent override (long-press
+question → Setup).
+
+Not a screen reader. Does not retrieve window content for reading passwords,
+messages, or other apps. Does not monitor the device outside an active lock
+session. Soft gate mode does not require Accessibility. Parents choose Soft vs
+Hard in onboarding/Setup; Hard is recommended for a real lock.
+```
+
+---
+
+## 8. Reviewer notes (paste into “App access” / notes if useful)
+
+```
+QuizGate is a parent-configured educational quiz lock. No login. Forever free; no ads; no IAP.
+1. Install → onboarding (photos, schedule, performance, Hard/Soft lock) → Setup → Arm.
+2. Hard (recommended): Accessibility confines the quiz only during an active lock.
+   Soft (gentler): overlay/FSI open; Home/Back can dismiss.
+3. Also needed: exact alarms, notifications (High “Unlock quiz” channel), battery unrestricted.
+   Soft critically needs Appear on top; Hard critically needs Accessibility.
+4. Tap “Test quiz now” for a quiz without waiting. Parent override: long-press the spoken question.
+Privacy: https://quizgate.app/privacy
 ```

@@ -36,6 +36,8 @@ echo "== MathPresentationTest =="
 java -cp "$OUT" MathPresentationTest
 echo "== PerfPolicyTest =="
 java -cp "$OUT" PerfPolicyTest
+echo "== GatePolicyTest =="
+java -cp "$OUT" GatePolicyTest
 echo "== CurriculumParserTest =="
 java -cp "$OUT" CurriculumParserTest "$ROOT/UnlockQuiz/assets/curricula/basic-math"
 echo "ALL UNIT TESTS PASSED"

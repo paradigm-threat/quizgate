@@ -12,7 +12,7 @@ import java.util.TimeZone;
  *
  * <p>Schedule kinds: {@code alarm_scheduled}, {@code alarm_fired}, {@code launch_attempt},
  * {@code bal_blocked}, {@code launch_ok}, {@code quiz_started}, {@code quiz_ended},
- * {@code skip_fire}, {@code arm}.
+ * {@code skip_fire}, {@code arm}, {@code hard_reintercept}, {@code hard_unlock}.
  */
 public final class DiagnosticsStore {
     public static final int MAX_BREADCRUMBS = 500;
@@ -37,6 +37,10 @@ public final class DiagnosticsStore {
     public static final String KIND_MEDIA = "media";
     /** Auto performance↔slim switch (structured reasons in note/msg). */
     public static final String KIND_PERF_MODE = "perf_mode";
+    /** Hard gate: Accessibility brought quiz back after leave attempt. */
+    public static final String KIND_HARD_REINTERCEPT = "hard_reintercept";
+    /** Hard gate: session cleared (unlock / consoling / parent override). */
+    public static final String KIND_HARD_UNLOCK = "hard_unlock";
 
     private final File diagDir;
     private final BoundedJsonl breadcrumbs;
@@ -175,6 +179,8 @@ public final class DiagnosticsStore {
         public final long jitterMs;
         public final Boolean otherAppPresent;
         public final String note;
+        /** Soft vs hard; stamped by {@code Diag.schedule} when empty. */
+        public String gateMode = "";
 
         public ScheduleEvent(long ts, TimeZone zone, String kind, String trigger,
                              String sessionType, long nextAlarmAt, long intervalMs, long jitterMs,
@@ -194,7 +200,7 @@ public final class DiagnosticsStore {
         }
 
         public String toJsonLine() {
-            StringBuilder sb = new StringBuilder(180);
+            StringBuilder sb = new StringBuilder(200);
             sb.append("{\"ts\":").append(ts);
             sb.append(",\"tz\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(tzId))).append('"');
             sb.append(",\"tz_offset_min\":").append(tzOffsetMinutes);
@@ -204,6 +210,9 @@ public final class DiagnosticsStore {
             }
             if (!sessionType.isEmpty()) {
                 sb.append(",\"session_type\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(sessionType))).append('"');
+            }
+            if (gateMode != null && !gateMode.isEmpty()) {
+                sb.append(",\"gate_mode\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(gateMode))).append('"');
             }
             if (nextAlarmAt > 0) sb.append(",\"next_alarm_at\":").append(nextAlarmAt);
             if (intervalMs > 0) sb.append(",\"interval_ms\":").append(intervalMs);
@@ -220,5 +229,85 @@ public final class DiagnosticsStore {
             sb.append('}');
             return sb.toString();
         }
+    }
+
+    /**
+     * Local Soft vs Hard success rates from recent schedule JSONL (no upload).
+     * Soft: launch_ok / alarm_fired (or unlocked quiz_ended vs bypass).
+     * Hard: hard_unlock / (hard_unlock + hard_reintercept) when present, else launch_ok / alarm_fired.
+     */
+    public static final class GateAbStats {
+        public final int softFired;
+        public final int softLaunchOk;
+        public final int softUnlocked;
+        public final int softBypass;
+        public final int hardFired;
+        public final int hardLaunchOk;
+        public final int hardUnlock;
+        public final int hardReintercept;
+
+        public GateAbStats(int softFired, int softLaunchOk, int softUnlocked, int softBypass,
+                           int hardFired, int hardLaunchOk, int hardUnlock, int hardReintercept) {
+            this.softFired = softFired;
+            this.softLaunchOk = softLaunchOk;
+            this.softUnlocked = softUnlocked;
+            this.softBypass = softBypass;
+            this.hardFired = hardFired;
+            this.hardLaunchOk = hardLaunchOk;
+            this.hardUnlock = hardUnlock;
+            this.hardReintercept = hardReintercept;
+        }
+
+        /** Soft success percent, or -1 if insufficient data. */
+        public int softSuccessPct() {
+            if (softFired > 0) return Math.min(100, Math.round(100f * softLaunchOk / softFired));
+            int softEnds = softUnlocked + softBypass;
+            if (softEnds > 0) return Math.min(100, Math.round(100f * softUnlocked / softEnds));
+            return -1;
+        }
+
+        /** Hard success percent, or -1 if insufficient data. Prefer launch_ok / fired. */
+        public int hardSuccessPct() {
+            if (hardFired > 0) {
+                return Math.min(100, Math.round(100f * hardLaunchOk / hardFired));
+            }
+            // No fires yet: if we saw unlocks, treat as success signal for local A/B.
+            if (hardUnlock > 0) return 100;
+            return -1;
+        }
+    }
+
+    public synchronized GateAbStats gateAbStats(int maxLines) throws IOException {
+        int softFired = 0, softLaunchOk = 0, softUnlocked = 0, softBypass = 0;
+        int hardFired = 0, hardLaunchOk = 0, hardUnlock = 0, hardReintercept = 0;
+        int n = Math.max(40, maxLines);
+        for (String line : schedule.tail(n)) {
+            String kind = JsonUtil.extract(line, "kind");
+            String mode = JsonUtil.extract(line, "gate_mode");
+            boolean hard = "hard".equalsIgnoreCase(mode);
+            boolean soft = "soft".equalsIgnoreCase(mode);
+            // Untagged legacy lines count toward soft (pre-dual-gate path).
+            if (!hard && !soft) soft = true;
+            if (KIND_ALARM_FIRED.equals(kind) || "fire".equals(kind)) {
+                if (hard) hardFired++; else softFired++;
+            } else if (KIND_LAUNCH_OK.equals(kind)) {
+                if (hard) hardLaunchOk++; else softLaunchOk++;
+            } else if (KIND_HARD_UNLOCK.equals(kind)) {
+                hardUnlock++;
+            } else if (KIND_HARD_REINTERCEPT.equals(kind)) {
+                hardReintercept++;
+            } else if (KIND_QUIZ_ENDED.equals(kind)) {
+                String note = JsonUtil.extract(line, "note");
+                if ("bypass".equalsIgnoreCase(note)) {
+                    if (soft) softBypass++;
+                } else if ("unlocked".equalsIgnoreCase(note) || "correct".equalsIgnoreCase(note)
+                        || "consoling".equalsIgnoreCase(note)
+                        || "consoling_unlock".equalsIgnoreCase(note)) {
+                    if (soft) softUnlocked++;
+                }
+            }
+        }
+        return new GateAbStats(softFired, softLaunchOk, softUnlocked, softBypass,
+                hardFired, hardLaunchOk, hardUnlock, hardReintercept);
     }
 }

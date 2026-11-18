@@ -16,7 +16,8 @@ import net.clevertree.quizgate.core.Scheduler;
 
 /**
  * Skippable first-run intro: welcome → photos → schedule → UI placement →
- * performance → permissions (one ScheduleAuth gap at a time) → Setup.
+ * performance → gate mode (Hard recommended) → permissions (one ScheduleAuth gap
+ * at a time) → Setup.
  */
 public class OnboardingActivity extends Activity {
     private static final int REQ_PHOTOS = 41;
@@ -25,8 +26,9 @@ public class OnboardingActivity extends Activity {
     private static final int STEP_SCHEDULE = 2;
     private static final int STEP_UI = 3;
     private static final int STEP_PERF = 4;
-    private static final int STEP_PERMISSIONS = 5;
-    private static final int STEP_DONE = 6;
+    private static final int STEP_GATE = 5;
+    private static final int STEP_PERMISSIONS = 6;
+    private static final int STEP_DONE = 7;
 
     private AppPrefs prefs;
     private TextView title;
@@ -39,6 +41,7 @@ public class OnboardingActivity extends Activity {
     private LinearLayout scheduleActions;
     private LinearLayout uiActions;
     private LinearLayout perfActions;
+    private LinearLayout gateActions;
     private LinearLayout permActions;
     private TextView intervalValue;
     private TextView jitterValue;
@@ -47,6 +50,7 @@ public class OnboardingActivity extends Activity {
     private String pendingPhotoSource = PhotoLibrary.SOURCE_BUNDLED;
     private String draftUiPlacement = AppPrefs.UI_PLACEMENT_TOP;
     private String draftPerfMode = PerformanceMode.AUTO;
+    private String draftGateMode = GateMode.HARD;
     private long draftIntervalMs = Scheduler.DEFAULT_INTERVAL_MS;
     private long draftJitterMs = Scheduler.DEFAULT_JITTER_MS;
     /** Gap currently shown on the permissions step (NONE when all granted). */
@@ -71,6 +75,7 @@ public class OnboardingActivity extends Activity {
         scheduleActions = findViewById(R.id.onboard_schedule_actions);
         uiActions = findViewById(R.id.onboard_ui_actions);
         perfActions = findViewById(R.id.onboard_perf_actions);
+        gateActions = findViewById(R.id.onboard_gate_actions);
         permActions = findViewById(R.id.onboard_perm_actions);
         intervalValue = findViewById(R.id.onboard_interval_value);
         jitterValue = findViewById(R.id.onboard_jitter_value);
@@ -82,6 +87,7 @@ public class OnboardingActivity extends Activity {
         draftJitterMs = prefs.getJitterMs();
         draftUiPlacement = prefs.getUiPlacement();
         draftPerfMode = prefs.getPerformanceMode();
+        draftGateMode = prefs.getGateMode();
 
         skip.setOnClickListener(v -> finishOnboarding(pendingPhotoSource, true));
         next.setOnClickListener(v -> onNext());
@@ -113,6 +119,14 @@ public class OnboardingActivity extends Activity {
         }
         if (btnSlim != null) {
             btnSlim.setOnClickListener(v -> choosePerfAndContinue(PerformanceMode.SLIM));
+        }
+        View btnHard = findViewById(R.id.btn_onboard_gate_hard);
+        View btnSoft = findViewById(R.id.btn_onboard_gate_soft);
+        if (btnHard != null) {
+            btnHard.setOnClickListener(v -> chooseGateAndContinue(GateMode.HARD));
+        }
+        if (btnSoft != null) {
+            btnSoft.setOnClickListener(v -> chooseGateAndContinue(GateMode.SOFT));
         }
         if (permAllow != null) {
             permAllow.setOnClickListener(v -> allowCurrentPermission());
@@ -149,6 +163,8 @@ public class OnboardingActivity extends Activity {
         } else if (step == STEP_PERF) {
             // Continue keeps Auto if they didn't tap a button (default).
             choosePerfAndContinue(draftPerfMode);
+        } else if (step == STEP_GATE) {
+            chooseGateAndContinue(draftGateMode);
         } else if (step == STEP_DONE) {
             finishOnboarding(pendingPhotoSource, false);
         } else {
@@ -179,6 +195,18 @@ public class OnboardingActivity extends Activity {
 
     private void choosePerfAndContinue(String mode) {
         draftPerfMode = PerformanceMode.normalize(mode);
+        goGate();
+    }
+
+    private void goGate() {
+        step = STEP_GATE;
+        showStep();
+    }
+
+    private void chooseGateAndContinue(String mode) {
+        draftGateMode = GateMode.normalize(mode);
+        // Persist early so permission walk uses Hard/Soft prompt order.
+        prefs.setGateMode(draftGateMode);
         goPermissions();
     }
 
@@ -217,6 +245,9 @@ public class OnboardingActivity extends Activity {
     }
 
     private void skipCurrentPermission() {
+        if (ScheduleAuth.isCritical(this, currentPermGap)) {
+            Toast.makeText(this, R.string.onboard_perm_critical_skip_toast, Toast.LENGTH_LONG).show();
+        }
         // Move to the next unmet gap without opening Settings again.
         currentPermGap = ScheduleAuth.nextGapAfter(this, currentPermGap);
         if (currentPermGap == ScheduleAuth.Gap.NONE) {
@@ -230,6 +261,7 @@ public class OnboardingActivity extends Activity {
         scheduleActions.setVisibility(View.GONE);
         if (uiActions != null) uiActions.setVisibility(View.GONE);
         if (perfActions != null) perfActions.setVisibility(View.GONE);
+        if (gateActions != null) gateActions.setVisibility(View.GONE);
         if (permActions != null) permActions.setVisibility(View.GONE);
         next.setVisibility(View.VISIBLE);
         if (step == STEP_WELCOME) {
@@ -257,11 +289,21 @@ public class OnboardingActivity extends Activity {
             body.setText(R.string.onboard_perf_body);
             if (perfActions != null) perfActions.setVisibility(View.VISIBLE);
             next.setVisibility(View.GONE);
+        } else if (step == STEP_GATE) {
+            title.setText(R.string.onboard_gate_title);
+            body.setText(R.string.onboard_gate_body);
+            if (gateActions != null) gateActions.setVisibility(View.VISIBLE);
+            next.setVisibility(View.GONE);
         } else if (step == STEP_PERMISSIONS) {
             showPermissionStep();
         } else if (step == STEP_DONE) {
             title.setText(R.string.onboard_done_title);
-            body.setText(R.string.onboard_done_body);
+            String missing = ScheduleAuth.missingRequiredSummary(this);
+            if (!missing.isEmpty()) {
+                body.setText(getString(R.string.onboard_done_body_missing, missing));
+            } else {
+                body.setText(R.string.onboard_done_body);
+            }
             next.setText(R.string.onboard_continue);
         }
     }
@@ -279,8 +321,16 @@ public class OnboardingActivity extends Activity {
         next.setVisibility(View.GONE);
         if (permActions != null) {
             permActions.setVisibility(View.VISIBLE);
-            if (permAllow != null) permAllow.setText(R.string.onboard_perm_allow);
-            if (permLater != null) permLater.setText(R.string.onboard_perm_later);
+            if (permAllow != null) {
+                permAllow.setText(ScheduleAuth.isCritical(this, currentPermGap)
+                        ? R.string.onboard_perm_allow_required
+                        : R.string.onboard_perm_allow);
+            }
+            if (permLater != null) {
+                permLater.setText(ScheduleAuth.isCritical(this, currentPermGap)
+                        ? R.string.onboard_perm_later_critical
+                        : R.string.onboard_perm_later);
+            }
         }
     }
 
@@ -365,11 +415,13 @@ public class OnboardingActivity extends Activity {
             prefs.setJitterMs(Scheduler.DEFAULT_JITTER_MS);
             prefs.setUiPlacement(AppPrefs.UI_PLACEMENT_TOP);
             prefs.setPerformanceMode(PerformanceMode.AUTO);
+            prefs.setGateMode(GateMode.HARD);
         } else {
             prefs.setIntervalMs(draftIntervalMs);
             prefs.setJitterMs(draftJitterMs);
             prefs.setUiPlacement(draftUiPlacement);
             prefs.setPerformanceMode(draftPerfMode);
+            prefs.setGateMode(draftGateMode);
         }
         try {
             PerformanceMode.reevaluate(this, "onboarding");

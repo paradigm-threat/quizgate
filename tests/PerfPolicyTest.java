@@ -50,6 +50,8 @@ public class PerfPolicyTest {
         Assert.isTrue(PerfPolicy.fgsStopAfterMs(true) < PerfPolicy.fgsStopAfterMs(false),
                 "slim shorter FGS");
         Assert.isTrue(PerfPolicy.keepScheduleKind(true, "perf_mode"), "slim keeps perf_mode");
+        Assert.isTrue(PerfPolicy.keepScheduleKind(true, "hard_reintercept"), "slim keeps hard_reintercept");
+        Assert.isTrue(PerfPolicy.keepScheduleKind(true, "hard_unlock"), "slim keeps hard_unlock");
         Assert.isTrue(!PerfPolicy.keepScheduleKind(true, "launch_attempt"), "slim drops attempt");
 
         System.out.println("PerfPolicyTest OK");

@@ -61,26 +61,31 @@ public class AlarmGateActivity extends Activity {
         final String trig = trigger;
         final AppPrefs p = prefs;
         Runnable launchQuiz = () -> {
+            if (GateMode.isHard(AlarmGateActivity.this)) {
+                HardGate.startSession(AlarmGateActivity.this);
+            }
             Intent quiz = QuizLaunch.quizIntent(AlarmGateActivity.this, trig);
+            String path = GateMode.isHard(AlarmGateActivity.this)
+                    ? "path=alarm_gate_hard" : "path=alarm_gate";
             Diag.schedule(AlarmGateActivity.this, new DiagnosticsStore.ScheduleEvent(
                     System.currentTimeMillis(), TimeZone.getDefault(),
                     DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trig, "lock",
                     p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
-                    null, "path=alarm_gate"));
+                    null, path));
             try {
                 startActivity(quiz);
                 Diag.schedule(AlarmGateActivity.this, new DiagnosticsStore.ScheduleEvent(
                         System.currentTimeMillis(), TimeZone.getDefault(),
                         DiagnosticsStore.KIND_LAUNCH_ATTEMPT, trig, "lock",
                         p.nextAlarmAt(), p.getIntervalMs(), p.getJitterMs(),
-                        null, "path=alarm_gate"));
+                        null, path));
                 Log.i(AlarmScheduler.TAG, "alarm gate started QuizActivity trigger=" + trig);
                 finish();
                 return;
             } catch (Exception e) {
                 Log.e(AlarmScheduler.TAG, "alarm gate startActivity failed — QuizLaunch", e);
             }
-            // Overlay + FSI path when BAL blocked the trampoline→quiz handoff.
+            // Soft overlay/FSI (or Hard reinforce) when BAL blocked trampoline→quiz.
             QuizLaunch.fromAlarm(AlarmGateActivity.this, trig);
             finish();
         };

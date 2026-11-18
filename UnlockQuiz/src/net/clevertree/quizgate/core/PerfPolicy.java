@@ -106,6 +106,8 @@ public final class PerfPolicy {
             case "quiz_started":
             case "quiz_ended":
             case "perf_mode":
+            case "hard_reintercept":
+            case "hard_unlock":
                 return true;
             default:
                 return false;

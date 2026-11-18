@@ -25,6 +25,7 @@ import android.widget.Toast;
 import net.clevertree.quizgate.core.AnonUserId;
 import net.clevertree.quizgate.core.BuildFingerprint;
 import net.clevertree.quizgate.core.CurriculumPack;
+import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.Scheduler;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
@@ -54,8 +55,12 @@ public class SetupActivity extends Activity {
     private Spinner tierSpinner;
     private Spinner uiPlacementSpinner;
     private Spinner perfModeSpinner;
+    private Spinner gateModeSpinner;
     private TextView uiPlacementDetail;
     private TextView perfDetail;
+    private TextView gateModeDetail;
+    private TextView gateAbStats;
+    private boolean suppressGateSpinner;
     private TextView intervalValue;
     private TextView jitterValue;
     private TextView windowValue;
@@ -97,8 +102,11 @@ public class SetupActivity extends Activity {
         tierSpinner = findViewById(R.id.tier_spinner);
         uiPlacementSpinner = findViewById(R.id.ui_placement_spinner);
         perfModeSpinner = findViewById(R.id.perf_mode_spinner);
+        gateModeSpinner = findViewById(R.id.gate_mode_spinner);
         uiPlacementDetail = findViewById(R.id.setup_ui_placement_detail);
         perfDetail = findViewById(R.id.setup_perf_detail);
+        gateModeDetail = findViewById(R.id.setup_gate_mode_detail);
+        gateAbStats = findViewById(R.id.setup_gate_ab_stats);
         intervalValue = findViewById(R.id.setup_interval_value);
         jitterValue = findViewById(R.id.setup_jitter_value);
         windowValue = findViewById(R.id.setup_window_value);
@@ -155,7 +163,10 @@ public class SetupActivity extends Activity {
             addWidget.setOnClickListener(v -> requestHomeWidget());
         }
         bindCurriculumSpinners();
+        // Dev extras (incl. gate_mode) before gate spinner so selection matches prefs
+        // and deferred onItemSelected cannot overwrite Soft→Hard.
         applyDevExtras(getIntent());
+        bindGateModeSpinner();
         refreshScheduleLabels();
         refreshStatus();
         CurriculumIndexClient.syncIfEnabled(this);
@@ -247,6 +258,51 @@ public class SetupActivity extends Activity {
             perfDetail.setText(R.string.setup_perf_performance_detail);
         } else {
             perfDetail.setText(R.string.setup_perf_auto_detail);
+        }
+    }
+
+    private void bindGateModeSpinner() {
+        if (gateModeSpinner == null) return;
+        AppPrefs prefs = new AppPrefs(this);
+        // Order: Hard (0, recommended), Soft (1, gentler)
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.setup_gate_hard));
+        labels.add(getString(R.string.setup_gate_soft));
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item, labels);
+        suppressGateSpinner = true;
+        gateModeSpinner.setAdapter(adapter);
+        String mode = prefs.getGateMode();
+        int sel = GateMode.isHard(mode) ? 0 : 1;
+        gateModeSpinner.setSelection(sel);
+        refreshGateModeDetail(mode);
+        gateModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (suppressGateSpinner) return;
+                String next = position == 1 ? GateMode.SOFT : GateMode.HARD;
+                AppPrefs p = new AppPrefs(SetupActivity.this);
+                if (!next.equals(p.getGateMode())) {
+                    p.setGateMode(next);
+                    if (!GateMode.isHard(next)) {
+                        // Soft: stop any in-flight Hard confine immediately.
+                        HardGate.clearSessionQuiet(SetupActivity.this);
+                    }
+                }
+                refreshGateModeDetail(next);
+                refreshRequirements();
+                refreshStatus();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        suppressGateSpinner = false;
+    }
+
+    private void refreshGateModeDetail(String mode) {
+        if (gateModeDetail == null) return;
+        if (GateMode.isHard(mode)) {
+            gateModeDetail.setText(R.string.setup_gate_hard_detail);
+        } else {
+            gateModeDetail.setText(R.string.setup_gate_soft_detail);
         }
     }
 
@@ -385,6 +441,17 @@ public class SetupActivity extends Activity {
         if (in.hasExtra("math_entry")) {
             prefs.setMathEntryMode(in.getStringExtra("math_entry"));
         }
+        // Smoke / adb: force Soft vs Hard without UI spinner.
+        if (in.hasExtra("gate_mode")) {
+            String mode = GateMode.normalize(in.getStringExtra("gate_mode"));
+            prefs.setGateMode(mode);
+            // Switching modes (or re-asserting Hard for daily prep) must not leave a
+            // stale confine session that yanks the child out of other apps.
+            HardGate.clearSessionQuiet(this);
+        }
+        if (in.getBooleanExtra("clear_hard_session", false)) {
+            HardGate.clearSessionQuiet(this);
+        }
         if (in.getBooleanExtra("auto_arm", false)) {
             skipAuthWarn = true;
             armNow();
@@ -405,6 +472,8 @@ public class SetupActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        // Parent is in Setup — never keep a stale hard confine from e2e / process death.
+        HardGate.clearSessionQuiet(this);
         refreshStatus();
         countdownHandler.removeCallbacks(countdownTick);
         countdownHandler.post(countdownTick);
@@ -419,6 +488,10 @@ public class SetupActivity extends Activity {
         AlarmScheduler.armAll(this);
         refreshStatus();
         ScheduleAuth.Snapshot snap = ScheduleAuth.snapshot(this);
+        if (!skipAuthWarn && snap.hasCriticalGap()) {
+            showAuthCriticalBlock();
+            return;
+        }
         if (!skipAuthWarn && snap.hasRequiredGap()) {
             showAuthSoftWarn();
             return;
@@ -426,7 +499,30 @@ public class SetupActivity extends Activity {
         finishArmSuccess();
     }
 
-    /** Soft warning only — never hard-blocks Arm / schedule. */
+    /**
+     * Hard-block Arm when mode-critical grants are missing (exact / notif /
+     * battery; Soft: Appear on top; Hard: Accessibility). Without these, alarms
+     * fire but Soft quizzes never open / Hard confine cannot hold.
+     */
+    private void showAuthCriticalBlock() {
+        String missing = ScheduleAuth.missingCriticalSummary(this);
+        if (missing.isEmpty()) {
+            finishArmSuccess();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.setup_auth_critical_title)
+                .setMessage(getString(R.string.setup_auth_critical_body, missing))
+                .setPositiveButton(R.string.setup_auth_critical_fix, (d, w) -> {
+                    if (reqCard != null) reqCard.requestFocus();
+                    ScheduleAuth.promptNextGap(this);
+                    refreshStatus();
+                })
+                .setCancelable(true)
+                .show();
+    }
+
+    /** Soft warning for non-critical gaps (FSI / usage) — Arm may proceed. */
     private void showAuthSoftWarn() {
         String missing = ScheduleAuth.missingRequiredSummary(this);
         if (missing.isEmpty()) {
@@ -438,13 +534,11 @@ public class SetupActivity extends Activity {
                 .setTitle(R.string.setup_auth_warn_title)
                 .setMessage(message)
                 .setNegativeButton(R.string.setup_auth_warn_back, (d, w) -> {
-                    // Stay on checklist and open Settings for the first missing item.
                     if (reqCard != null) reqCard.requestFocus();
                     ScheduleAuth.promptNextGap(this);
                     refreshStatus();
                 })
                 .setPositiveButton(R.string.setup_auth_warn_proceed, (d, w) -> {
-                    // Proceed anyway — do not force remaining validation.
                     Toast.makeText(this, "Armed", Toast.LENGTH_SHORT).show();
                     maybeRequestPhotos();
                     refreshStatus();
@@ -520,13 +614,13 @@ public class SetupActivity extends Activity {
         int pad = dp(12);
         int gap = dp(8);
         for (ScheduleAuth.CheckItem item : ScheduleAuth.checklist(this)) {
-            reqList.addView(buildReqRow(item.titleRes, item.detailRes, item.required, item.met,
-                    item.met ? null : () -> ScheduleAuth.openGap(this, item.gap)),
+            reqList.addView(buildReqRow(item, item.met ? null : () -> ScheduleAuth.openGap(this, item.gap)),
                     rowParams(gap));
         }
         boolean widgetPinned = ScoreWidgetProvider.isPinned(this);
         reqList.addView(buildReqRow(R.string.setup_req_widget_title, R.string.setup_req_widget_detail,
-                false, widgetPinned, widgetPinned ? null : this::requestHomeWidget),
+                        false, false, widgetPinned,
+                        widgetPinned ? null : this::requestHomeWidget),
                 rowParams(gap));
         reqList.setPadding(0, 0, 0, pad / 2);
     }
@@ -539,8 +633,13 @@ public class SetupActivity extends Activity {
         return lp;
     }
 
-    private View buildReqRow(int titleRes, int detailRes, boolean required, boolean met,
-                             Runnable onTap) {
+    private View buildReqRow(ScheduleAuth.CheckItem item, Runnable onTap) {
+        return buildReqRow(item.titleRes, item.detailRes, item.required,
+                ScheduleAuth.isCritical(this, item.gap), item.met, onTap);
+    }
+
+    private View buildReqRow(int titleRes, int detailRes, boolean required, boolean critical,
+                             boolean met, Runnable onTap) {
         int pad = dp(12);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
@@ -577,7 +676,13 @@ public class SetupActivity extends Activity {
         textCol.addView(title);
 
         TextView badge = new TextView(this);
-        badge.setText(required ? R.string.setup_req_badge_required : R.string.setup_req_badge_optional);
+        if (critical) {
+            badge.setText(R.string.setup_req_badge_critical);
+        } else if (required) {
+            badge.setText(R.string.setup_req_badge_required);
+        } else {
+            badge.setText(R.string.setup_req_badge_optional);
+        }
         badge.setTextColor(getResources().getColor(R.color.symbolic, getTheme()));
         badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         textCol.addView(badge);
@@ -668,6 +773,21 @@ public class SetupActivity extends Activity {
                 ? formatClock(next)
                 : "—";
         scheduleHealth.setText(getString(R.string.setup_schedule_health_line, lastLabel, nextLabel));
+        refreshGateAbStats();
+    }
+
+    private void refreshGateAbStats() {
+        if (gateAbStats == null) return;
+        try {
+            DiagnosticsStore.GateAbStats ab = Diag.diagnostics(this).gateAbStats(200);
+            int softPct = ab.softSuccessPct();
+            int hardPct = ab.hardSuccessPct();
+            String softLabel = softPct < 0 ? "—" : softPct + "%";
+            String hardLabel = hardPct < 0 ? "—" : hardPct + "%";
+            gateAbStats.setText(getString(R.string.setup_gate_ab_line, softLabel, hardLabel));
+        } catch (Exception e) {
+            gateAbStats.setText(R.string.setup_gate_ab_none);
+        }
     }
 
     private String formatClock(long ms) {

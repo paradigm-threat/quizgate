@@ -155,6 +155,12 @@ public class QuizActivity extends Activity {
         // pre-pause; this reinforces and keeps the sticky resume latch.
         mediaGate.pauseForQuiz(this);
         spoken = findViewById(R.id.spoken);
+        if (spoken != null) {
+            spoken.setOnLongClickListener(v -> {
+                openParentsSetup();
+                return true;
+            });
+        }
         symbolic = findViewById(R.id.symbolic);
         digitAnswerView = findViewById(R.id.digit_answer);
         questionBalloon = findViewById(R.id.question_balloon);
@@ -206,6 +212,12 @@ public class QuizActivity extends Activity {
                     prefs.getResumePackage() != null, "path=activity_visible"));
         }
         playMode = TRIGGER_PLAY.equals(trigger);
+        if (playMode) {
+            // Practice must never activate Hard confine (clear stale session from a prior lock).
+            HardGate.clearSessionQuiet(this);
+        } else if (GateMode.isHard(this)) {
+            HardGate.startSession(this);
+        }
         if (playMode || !PerformanceMode.allowReturnToApp(prefs)) {
             restorePreviousApp = false;
         }
@@ -250,7 +262,10 @@ public class QuizActivity extends Activity {
         String trigger = intent.getStringExtra(EXTRA_TRIGGER);
         if (trigger == null) trigger = TRIGGER_PLAY;
         playMode = TRIGGER_PLAY.equals(trigger);
-        if (playMode) restorePreviousApp = false;
+        if (playMode) {
+            HardGate.clearSessionQuiet(this);
+            restorePreviousApp = false;
+        }
         if (finishing || inTransition) return;
         if (session != null && !session.isEnded()) {
             // Soft-replace open play request while mid-question — ignore
@@ -298,6 +313,9 @@ public class QuizActivity extends Activity {
         if (mediaResumePending || finishing) {
             mediaResumePending = false;
             mediaGate.resumeAfterQuiz(this);
+        } else if (!playMode && HardGate.isHardLockActive(this)) {
+            // Second belt if leave-hint was skipped (some OEM Home paths).
+            handler.postDelayed(() -> HardGate.bringQuizToFront(this, "on_stop"), 500L);
         }
     }
 
@@ -323,11 +341,18 @@ public class QuizActivity extends Activity {
         super.onUserLeaveHint();
         // Navigating to historic stats is not a Home leave
         if (browsingStats) return;
-        // Home / Recents: soft bypass — stay where the child went (usually Home)
-        if (!finishing && !inTransition && session != null && !session.isEnded()) {
+        if (finishing || inTransition || session == null || session.isEnded()) return;
+        // Hard lock: do not bypass — Accessibility (and a leave-hint belt) reopen quiz.
+        if (!playMode && HardGate.isHardLockActive(this)) {
             restorePreviousApp = false;
-            finishWithBypass();
+            // Belt-and-suspenders when a11y is unbound/slow (Samsung user builds often need a
+            // manual Accessibility toggle even after settings put). Debounced in HardGate.
+            handler.postDelayed(() -> HardGate.bringQuizToFront(this, "leave_hint"), 400L);
+            return;
         }
+        // Soft: Home / Recents bypass — stay where the child went (usually Home)
+        restorePreviousApp = false;
+        finishWithBypass();
     }
 
     @Override public void onBackPressed() {
@@ -336,7 +361,11 @@ public class QuizActivity extends Activity {
             return;
         }
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
-            // Play mode: just leave. Lock mode: soft bypass + restore previous app.
+            if (!playMode && HardGate.isHardLockActive(this)) {
+                // Hard: ignore Back; Accessibility keeps the quiz foreground.
+                return;
+            }
+            // Play mode: just leave. Soft lock: bypass + restore previous app.
             restorePreviousApp = !playMode;
             finishWithBypass();
         } else if (!inTransition) {
@@ -785,12 +814,22 @@ public class QuizActivity extends Activity {
     }
 
     private void openParentsSetup() {
+        // Parent override: end hard session before leaving so Accessibility stops confining.
+        if (HardGate.isHardLockActive(this)) {
+            HardGate.endSession(this, "parent_override");
+        }
         Intent i = new Intent(this, SetupActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(i);
         restorePreviousApp = false;
         if (session != null && !session.isEnded()) {
-            finishWithBypass();
+            if (GateMode.isHard(this) && !playMode) {
+                session.bypass(clock.nowMillis());
+                logPresented("bypass", session.getCurrent(), "", session.getMissStreak());
+                finishSession();
+            } else {
+                finishWithBypass();
+            }
         } else {
             finishSession();
         }
@@ -1250,6 +1289,13 @@ public class QuizActivity extends Activity {
             handler.removeCallbacks(successEndTick);
             successEndTick = null;
         }
+        String outcome = session != null && session.getOutcome() != null
+                ? session.getOutcome().name().toLowerCase() : "";
+        if (!playMode && prefs.isHardSessionActive()) {
+            String reason = outcome.isEmpty() ? "session_end" : outcome;
+            if ("bypass".equals(reason)) reason = "parent_or_bypass";
+            HardGate.endSession(this, reason);
+        }
         try {
             if (session != null) stats.appendSession(session);
         } catch (Exception e) {
@@ -1258,8 +1304,6 @@ public class QuizActivity extends Activity {
         }
         String sessionType = playMode ? "play" : "lock";
         String trigger = session != null ? session.getTrigger() : "";
-        String outcome = session != null && session.getOutcome() != null
-                ? session.getOutcome().name().toLowerCase() : "";
         Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
                 clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_ENDED,
                 trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
