@@ -4,8 +4,9 @@
 ## Decision (locked)
 **Form a new Georgia nonprofit corporation**, apply for 501(c)(3) for that entity, and keep it **separate from Clevertree LLC**.
 
-- Clevertree LLC stays a for-profit (MyProblem and other commercial work stay there).
-- The nonprofit’s purpose is **QuizGate as an educational program** — learning instead of idle screen time, for families everywhere.
+- Clevertree LLC stays a for-profit (MyProblem and other commercial work stay there). LLC + nonprofit side by side is fine; co-mingling money/brand/board is not.
+- **QuizGate is the technique** (short age-fit practice unlocks screen time). The nonprofit’s purpose is that educational program — not Clevertree’s other products.
+- **Working legal name:** QuizGate Educational Foundation, Inc. (final name only at Georgia filing). Avoid Clevertree-echo names and bare product “Inc.” names — see [`nonprofit/NAME_OPTIONS.md`](nonprofit/NAME_OPTIONS.md).
 - Do **not** convert Clevertree LLC. Do **not** put MyProblem in the filing narrative.
 
 ## Timing strategy (near term vs Form 1023)
@@ -39,8 +40,9 @@ That continual worldwide curriculum + compliance work is why donations matter la
 ## Relationship to Clevertree LLC
 1. **IP:** Written assign or license of QuizGate code, name, store listings, domains to the nonprofit when it exists.
 2. **Money:** Separate books; donations only to the nonprofit once recognized / registered to solicit.
-3. **Brand:** Distinct legal name for the nonprofit; Clevertree may appear as licensed brand.
+3. **Brand:** Nonprofit legal name centers QuizGate + education (Foundation/Institute), not Clevertree / “Clever Treat.” Clevertree may appear as incubator/licensee narrative.
 4. **People:** Prefer independent board majority over “LLC owners only.”
+5. **Human checklist:** all filing/sign steps live only in [`nonprofit/HUMAN_NEXT_STEPS.md`](nonprofit/HUMAN_NEXT_STEPS.md).
 
 ## Note — Repo Visibility
 - **Public:** `paradigm-threat/quizgate`, `clevertree/quizgate`, `myproblem`, `clevertree-chat`, `clevertree-site`
@@ -49,19 +51,15 @@ That continual worldwide curriculum + compliance work is why donations matter la
 Checklist: [`docs/TODO.md`](TODO.md). Fold PR/handoff TODOs into that file.
 
 ## Phase 1 — Educational record + public intent (now) — **done in-repo**
-1. ~~Mission / nonprofit intent on quizgate.app~~ → `/mission`
+1. ~~Mission / nonprofit intent on quizgate.app~~ → `/mission` (technique + Foundation working name + LLC coexistence)
 2. ~~Play listing draft~~ → `store/play/LISTING_COPY.txt`
 3. ~~Pedagogy~~ → `docs/PEDAGOGY.md` + `/pedagogy`
 4. ~~Forever-free / no ads / no IAP on site~~
 5. ~~Soft support path (no fake receipts)~~ → `/support`
+6. ~~Name framing / rejected Clevertree-echo names~~ → `nonprofit/NAME_OPTIONS.md`
 
 ## Phase 2 — Form nonprofit when ready (near term, before Form 1023)
-**Drafts** in [`docs/nonprofit/`](nonprofit/). Humans still must:
-1. Legal name + Georgia registered agent.
-2. File Articles (educational purpose + dissolution language).
-3. Adopt bylaws + conflict-of-interest policy; 3+ directors.
-4. Sign IP license/assignment from Clevertree LLC.
-5. Nonprofit bank account; EIN.
+**Drafts** in [`docs/nonprofit/`](nonprofit/). **Humans only** — see [`nonprofit/HUMAN_NEXT_STEPS.md`](nonprofit/HUMAN_NEXT_STEPS.md) (name check, agent, Articles, board/COI, IP sign, EIN, bank).
 
 ## Phase 3 — Federal exemption (later)
 1. Confirm 1023-EZ eligibility.
