@@ -2,12 +2,12 @@
 
 Kids playing in **standalone / practice mode** (app opened on its own, not during a Hard lock) can earn extra minutes for the **minutes jar** before the next scheduled screen lock by answering quickly. Each correct answer grants minutes scaled by response speed; the pool is capped per session. Jar minutes still **add on top of** the normal 40±10 window (never shrink it).
 
-Policy core is pure JVM: [`TimeEarnPolicy`](../UnlockQuiz/src/net/clevertree/quizgate/core/TimeEarnPolicy.java). UI wiring (Earn More Time button on the play success overlay) lands separately; this doc describes the shipped policy + admin knobs.
+Policy core is pure JVM: [`TimeEarnPolicy`](../UnlockQuiz/src/net/clevertree/quizgate/core/TimeEarnPolicy.java). Play success overlay wires **Earn more time** in [`QuizActivity`](../UnlockQuiz/src/net/clevertree/quizgate/QuizActivity.java).
 
 ## How it works
 
 1. **Visibility threshold** — The "Earn More Time" entry point only appears when remaining time until the next scheduled lock is **strictly less than the session cap** (default two hours) and still **&gt; 0**. At or above the cap (or with no upcoming alarm), the UI stays hidden.
-2. **Success overlay button** (UI later) — On a correct answer in standalone mode, the success transition can offer **Earn More Time** alongside Ask Another / Quit / View Stats.
+2. **Success overlay button** — On a correct answer in standalone / play mode, the success transition offers **Earn more time** (primary) alongside Ask Another / Quit / View Stats. Tapping it grants jar minutes for that answer’s latency band, then asks another. Once active, further corrects in the same play visit auto-grant until the session cap is exhausted.
 3. **Latency bands** — Response time is bucketed; raw milliseconds are never stored:
    - **Fast** — under 3 seconds → **5** minutes
    - **Thinking** — 3 to 10 seconds (inclusive) → **2** minutes
@@ -35,4 +35,4 @@ Written by human admin PATCH → queue → `quizgate-batch`; applied on device b
 
 ## UI scope
 
-Standalone / practice only for v1. Lock-screen Hard sessions unchanged. Overlay button + session wiring: follow-on.
+Standalone / practice only for v1. Lock-screen Hard sessions unchanged. Entry: `btn_earn_more_time` on `transition_play_actions`.

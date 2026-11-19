@@ -16,6 +16,8 @@
     <string name="fail_title">Oh well, better luck next time!</string>
     <string name="success_title">Great job!</string>
     <string name="play_success_prompt">Want another question, or quit?</string>
+    <string name="play_earn_more_time">Earn more time</string>
+    <string name="play_earn_granted_prompt">+%1$d min in the jar! Want another, or quit?</string>
     <string name="play_ask_another">Ask me another</string>
     <string name="play_quit">Quit</string>
     <string name="play_parents">Parents</string>

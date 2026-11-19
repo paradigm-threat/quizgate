@@ -38,6 +38,7 @@ import net.clevertree.quizgate.core.ScreenLockPolicy;
 import net.clevertree.quizgate.core.StatsEvent;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
+import net.clevertree.quizgate.core.TimeEarnPolicy;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -89,6 +90,13 @@ public class QuizActivity extends Activity {
     private boolean unlockExitPrepared;
     /** Wall clock when current question was shown (for latency_ms). */
     private long questionShownAt;
+    /** Standalone rapid-fire jar minutes (play mode only). */
+    private TimeEarnPolicy timeEarn;
+    private boolean timeEarnActive;
+    private long lastAnswerLatencyMs = -1L;
+    private boolean lastCorrectTimeEarnApplied;
+    private int lastEarnGrantedMinutes;
+    private View btnEarnMoreTime;
 
     private TextView spoken;
     private TextView symbolic;
@@ -198,6 +206,10 @@ public class QuizActivity extends Activity {
         transitionGateIcon = findViewById(R.id.transition_gate_icon);
         transitionPlayPrompt = findViewById(R.id.transition_play_prompt);
         transitionPlayActions = findViewById(R.id.transition_play_actions);
+        btnEarnMoreTime = findViewById(R.id.btn_earn_more_time);
+        if (btnEarnMoreTime != null) {
+            btnEarnMoreTime.setOnClickListener(v -> onEarnMoreTime());
+        }
         findViewById(R.id.btn_ask_another).setOnClickListener(v -> askAnotherQuestion());
         findViewById(R.id.btn_quit_play).setOnClickListener(v -> quitPlay());
         findViewById(R.id.btn_play_parents).setOnClickListener(v -> openParentsSetup());
@@ -223,6 +235,7 @@ public class QuizActivity extends Activity {
         if (playMode) {
             // Practice must never activate Hard confine (clear stale session from a prior lock).
             HardGate.clearSessionQuiet(this);
+            resetTimeEarnSession();
         } else {
             HardGate.startSession(this);
         }
@@ -280,6 +293,7 @@ public class QuizActivity extends Activity {
             if (!playMode) return;
         }
         if (TRIGGER_PLAY.equals(trigger) && (session == null || session.isEnded())) {
+            resetTimeEarnSession();
             startRound(TRIGGER_PLAY);
         }
     }
@@ -443,6 +457,9 @@ public class QuizActivity extends Activity {
         if (cur == null) return;
         setSkipEnabled(false);
         setDigitPadEnabled(false);
+        if (playMode && timeEarnActive) {
+            ensureTimeEarnPolicy().recordSkip();
+        }
         logPresented("skipped", cur, "", session.getMissStreak());
         currentAnswered = true;
         PresentedQuestion next = session.skip();
@@ -731,7 +748,11 @@ public class QuizActivity extends Activity {
         if (session.isEnded() || finishing || inTransition) return;
         PresentedQuestion q = session.getCurrent();
         setSkipEnabled(false);
-        QuizSession.AnswerResult result = session.answer(choice, clock.nowMillis());
+        long now = clock.nowMillis();
+        lastAnswerLatencyMs = questionShownAt > 0 ? Math.max(0L, now - questionShownAt) : -1L;
+        lastCorrectTimeEarnApplied = false;
+        lastEarnGrantedMinutes = 0;
+        QuizSession.AnswerResult result = session.answer(choice, now);
         currentAnswered = true;
         if (result == QuizSession.AnswerResult.CORRECT_UNLOCK
                 || result == QuizSession.AnswerResult.CORRECT_ROUND_DONE) {
@@ -739,6 +760,9 @@ public class QuizActivity extends Activity {
             int earn = activePack == null ? 0
                     : session.getCorrectInRound() * activePack.earnMinutesPerCorrect;
             if (earn > 0) prefs.addMinutes(earn);
+            if (playMode && timeEarnActive) {
+                applyTimeEarnForLastCorrect();
+            }
             showSuccessThenFinish();
             return;
         }
@@ -786,7 +810,7 @@ public class QuizActivity extends Activity {
         if (!playMode) prepareUnlockExit();
         fadeInTransition(() -> {
             if (playMode) {
-                showPlayChoiceChrome(R.string.play_fail_prompt);
+                showPlayChoiceChrome(R.string.play_fail_prompt, false);
                 return;
             }
             startFailPulse();
@@ -813,7 +837,7 @@ public class QuizActivity extends Activity {
             }
             long holdMs = PerformanceMode.successHoldMs(prefs);
             if (playMode) {
-                showPlayChoiceChrome(R.string.play_success_prompt);
+                showPlayChoiceChrome(R.string.play_success_prompt, true);
                 // Finite party, then idle so taps/dumps aren't blocked by looping anims
                 if (successEndTick != null) handler.removeCallbacks(successEndTick);
                 successEndTick = () -> {
@@ -834,13 +858,19 @@ public class QuizActivity extends Activity {
         });
     }
 
-    private void showPlayChoiceChrome(int promptRes) {
+    private void showPlayChoiceChrome(int promptRes, boolean successPath) {
         if (transitionGateIcon != null) transitionGateIcon.setVisibility(View.VISIBLE);
         if (transitionPlayPrompt != null) {
-            transitionPlayPrompt.setText(promptRes);
+            if (successPath && timeEarnActive && lastEarnGrantedMinutes > 0) {
+                transitionPlayPrompt.setText(getString(R.string.play_earn_granted_prompt,
+                        lastEarnGrantedMinutes));
+            } else if (promptRes != 0) {
+                transitionPlayPrompt.setText(promptRes);
+            }
             transitionPlayPrompt.setVisibility(View.VISIBLE);
         }
         if (transitionPlayActions != null) transitionPlayActions.setVisibility(View.VISIBLE);
+        updateEarnMoreTimeButton(successPath);
         transitionRetryLabel.setVisibility(View.GONE);
         transitionCountdown.setVisibility(View.GONE);
         transitionTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40);
@@ -850,6 +880,59 @@ public class QuizActivity extends Activity {
         if (transitionGateIcon != null) transitionGateIcon.setVisibility(View.GONE);
         if (transitionPlayPrompt != null) transitionPlayPrompt.setVisibility(View.GONE);
         if (transitionPlayActions != null) transitionPlayActions.setVisibility(View.GONE);
+        if (btnEarnMoreTime != null) btnEarnMoreTime.setVisibility(View.GONE);
+    }
+
+    private void resetTimeEarnSession() {
+        timeEarnActive = false;
+        lastCorrectTimeEarnApplied = false;
+        lastAnswerLatencyMs = -1L;
+        lastEarnGrantedMinutes = 0;
+        timeEarn = new TimeEarnPolicy(prefs.getTimeEarnCapMinutes(),
+                TimeEarnPolicy.DEFAULT_FLOOR_MINUTES);
+    }
+
+    private TimeEarnPolicy ensureTimeEarnPolicy() {
+        if (timeEarn == null) {
+            timeEarn = new TimeEarnPolicy(prefs.getTimeEarnCapMinutes(),
+                    TimeEarnPolicy.DEFAULT_FLOOR_MINUTES);
+        }
+        return timeEarn;
+    }
+
+    private boolean shouldShowEarnMoreTime() {
+        if (!playMode || prefs == null) return false;
+        TimeEarnPolicy policy = ensureTimeEarnPolicy();
+        if (policy.isCapExhausted()) return false;
+        return TimeEarnPolicy.isFeatureVisibleAt(
+                prefs.nextAlarmAt(), clock.nowMillis(), policy.getCapMinutes());
+    }
+
+    private void updateEarnMoreTimeButton(boolean successPath) {
+        if (btnEarnMoreTime == null) return;
+        boolean show = successPath && shouldShowEarnMoreTime();
+        btnEarnMoreTime.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    /** Grant jar minutes for the just-answered correct question (band from latency). */
+    private int applyTimeEarnForLastCorrect() {
+        if (lastCorrectTimeEarnApplied) return lastEarnGrantedMinutes;
+        TimeEarnPolicy policy = ensureTimeEarnPolicy();
+        TimeEarnPolicy.Band band = lastAnswerLatencyMs >= 0L
+                ? TimeEarnPolicy.bandForLatencyMs(lastAnswerLatencyMs)
+                : TimeEarnPolicy.Band.SLOW;
+        int granted = policy.recordCorrect(band);
+        if (granted > 0) prefs.addMinutes(granted);
+        lastCorrectTimeEarnApplied = true;
+        lastEarnGrantedMinutes = granted;
+        return granted;
+    }
+
+    private void onEarnMoreTime() {
+        if (!playMode || finishing) return;
+        timeEarnActive = true;
+        applyTimeEarnForLastCorrect();
+        askAnotherQuestion();
     }
 
     private void askAnotherQuestion() {
@@ -883,6 +966,7 @@ public class QuizActivity extends Activity {
     private void quitPlay() {
         if (!playMode) return;
         restorePreviousApp = false;
+        resetTimeEarnSession();
         stopPhotoFlash();
         stopBalloonPulse();
         fadeOutTransition(this::finishSession);

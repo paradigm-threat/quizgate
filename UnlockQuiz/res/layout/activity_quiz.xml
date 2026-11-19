@@ -311,9 +311,22 @@
                 android:visibility="gone">
 
                 <Button
+                    android:id="@+id/btn_earn_more_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:backgroundTint="@color/success"
+                    android:text="@string/play_earn_more_time"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"/>
+
+                <Button
                     android:id="@+id/btn_ask_another"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
+                    android:layout_marginTop="10dp"
                     android:backgroundTint="@color/accent"
                     android:text="@string/play_ask_another"
                     android:textAllCaps="false"
