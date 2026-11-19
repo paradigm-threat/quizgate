@@ -11,14 +11,14 @@ QuizGate
 
 SHORT DESCRIPTION (max 80 characters)
 --------------------------------------------------------------------------------
-Earn screen time with quick math quizzes. Forever free. No ads. No purchases.
+Earn screen time with math. Forever free. Nonprofit intent if MVP succeeds.
 
 
 FULL DESCRIPTION (max 4000 characters)
 --------------------------------------------------------------------------------
 QuizGate helps kids earn tablet time by answering short math quizzes.
 
-Correct answers bank minutes. Scheduled Hard quizzes ask for a quick round on your schedule (default about every hour, ±15 minutes) plus a morning check-in. One correct answer unlocks; quizzes do not stack. Parents stay in control — forever free, with no ads and no in-app purchases.
+Correct answers bank minutes. Scheduled Hard quizzes ask for a quick round on your schedule (default about every 40 minutes ±10 minutes) plus a morning check-in. One correct answer unlocks; quizzes do not stack. Parents stay in control — forever free, with no ads and no in-app purchases.
 
 How it works
 • Hard lock: Accessibility keeps the scheduled quiz on screen until unlock (practice from the widget stays free)
@@ -33,14 +33,17 @@ Built for families
 • Gallery photos and learning progress stay on the device
 • Closed-loop SI helps curate curriculum packs; parents decide what runs
 
+Our direction (not a recognized nonprofit yet)
+QuizGate is shipped today by Clevertree. We intend to form a dedicated educational nonprofit — separate from Clevertree LLC — if this MVP succeeds. Future donations would fund world-scale curriculum and languages, education-oriented licenses, ongoing content guardrails (age-fit, education-worthy — not controversial topics out of context), practical deployment so families can use the app, and modest access infrastructure. Donations would not unlock features or add ads. Mission: https://quizgate.app/mission
+
 Permissions (why we ask)
-• Notifications & exact alarms — scheduled quizzes on your 60±15 + morning window
+• Notifications & exact alarms — scheduled quizzes on your ~40±10 minute window + morning
 • Accessibility — confine only while a Hard lock is active (not a screen reader)
 • Photos — optional quiz backdrops from this device
 • Usage access (optional) — pause media during a quiz and return to the app your child was just using
 • Battery unrestricted — so the schedule stays reliable on some devices
 
-QuizGate is open source. Privacy policy: https://quizgate.app/privacy
+QuizGate is open source. Privacy: https://quizgate.app/privacy · Mission: https://quizgate.app/mission
 
 
 APP CATEGORY

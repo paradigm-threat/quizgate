@@ -19,6 +19,7 @@ Upload-ready graphics live in [`store/play/upload/`](../store/play/upload/).
 | **Data safety** | https://support.google.com/googleplay/android-developer/answer/10787469 |
 | **Graphic assets specs** | https://support.google.com/googleplay/android-developer/answer/9866151 |
 | Privacy policy (live) | https://quizgate.app/privacy |
+| Mission / nonprofit intent | https://quizgate.app/mission |
 | Marketing site | https://quizgate.app |
 
 Package name (must never change once claimed): `net.clevertree.quizgate`

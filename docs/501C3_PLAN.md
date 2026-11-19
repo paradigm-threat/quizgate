@@ -5,70 +5,79 @@
 **Form a new Georgia nonprofit corporation**, apply for 501(c)(3) for that entity, and keep it **separate from Clevertree LLC**.
 
 - Clevertree LLC stays a for-profit (MyProblem and other commercial work stay there).
-- The nonprofit’s purpose is **QuizGate as an educational program** (kids’ math / curriculum that replaces idle screen time with learning).
+- The nonprofit’s purpose is **QuizGate as an educational program** — learning instead of idle screen time, for families everywhere.
 - Do **not** convert Clevertree LLC. Do **not** put MyProblem in the filing narrative.
-- Clevertree Chat is optional/later — not required for this filing.
 
-The IRS exempts the **organization**, not the app name. QuizGate can still be the public face; the applicant is the new nonprofit.
+## Timing strategy (near term vs Form 1023)
+**Do now / in the near future — everything except the full IRS Form 1023 (or 1023-EZ) filing:**
+
+| Do now | Hold until MVP traction + fundraising readiness |
+|--------|--------------------------------------------------|
+| Public mission / nonprofit **intent** on quizgate.app + Play listing copy | Submit Form **1023 / 1023-EZ** |
+| Pedagogy / educational-record docs | Expect determination letter (often months) |
+| Choose nonprofit legal name; line up 3+ directors | GA charitable solicitation (when asking for money) |
+| Draft Articles / bylaws; incorporate when directors ready | Large public fundraising campaigns |
+| Draft IP license/assignment from Clevertree LLC → nonprofit | |
+| EIN for the new corp once incorporated | |
+| Keep forever-free / no-ads stance | |
+
+**Why wait on Form 1023:** Play Store MVP and store approval do not require exemption. Filing has fees and compliance; little cash benefit until donations/grants. Public **intent** + real product still strengthen a later application.
+
+Public messaging (site, Play, README): we are **not a recognized 501(c)(3) yet**. Direction is a dedicated educational nonprofit **if the MVP succeeds**. Until then Clevertree LLC ships the free app; donations (when enabled) are aimed at the educational expansion below — not at selling the product.
+
+## What donations would fund (purpose narrative)
+Not a Relay-style “node in every place” network. Global **use** means:
+
+1. **Hardware & deployment** so families and partners can actually run QuizGate (devices, install support, practical rollout — not commercial SaaS fees).
+2. **Access infrastructure** — modest regional servers / CDN for curriculum and updates where needed for good access (not geo-political Relay vision).
+3. **Curriculum at world scale** — every language and education-worthy subject band that families need. That cannot be “AI dump only”; it needs **real research**, educators, and time.
+4. **Legal & licensing** — education-oriented licenses and rights so packs stay lawful.
+5. **Guardrails** — continual process, with people worldwide, so content stays within educational norms: no spillover into controversial topics out of context, and nothing that would not be deemed education-worthy for the age band.
+
+That continual worldwide curriculum + compliance work is why donations matter later; the MVP itself stays forever free with no ads and no IAP.
 
 ## Relationship to Clevertree LLC
-Treat the LLC and nonprofit as arm’s-length:
-
-1. **IP:** Clevertree LLC (or current copyright holders) **assigns or licenses** QuizGate code, name, store listings, and domain rights to the nonprofit in writing (board-approved on both sides if needed).
-2. **Money:** No informal mixing of LLC and nonprofit bank accounts. Donations go only to the nonprofit.
-3. **Brand:** Prefer a distinct legal name for the nonprofit (e.g. educational foundation / institute). “Clevertree” may appear as a licensed brand later; the determination letter should not read as “Clevertree LLC went nonprofit.”
-4. **People:** Founder may serve, but IRS prefers **3+ directors** with independence — not only LLC owners/family.
+1. **IP:** Written assign or license of QuizGate code, name, store listings, domains to the nonprofit when it exists.
+2. **Money:** Separate books; donations only to the nonprofit once recognized / registered to solicit.
+3. **Brand:** Distinct legal name for the nonprofit; Clevertree may appear as licensed brand.
+4. **People:** Prefer independent board majority over “LLC owners only.”
 
 ## Note — Repo Visibility
-Public docs and source are what examiners can cite. Status after 2026-11-19 visibility pass:
-- **Public:** `paradigm-threat/quizgate` (GitHub), `clevertree/quizgate` (GitLab), `paradigm-threat/myproblem`, `paradigm-threat/clevertree-chat`, `paradigm-threat/clevertree-site`
-- **Keep private:** auth / credential stores (e.g. `clevertree-chat-auth`)
+- **Public:** `paradigm-threat/quizgate`, `clevertree/quizgate`, `myproblem`, `clevertree-chat`, `clevertree-site`
+- **Keep private:** credential stores (e.g. `clevertree-chat-auth`)
 
-Track checklist items in [`docs/TODO.md`](TODO.md). When TODO-style work arrives via PRs or other channels, fold it into that file.
+Checklist: [`docs/TODO.md`](TODO.md). Fold PR/handoff TODOs into that file.
 
-## Phase 1 — Strengthen the Educational Record (Weeks 1–4)
-1. Publish a public pedagogy doc for QuizGate: learning objectives per curriculum pack, age bands, how the time-earn mechanic reinforces mastery vs. speed-grinding.
-2. Add a "Why this exists" / mission statement page to **quizgate.app** that leads with education and accessibility, not product features.
-3. Document the no-tracking, no-ads, no-IAP stance on the public site (already in README — surface it on the site).
-4. Gather any usage stats, testimonials from parents/teachers, or pilot feedback. Even informal.
+## Phase 1 — Educational record + public intent (now)
+1. Mission / “Why this exists” + **nonprofit intent** on quizgate.app (and `/mission`).
+2. Play listing copy states forever-free + nonprofit direction if MVP succeeds.
+3. Pedagogy doc: objectives, age bands, time-earn mastery design.
+4. Surface no-tracking / no-ads / no-IAP on the site.
+5. Soft ask later: support educational expansion (curriculum, licenses, guardrails) — not paywalls.
 
-## Phase 2 — Form the Nonprofit (Weeks 3–6)
-1. Choose legal name + registered agent (Georgia).
-2. File **Articles of Incorporation** (Georgia nonprofit corp). ~$100. Purpose clause must be educational/charitable in IRS-compatible language (and dissolution language that satisfies 501(c)(3)).
-3. Adopt **bylaws**: educational mission, no private inurement, conflict-of-interest policy, dissolution clause (assets to another 501c3 or government).
-4. Appoint **3+ directors** (independent board preferred).
-5. Execute **IP license or assignment** of QuizGate from Clevertree LLC → nonprofit.
-6. Open a nonprofit bank account; keep LLC finances separate.
+## Phase 2 — Form nonprofit when ready (near term, before Form 1023)
+1. Legal name + Georgia registered agent.
+2. Articles (educational purpose + dissolution language).
+3. Bylaws + conflict-of-interest policy; 3+ directors.
+4. IP license/assignment from Clevertree LLC.
+5. Nonprofit bank account; EIN.
 
-## Phase 3 — Federal Filing (Weeks 6–10+)
-1. Get **EIN** for the new nonprofit (free, irs.gov).
-2. Confirm Form **1023-EZ** eligibility (budget thresholds + organizing document language). If eligible, ~$275; otherwise full Form 1023 (~$600).
-3. Narrative: education-first mission, QuizGate activities, donation-only revenue. No MyProblem. No “we are Clevertree LLC.”
-4. Reference: curriculum docs, mission pages, bylaws, financial projections (donations only, no program fees).
+## Phase 3 — Federal exemption (later)
+1. Confirm 1023-EZ eligibility.
+2. File Form 1023-EZ (~$275) or full 1023 (~$600) when fundraising is real.
+3. Narrative: QuizGate education + donation uses above; no MyProblem; not “Clevertree LLC converted.”
 
-Determination letters often take **months**; plan cashflow accordingly.
-
-## Phase 4 — Georgia State Registration (parallel with Phase 3)
-1. Register charitable solicitation with Georgia Department of Agriculture if soliciting donations from GA residents.
-2. Initial registration fee + annual renewal (verify current amounts).
+## Phase 4 — Georgia solicitation (when asking for money)
+Register with GA Dept. of Agriculture; renew annually.
 
 ## Risk Flags
-- **Commerciality:** no paid tiers or ads on QuizGate.
-- **Private inurement:** any founder compensation must be reasonable, documented, board-approved.
-- **Related-party deals:** LLC↔nonprofit IP license must be documented (and fair) so it does not look like the LLC is draining the charity.
-- **MyProblem / Clevertree LLC:** out of the nonprofit purpose statement and Form 1023 narrative.
-- Frame donations as grants supporting education — not pay-what-you-want for software.
-
-## Gaps before filing
-- Attorney or EO advisor review of Articles / bylaws / 1023 narrative
-- Conflict-of-interest policy (signed by directors)
-- Written IP assignment or license from LLC
-- 1023-EZ eligibility checklist vs current IRS instructions
-- Bank account + organizing board resolutions
+- Commerciality: no paid tiers / ads on QuizGate.
+- Private inurement; arm’s-length LLC↔nonprofit IP deals.
+- Do not claim current 501(c)(3) status before the determination letter.
+- Frame future donations as grants for educational mission, not pay-what-you-want software.
 
 ## Success Criteria
+- Public intent + MVP educational record live **before** Form 1023
 - New Georgia nonprofit incorporated (separate from Clevertree LLC)
-- 501(c)(3) determination letter received
-- Donor gifts tax-deductible to that entity
-- Georgia charitable solicitation registered (when fundraising)
-- Public QuizGate repos + mission docs as permanent evidence
+- 501(c)(3) determination letter when we file
+- Donor gifts tax-deductible; GA solicitation when fundraising
