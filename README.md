@@ -1,6 +1,8 @@
 # QuizGate
 
-Clevertree quiz lock for young kids: about every **40 min (±10m → next fire in 30–50 min)** while the tablet is already in use + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). **One correct answer unlocks** a lock session — never stack another quiz immediately after. **Screen off** cancels schedule alarms (no idle wake); **power on** opens the Hard quiz (not during the short post-unlock grace). Widget and Setup practice stay unlocked. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+Clevertree quiz lock for young kids: about every **40 min (±10m → next fire in 30–50 min)** while the tablet is already in use + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). **One correct answer unlocks** a lock session — never stack another quiz immediately after. **Screen off** cancels schedule alarms (no idle wake); **power on** opens the Hard quiz (not during the short post-unlock grace). Widget and Setup practice stay unlocked. Today's stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+
+**Rapid-fire time earn** (standalone mode): kids answer questions fast to earn extra minutes before the next lock — three latency bands, speed-weighted rewards, two-hour session cap admin-tunable via remote admin. See [`docs/TIME_EARN.md`](docs/TIME_EARN.md).
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
@@ -53,12 +55,13 @@ Performance Auto / Performance / Slim: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.
 Local diagnostics (upload OFF): [`docs/TELEMETRY.md`](docs/TELEMETRY.md).  
 Anonymized Relay progress plane (`api.quizgate.app`): [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md).  
 Remote admin (`admin.quizgate.app`): [`docs/REMOTE_ADMIN.md`](docs/REMOTE_ADMIN.md).  
+Rapid-fire time earn: [`docs/TIME_EARN.md`](docs/TIME_EARN.md).  
 Email (outbound Gmail 2FA + inbound `batch@quizgate.app` Maildir): [`docs/EMAIL.md`](docs/EMAIL.md).  
 Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test
 
-First launch opens skippable onboarding: photos → schedule (default 40±10) → UI placement (Top default / Bottom) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
+First launch opens skippable onboarding: photos → schedule (default 40±10) → UI placement (Top default / Bottom) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder's README.
 
 **Fully working** Hard lock needs those grants (photos optional). Setup shows a requirements checklist and prompts the next missing gap with a cooldown.
 
@@ -116,11 +119,12 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 ## Behavior
 
 - Schedule: default **40±10 min** (fire window 30–50) while interactive; morning alarm; minutes jar adds free time on top of that window (never shrinks it); screen-off cancels alarms + pending lock; wake opens Hard quiz; unlock grace blocks stacked wake locks and restores the schedule if screen-off cancelled alarms; re-arm after unlock / boot / app update / time change / grace wake-skip only while interactive
-- Header: “Please answer this question”
+- **Time earn** (standalone only): success overlay shows **Earn More Time**; fast answers (<3s) earn 5 min, thinking (3–10s) 2 min, slow (>10s) the floor (1 min); per-session cap default 120 min, admin-tunable; feature hidden when ≥cap remains on schedule; daily stats log band + question format per attempt, never raw latency — see [`docs/TIME_EARN.md`](docs/TIME_EARN.md)
+- Header: "Please answer this question"
 - Curriculum: bundled **basic-math v4** — addition under 10, expanded subtraction, light multiplication; math asks as fill-in (`equation`), Pickles-style **True/False**, or multi-answer **choice** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
 - Math: spoken + `2 + 5 = _` (digit pad by default)
 - **Skip** on every ask → counts as skipped, immediately another question; soft bias toward yes/no or multiple-choice (still varied — no fixed ladder)
-- Wrong → fade + “Retry in” countdown → new question
+- Wrong → fade + "Retry in" countdown → new question
 - 3 wrong → fail overlay + 6s countdown → unlock
 - Leave without answering → bypass (no reopen), logged as skipped
 - YouTube / music: soft-pause **before** the quiz is brought to the foreground (exclusive audio focus + media-pause burst + short settle so auto-PiP is less likely); resume after unlock (best-effort). On API 31+ the quiz window uses `setHideOverlayWindows` for foreign `TYPE_APPLICATION_OVERLAY` windows. Critical quiz controls start near the **top** by default (Parents can choose **bottom**) and can be **dragged anywhere**; they snap back if pulled too far off-screen so answers stay reachable. Expanding PiP leaves the quiz and counts as bypass. **Usage access** required to return to the prior app after the session
