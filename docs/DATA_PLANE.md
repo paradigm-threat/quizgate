@@ -16,7 +16,10 @@ Public hosts are **`*.quizgate.app` only**.
 3. Upload is off by default. Runtime **Share anonymous progress** (onboarding + Parents/Setup `remote_management`) or the compile flag enables POSTs of privacy-safe snapshots to  
    `POST /v1/users/{uuid}/sync` on Intake — only from interactive quiz/Setup paths (not idle). Optional parent email registers a hash for human admin.
 4. Intake **caches + enqueues** (PVC). It does **not** commit the tip. On each sync it also upserts an ephemeral **day batch** under the cache PVC:
-   `{QUIZGATE_CACHE_DIR}/batches/{YYYY-MM-DD}/{uuid}.json` (override root with `QUIZGATE_BATCH_DIR`) — aggregates only (`asked`/`right`/`wrong`/`skipped`), no quiz event trails.
+   `{QUIZGATE_CACHE_DIR}/batches/{YYYY-MM-DD}/{uuid}.json` (override root with `QUIZGATE_BATCH_DIR`) — aggregates only (`asked`/`right`/`wrong`/`skipped`, plus `*_lock` / `*_play` splits when the client sends them), no quiz event trails.
+   - **Unique per uuid + day:** exactly one file per `(uuid, day)`. Re-syncs atomically overwrite the counts (last write wins) and bump `sync_count`; no duplicate files.
+   - **Day key:** optional body `day` (`YYYY-MM-DD`, e.g. the device's local day for backfill). When omitted, Intake uses the **UTC receive day**. Malformed `day` → `400 invalid_day`.
+   - Identical bodies within 30s are deduped by the request cache (`deduped: true`, no `sync_count` bump).
 5. Batch SI drains the queue and writes **`users/<uuid>/profile.json` only** as **`quizgate-batch`** (readiness / curriculum / settings). It does **not** append tip `days.jsonl` / `events.jsonl` (those stay off git). SI will later scan day-batch folders for direction / proficient marks.
 6. App GETs `/v1/users/{uuid}/profile` for curriculum / frequency / performance preference.
 
@@ -55,7 +58,12 @@ UUID=xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
 curl -sS -X POST "https://api.quizgate.app/v1/users/$UUID/sync" \
   -H 'content-type: application/json' \
   -d "{\"user_uuid\":\"$UUID\",\"today\":{\"asked\":10,\"right\":9,\"wrong\":1,\"skipped\":0},\"curriculumId\":\"basic-math\"}"
+# backfill a past local day (same uuid+day file is overwritten, sync_count++):
+curl -sS -X POST "https://api.quizgate.app/v1/users/$UUID/sync" \
+  -H 'content-type: application/json' \
+  -d "{\"user_uuid\":\"$UUID\",\"day\":\"2026-11-18\",\"today\":{\"asked\":52,\"right\":24,\"wrong\":2,\"skipped\":8,\"asked_lock\":5}}"
 # on iad1:
+ls /var/quizgate/cache/batches/2026-11-18/
 sudo systemctl start quizgate-batch
 curl -sS "https://api.quizgate.app/v1/users/$UUID/profile"
 ```

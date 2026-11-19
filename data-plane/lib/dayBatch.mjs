@@ -31,7 +31,8 @@ const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Reject path traversal / non-calendar day keys. */
 export function assertDayKey(day) {
-  if (typeof day !== "string" || !DAY_RE.test(day)) {
+  const ts = typeof day === "string" && DAY_RE.test(day) ? Date.parse(`${day}T00:00:00Z`) : NaN;
+  if (!Number.isFinite(ts) || utcDayKey(ts) !== day) {
     throw new Error("invalid_day");
   }
   return day;
@@ -43,16 +44,26 @@ function nonNegInt(v) {
   return Math.min(Math.floor(n), 1_000_000);
 }
 
-function normalizeToday(today) {
+const SPLIT_KEYS = ["asked", "right", "wrong", "skipped"].flatMap((k) => [
+  `${k}_lock`,
+  `${k}_play`,
+]);
+
+export function normalizeToday(today) {
   if (!today || typeof today !== "object") {
     return { asked: 0, right: 0, wrong: 0, skipped: 0 };
   }
-  return {
+  const out = {
     asked: nonNegInt(today.asked),
     right: nonNegInt(today.right),
     wrong: nonNegInt(today.wrong),
     skipped: nonNegInt(today.skipped),
   };
+  // Lock vs practice splits are only stored when the client sends them.
+  for (const k of SPLIT_KEYS) {
+    if (today[k] != null) out[k] = nonNegInt(today[k]);
+  }
+  return out;
 }
 
 function normalizeCurriculumId(id, fallback = null) {
@@ -63,7 +74,8 @@ function normalizeCurriculumId(id, fallback = null) {
 }
 
 /**
- * Upsert one privacy-safe aggregate per user per UTC day (last-write-wins counts).
+ * Upsert one privacy-safe aggregate per user per day (last-write-wins counts).
+ * `day` defaults to the UTC receive day; clients may pass their local day for backfill.
  * Does not store recent_quiz / event trails.
  */
 export function writeDayBatch(uuid, { today, curriculum_id, day } = {}) {

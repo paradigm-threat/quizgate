@@ -65,6 +65,17 @@ export QUIZGATE_PUBLISH_REMOTES=git://iad1.relaygateway.net:9418/quizgate-users.
 
 Day aggregates: Intake upserts `{QUIZGATE_BATCH_DIR}/{YYYY-MM-DD}/{uuid}.json` on each `POST …/sync`. Tip stays profile-only; batch drain does not write `days.jsonl` / `events.jsonl`.
 
+- One file per **uuid + day**; re-sync overwrites counts (last write wins) and bumps `sync_count`.
+- `day` comes from the optional body field `day` (`YYYY-MM-DD`, for backfill / client local day); default is the UTC receive day. Bad keys → `400 invalid_day`.
+- `today` keeps `asked`/`right`/`wrong`/`skipped` plus `*_lock` / `*_play` splits when sent.
+
+Deploy code changes:
+
+```bash
+rsync -az data-plane/intake data-plane/lib iad1.relaygateway.net:/opt/quizgate/data-plane/
+ssh iad1.relaygateway.net 'sudo systemctl restart quizgate-intake && curl -sS localhost:8791/health'
+```
+
 ## Sole tip writer
 
 **`quizgate-batch`** only. Intake never runs `git commit` on `users/`.

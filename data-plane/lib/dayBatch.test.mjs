@@ -9,6 +9,8 @@ import {
   utcDayKey,
   DAY_BATCH_SCHEMA,
   dayBatchPath,
+  normalizeToday,
+  assertDayKey,
 } from "./dayBatch.mjs";
 
 describe("dayBatch", () => {
@@ -70,6 +72,54 @@ describe("dayBatch", () => {
         today: { asked: "nope", right: -3, wrong: 1.9, skipped: Infinity },
       });
       assert.deepEqual(rec.today, { asked: 0, right: 0, wrong: 1, skipped: 0 });
+    } finally {
+      delete process.env.QUIZGATE_BATCH_DIR;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps lock/play splits when sent and omits them otherwise", () => {
+    const root = mkdtempSync(join(tmpdir(), "qg-batches-split-"));
+    process.env.QUIZGATE_BATCH_DIR = root;
+    const uuid = "851f35c3-2432-4e44-81cd-84050a403e50";
+    try {
+      const rec = writeDayBatch(uuid, {
+        day: "2026-11-18",
+        today: {
+          asked: 52, right: 24, wrong: 2, skipped: 8,
+          asked_lock: 5, right_lock: 1, wrong_lock: 1, skipped_lock: 0,
+          asked_play: 0, right_play: 0, wrong_play: 0, skipped_play: "x",
+          recent_quiz: [{ q: "1+1" }],
+        },
+      });
+      assert.deepEqual(rec.today, {
+        asked: 52, right: 24, wrong: 2, skipped: 8,
+        asked_lock: 5, asked_play: 0,
+        right_lock: 1, right_play: 0,
+        wrong_lock: 1, wrong_play: 0,
+        skipped_lock: 0, skipped_play: 0,
+      });
+      assert.deepEqual(normalizeToday({ asked: 3 }), {
+        asked: 3, right: 0, wrong: 0, skipped: 0,
+      });
+    } finally {
+      delete process.env.QUIZGATE_BATCH_DIR;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("explicit day writes that day's file; omitted day uses UTC today", () => {
+    const root = mkdtempSync(join(tmpdir(), "qg-batches-day-"));
+    process.env.QUIZGATE_BATCH_DIR = root;
+    const uuid = "851f35c3-2432-4e44-81cd-84050a403e50";
+    try {
+      const back = writeDayBatch(uuid, { day: "2026-11-18", today: { asked: 52 } });
+      const now = writeDayBatch(uuid, { today: { asked: 2 } });
+      assert.equal(back.day, "2026-11-18");
+      assert.equal(now.day, utcDayKey());
+      assert.equal(readDayBatch(uuid, "2026-11-18").today.asked, 52);
+      assert.throws(() => assertDayKey("2026-13-01"), /invalid_day/);
+      assert.throws(() => assertDayKey("2026-02-30"), /invalid_day/);
     } finally {
       delete process.env.QUIZGATE_BATCH_DIR;
       rmSync(root, { recursive: true, force: true });

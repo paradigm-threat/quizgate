@@ -11,7 +11,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { enqueue, pendingCount, listPending } from "../lib/queue.mjs";
 import { cacheGet, cacheSet, cacheDedupePost } from "../lib/cache.mjs";
-import { writeDayBatch } from "../lib/dayBatch.mjs";
+import { writeDayBatch, assertDayKey } from "../lib/dayBatch.mjs";
 import {
   isUuid,
   loadProfile,
@@ -295,12 +295,21 @@ const server = createServer(async (req, res) => {
       payload.prefs?.curriculum_id ||
       null;
     const today = payload.today || null;
+    const day = payload.day == null || payload.day === "" ? null : payload.day;
+    if (day != null) {
+      try {
+        assertDayKey(day);
+      } catch {
+        return json(res, 400, { error: "invalid_day" });
+      }
+    }
     // Ephemeral day aggregate on cache PVC — never the Relay tip.
     let day_batch = null;
     try {
       day_batch = writeDayBatch(u.uuid, {
         today,
         curriculum_id: curriculumId,
+        day,
       });
     } catch (err) {
       return json(res, 500, {
@@ -317,6 +326,7 @@ const server = createServer(async (req, res) => {
           payload.schema_version ||
           payload.schema ||
           3,
+        day: day_batch.day,
         today,
         recent_quiz: payload.recentQuiz || payload.recent_quiz || [],
         recent_schedule: payload.recentSchedule || payload.recent_schedule || [],
