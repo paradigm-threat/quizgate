@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 import net.clevertree.quizgate.core.TimeEarnPolicy;
 import net.clevertree.quizgate.core.TimeEarnPolicy.Band;
 import net.clevertree.quizgate.core.TimeEarnPolicy.Format;
@@ -180,6 +182,10 @@ public class TimeEarnTest {
         assertEq(5, 4 + 1);
     }
 
+    private static void assertEq(int expected, int actual) {
+        assertEq(expected, actual, "values");
+    }
+
     private static void assertEq(int expected, int actual, String msg) {
         if (expected != actual) {
             fails++;
@@ -194,6 +200,10 @@ public class TimeEarnTest {
         }
     }
 
+    private static void assertEq(boolean expected, boolean actual) {
+        assertEq(expected, actual, "values");
+    }
+
     private static void assertEq(boolean expected, boolean actual, String msg) {
         if (expected != actual) {
             fails++;
@@ -202,10 +212,14 @@ public class TimeEarnTest {
     }
 
     private static void assertEq(String expected, String actual) {
-        if (!expected.equals(actual)) {
+        if (!Objects.equals(expected, actual)) {
             fails++;
             System.err.println("FAIL: expected '" + expected + "', got '" + actual + "'");
         }
+    }
+
+    private static void assertEq(Band expected, Band actual) {
+        assertEq(expected, actual, "band");
     }
 
     private static void assertEq(Band expected, Band actual, String msg) {

@@ -57,9 +57,12 @@ public final class TimeEarnPolicy {
     public int getEarnedMinutes() { return earnedMinutes; }
     public int getRemainingCapMinutes() { return capMinutes - earnedMinutes; }
 
-    /** True when the feature UI should be shown: remaining schedule time is under the cap. */
+    /**
+     * True when the feature UI should be shown: remaining schedule time is under the
+     * cap, and there is still some time left to extend (zero/negative → hidden).
+     */
     public static boolean isFeatureVisible(long remainingScheduleMs, int capMinutes) {
-        if (capMinutes <= 0) return false;
+        if (capMinutes <= 0 || remainingScheduleMs <= 0) return false;
         long remainingMinutes = remainingScheduleMs / 60_000L;
         return remainingMinutes < capMinutes;
     }
@@ -82,7 +85,7 @@ public final class TimeEarnPolicy {
      * never exceeds the cap. Slow-but-correct answers still earn the floor.
      */
     public int rewardFor(Band band) {
-        Objects requiringNonNull(band, "band");
+        Objects.requireNonNull(band, "band");
         if (band == Band.SKIPPED) return 0;
         int reward = switch (band) {
             case FAST -> 5;
