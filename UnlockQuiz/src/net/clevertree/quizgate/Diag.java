@@ -127,6 +127,7 @@ public final class Diag {
     }
 
     /** @deprecated Prefer {@link #syncDayBatchesOnOpen}; kept for call-site compatibility. */
+    @Deprecated
     public static final long REMOTE_FLUSH_MIN_GAP_MS = 20_000L;
 
     private static final AtomicBoolean DAY_BATCH_SYNC_RUNNING = new AtomicBoolean(false);
