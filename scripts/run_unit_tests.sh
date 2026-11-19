@@ -49,5 +49,7 @@ echo "== TimeEarnTest =="
 java -cp "$OUT" TimeEarnTest
 echo "== QuizLayoutPolicyTest =="
 java -cp "$OUT" QuizLayoutPolicyTest
+echo "== QuizUiScaleTest =="
+java -cp "$OUT" QuizUiScaleTest
 
 echo "ALL UNIT TESTS PASSED"

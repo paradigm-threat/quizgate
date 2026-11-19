@@ -39,6 +39,7 @@ import net.clevertree.quizgate.core.StatsEvent;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
 import net.clevertree.quizgate.core.TimeEarnPolicy;
+import net.clevertree.quizgate.core.QuizUiScale;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -97,6 +98,8 @@ public class QuizActivity extends Activity {
     private boolean lastCorrectTimeEarnApplied;
     private int lastEarnGrantedMinutes;
     private View btnEarnMoreTime;
+    /** Resolution scale for text/buttons (tablets ~1.5–1.85× phones). */
+    private float uiScale = 1f;
 
     private TextView spoken;
     private TextView symbolic;
@@ -185,7 +188,9 @@ public class QuizActivity extends Activity {
         quizPan = findViewById(R.id.quiz_pan);
         quizPanel = findViewById(R.id.quiz_panel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
+        refreshUiScale();
         applyQuizChrome();
+        applyQuizTypeScale();
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);
@@ -302,6 +307,7 @@ public class QuizActivity extends Activity {
         super.onResume();
         OverlayGate.onFocus(this);
         applyQuizChrome();
+        applyQuizTypeScale();
         if (browsingStats) browsingStats = false;
     }
 
@@ -442,9 +448,67 @@ public class QuizActivity extends Activity {
         hideTransitionOverlayImmediate();
         currentAnswered = false;
         setSkipEnabled(true);
+        applyQuizTypeScale();
         refreshQuizDayStats();
         if (PerformanceMode.allowRichMotion(prefs)) {
             startBalloonPulse(questionBalloon, BALLOON_INFLATED, 3);
+        }
+    }
+
+    private void refreshUiScale() {
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        uiScale = QuizUiScale.scaleFor(dm.widthPixels, dm.heightPixels, dm.density);
+    }
+
+    /** Enlarge header/question/skip for the current resolution; formats rebuild with scale. */
+    private void applyQuizTypeScale() {
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
+        TextView header = findViewById(R.id.header);
+        if (header != null) {
+            header.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(30f, uiScale));
+        }
+        if (spoken != null) {
+            spoken.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(34f, uiScale));
+        }
+        if (symbolic != null) {
+            symbolic.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(44f, uiScale));
+        }
+        if (digitAnswerView != null) {
+            digitAnswerView.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(52f, uiScale));
+            digitAnswerView.setMinHeight(QuizUiScale.scaledDp(64, uiScale, dens));
+        }
+        styleSkipButton();
+    }
+
+    /** Large, easy-to-hit Skip for every format. */
+    private void styleSkipButton() {
+        if (btnSkipQuestion == null) return;
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int colW = QuizUiScale.columnWidthPx(screenW, uiScale);
+        int h = QuizUiScale.scaledDp(64, uiScale, dens);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(colW, h);
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        lp.topMargin = QuizUiScale.scaledDp(16, uiScale, dens);
+        lp.bottomMargin = QuizUiScale.scaledDp(8, uiScale, dens);
+        btnSkipQuestion.setLayoutParams(lp);
+        if (btnSkipQuestion instanceof TextView) {
+            TextView skip = (TextView) btnSkipQuestion;
+            skip.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(22f, uiScale));
+            skip.setGravity(Gravity.CENTER);
+            skip.setPadding(
+                    QuizUiScale.scaledDp(20, uiScale, dens),
+                    QuizUiScale.scaledDp(12, uiScale, dens),
+                    QuizUiScale.scaledDp(20, uiScale, dens),
+                    QuizUiScale.scaledDp(12, uiScale, dens));
+            skip.setAlpha(0.92f);
+            GradientDrawable bg = new GradientDrawable();
+            bg.setCornerRadius(QuizUiScale.scaledDp(16, uiScale, dens));
+            bg.setStroke(QuizUiScale.scaledDp(2, uiScale, dens), Color.parseColor("#1A3A4A"));
+            bg.setColor(Color.parseColor("#E8F0F2"));
+            skip.setBackground(bg);
         }
     }
 
@@ -536,11 +600,15 @@ public class QuizActivity extends Activity {
 
     /** Pickles-style True/False: green check + red X (not digit pad). */
     private void buildTrueFalseChoices() {
+        refreshUiScale();
+        int colW = QuizUiScale.columnWidthPx(
+                getResources().getDisplayMetrics().widthPixels, uiScale);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                colW, LinearLayout.LayoutParams.WRAP_CONTENT);
+        rowLp.gravity = Gravity.CENTER_HORIZONTAL;
         row.setLayoutParams(rowLp);
 
         row.addView(styleTrueFalseButton(getString(R.string.choice_true_mark),
@@ -551,21 +619,25 @@ public class QuizActivity extends Activity {
     }
 
     private Button styleTrueFalseButton(String mark, int fill, String choice) {
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
         boolean land = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-        int size = land ? dp(72) : dp(96);
+        int base = land ? 96 : 128;
+        int size = QuizUiScale.scaledDp(base, uiScale, dens);
         Button btn = new Button(this);
         btn.setText(mark);
         btn.setAllCaps(false);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, land ? 28 : 36);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(land ? 36f : 48f, uiScale));
         btn.setTextColor(Color.WHITE);
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
         bg.setColor(fill);
-        bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
+        bg.setStroke(QuizUiScale.scaledDp(4, uiScale, dens), Color.parseColor("#1A3A4A"));
         btn.setBackground(bg);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-        lp.setMargins(dp(12), dp(land ? 4 : 8), dp(12), dp(land ? 4 : 8));
+        int m = QuizUiScale.scaledDp(land ? 10 : 16, uiScale, dens);
+        lp.setMargins(m, m, m, m);
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
         btn.setContentDescription(PresentedQuestion.CHOICE_TRUE.equals(choice)
@@ -615,26 +687,25 @@ public class QuizActivity extends Activity {
     }
 
     private void buildDigitPad() {
-        // rows: 1 2 3 / 4 5 6 / 7 8 9 / Clear 0 OK
-        // Compact keys on short/narrow viewports so the pad never forces the
-        // question off-screen (portrait tablets were worst).
+        // rows: 1 2 3 / 4 5 6 / 7 8 9 / Clear 0 OK — sized for ~60–70% column width
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
         boolean land = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
         int screenW = getResources().getDisplayMetrics().widthPixels;
         int screenH = getResources().getDisplayMetrics().heightPixels;
-        boolean compact = land || screenH < dp(700) || screenW < dp(420);
-        int keyH = compact ? dp(48) : dp(64);
-        int keySp = compact ? 22 : 28;
-        int clearSp = compact ? 15 : 18;
-        int keyMargin = compact ? dp(3) : dp(4);
+        boolean compact = land || screenH < dens * 640f;
+        int keyH = QuizUiScale.scaledDp(compact ? 56 : 76, uiScale, dens);
+        float keySp = QuizUiScale.sp(compact ? 26f : 34f, uiScale);
+        float clearSp = QuizUiScale.sp(compact ? 18f : 22f, uiScale);
+        int keyMargin = QuizUiScale.scaledDp(compact ? 4 : 6, uiScale, dens);
         int[][] rows = {
                 {1, 2, 3},
                 {4, 5, 6},
                 {7, 8, 9},
                 {-1, 0, -2} // -1 clear, -2 enter/OK
         };
-        // Near full-bleed width — avoid nested side pads that made options look narrow.
-        int padW = Math.max(dp(200), screenW - dp(8));
+        int padW = QuizUiScale.columnWidthPx(screenW, uiScale);
         LinearLayout.LayoutParams padLp = new LinearLayout.LayoutParams(
                 padW, LinearLayout.LayoutParams.WRAP_CONTENT);
         padLp.gravity = Gravity.CENTER_HORIZONTAL;
@@ -652,8 +723,8 @@ public class QuizActivity extends Activity {
                 btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, keySp);
                 btn.setTextColor(Color.parseColor("#1A3A4A"));
                 GradientDrawable bg = new GradientDrawable();
-                bg.setCornerRadius(dp(land ? 12 : 16));
-                bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
+                bg.setCornerRadius(QuizUiScale.scaledDp(land ? 14 : 18, uiScale, dens));
+                bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens), Color.parseColor("#1A3A4A"));
                 bg.setColor(Color.WHITE);
                 btn.setBackground(bg);
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, keyH, 1f);
@@ -666,7 +737,6 @@ public class QuizActivity extends Activity {
                         digitAnswer.press(d);
                         refreshDigitAnswer();
                         refreshSymbolic();
-                        // Unlock as soon as the typed digits match (OK still works for wrongs).
                         maybeAutoSubmitDigit();
                     });
                 } else if (key == -1) {
@@ -678,7 +748,6 @@ public class QuizActivity extends Activity {
                         refreshSymbolic();
                     });
                 } else {
-                    // Kept for wrong answers / habit; correct answers auto-submit on digit match.
                     btn.setText("OK");
                     bg.setColor(Color.parseColor("#E87A2E"));
                     btn.setTextColor(Color.WHITE);
@@ -692,19 +761,25 @@ public class QuizActivity extends Activity {
     }
 
     private Button styleChoiceButton(String label, Integer chipColor) {
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int colW = QuizUiScale.columnWidthPx(screenW, uiScale);
         Button btn = new Button(this);
         btn.setText(label);
         btn.setAllCaps(false);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(30f, uiScale));
         btn.setTextColor(Color.parseColor("#1A3A4A"));
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(20));
-        bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
+        bg.setCornerRadius(QuizUiScale.scaledDp(22, uiScale, dens));
+        bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens), Color.parseColor("#1A3A4A"));
         bg.setColor(chipColor != null ? chipColor : Color.WHITE);
         btn.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(72));
-        lp.setMargins(dp(4), dp(6), dp(4), dp(6));
+        int btnH = QuizUiScale.scaledDp(88, uiScale, dens);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(colW, btnH);
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        int m = QuizUiScale.scaledDp(8, uiScale, dens);
+        lp.setMargins(m, m, m, m);
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
         return btn;
