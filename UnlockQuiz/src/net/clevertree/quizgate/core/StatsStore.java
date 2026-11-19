@@ -251,21 +251,35 @@ public final class StatsStore {
         try (BufferedReader br = new BufferedReader(new FileReader(daysFile))) {
             String line;
             while ((line = br.readLine()) != null) {
-                String day = JsonUtil.extract(line, "day");
+                String day = canonicalDayKey(JsonUtil.extract(line, "day"));
                 if (day.isEmpty()) continue;
-                DayStats d = new DayStats();
-                d.questionsAsked = (int) Math.max(0, JsonUtil.extractLong(line, "asked"));
-                d.answeredRight = (int) Math.max(0, JsonUtil.extractLong(line, "right"));
-                d.answeredWrong = (int) Math.max(0, JsonUtil.extractLong(line, "wrong"));
-                d.skipped = (int) Math.max(0, JsonUtil.extractLong(line, "skipped"));
-                d.askedLock = (int) Math.max(0, JsonUtil.extractLong(line, "asked_lock"));
-                d.rightLock = (int) Math.max(0, JsonUtil.extractLong(line, "right_lock"));
-                d.wrongLock = (int) Math.max(0, JsonUtil.extractLong(line, "wrong_lock"));
-                d.skippedLock = (int) Math.max(0, JsonUtil.extractLong(line, "skipped_lock"));
-                d.askedPlay = (int) Math.max(0, JsonUtil.extractLong(line, "asked_play"));
-                d.rightPlay = (int) Math.max(0, JsonUtil.extractLong(line, "right_play"));
-                d.wrongPlay = (int) Math.max(0, JsonUtil.extractLong(line, "wrong_play"));
-                d.skippedPlay = (int) Math.max(0, JsonUtil.extractLong(line, "skipped_play"));
+                DayStats d = map.get(day);
+                if (d == null) d = new DayStats();
+                // Prefer higher totals when merging legacy unpadded + padded keys.
+                d.questionsAsked = Math.max(d.questionsAsked,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "asked")));
+                d.answeredRight = Math.max(d.answeredRight,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "right")));
+                d.answeredWrong = Math.max(d.answeredWrong,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "wrong")));
+                d.skipped = Math.max(d.skipped,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "skipped")));
+                d.askedLock = Math.max(d.askedLock,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "asked_lock")));
+                d.rightLock = Math.max(d.rightLock,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "right_lock")));
+                d.wrongLock = Math.max(d.wrongLock,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "wrong_lock")));
+                d.skippedLock = Math.max(d.skippedLock,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "skipped_lock")));
+                d.askedPlay = Math.max(d.askedPlay,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "asked_play")));
+                d.rightPlay = Math.max(d.rightPlay,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "right_play")));
+                d.wrongPlay = Math.max(d.wrongPlay,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "wrong_play")));
+                d.skippedPlay = Math.max(d.skippedPlay,
+                        (int) Math.max(0, JsonUtil.extractLong(line, "skipped_play")));
                 map.put(day, d);
             }
         }
@@ -391,9 +405,30 @@ public final class StatsStore {
     }
 
     public static String dayKey(long whenMs, TimeZone zone) {
-        Calendar c = Calendar.getInstance(zone);
+        Calendar c = Calendar.getInstance(zone == null ? TimeZone.getDefault() : zone);
         c.setTimeInMillis(whenMs);
-        return c.get(Calendar.YEAR) + "-" + (c.get(Calendar.MONTH) + 1) + "-" + c.get(Calendar.DAY_OF_MONTH);
+        return String.format(Locale.US, "%04d-%02d-%02d",
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH) + 1,
+                c.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /** Normalize {@code YYYY-M-D} / {@code YYYY-MM-DD} to zero-padded Intake day keys. */
+    public static String canonicalDayKey(String raw) {
+        if (raw == null) return "";
+        String s = raw.trim();
+        if (s.isEmpty()) return "";
+        String[] p = s.split("-");
+        if (p.length != 3) return s;
+        try {
+            int y = Integer.parseInt(p[0]);
+            int m = Integer.parseInt(p[1]);
+            int d = Integer.parseInt(p[2]);
+            if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return s;
+            return String.format(Locale.US, "%04d-%02d-%02d", y, m, d);
+        } catch (NumberFormatException e) {
+            return s;
+        }
     }
 
     public static final class Aggregates {

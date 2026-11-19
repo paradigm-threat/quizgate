@@ -191,6 +191,8 @@ public class QuizActivity extends Activity {
         refreshUiScale();
         applyQuizChrome();
         applyQuizTypeScale();
+        // Fire-and-forget: upload any missing day batches (weeks/months OK).
+        Diag.syncDayBatchesOnOpen(this);
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);

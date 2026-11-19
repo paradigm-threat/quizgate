@@ -441,12 +441,29 @@ public final class AppPrefs {
         sp.edit().putLong("last_remote_register_at", Math.max(0L, ms)).apply();
     }
 
-    /** Last interactive Intake progress flush (ms). Used only for client throttle. */
+    /** Last interactive Intake progress flush (ms). Legacy throttle; day-batch sync uses ledger. */
     public long getLastRemoteFlushAt() {
         return sp.getLong("last_remote_flush_at", 0L);
     }
 
     public void setLastRemoteFlushAt(long ms) {
         sp.edit().putLong("last_remote_flush_at", Math.max(0L, ms)).apply();
+    }
+
+    /**
+     * Local day key ({@code YYYY-MM-DD}) of the last successful <em>today</em>
+     * day-batch snapshot. Cleared automatically when the calendar day advances.
+     */
+    public String getTodayBatchSnapshotDay() {
+        return sp.getString("today_batch_snapshot_day", "");
+    }
+
+    public void setTodayBatchSnapshotDay(String dayKey) {
+        String d = net.clevertree.quizgate.core.StatsStore.canonicalDayKey(dayKey);
+        if (d.isEmpty()) {
+            sp.edit().remove("today_batch_snapshot_day").apply();
+        } else {
+            sp.edit().putString("today_batch_snapshot_day", d).apply();
+        }
     }
 }

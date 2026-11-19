@@ -10,6 +10,8 @@ import android.util.Log;
 
 import net.clevertree.quizgate.core.AnonUserId;
 import net.clevertree.quizgate.core.BuildFingerprint;
+import net.clevertree.quizgate.core.DayBatchSyncPolicy;
+import net.clevertree.quizgate.core.DayUploadLedger;
 import net.clevertree.quizgate.core.DiagBreadcrumb;
 import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.StatsStore;
@@ -21,11 +23,13 @@ import net.clevertree.quizgate.telemetry.TelemetryUploader;
 import java.io.File;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * App-facing diagnostics helper: local breadcrumbs, schedule events, crash summary.
- * Never logs package names or PII. Network upload requires remote-management opt-in
- * (or the compile flag) and is only kicked from interactive UI paths.
+ * Never logs package names or PII. Day-batch upload requires remote-management
+ * opt-in (or the compile flag) and runs asynchronously on open / session end —
+ * no scheduled jobs. Closed days upload once; today at most once per day.
  */
 public final class Diag {
     private Diag() {}
@@ -122,49 +126,108 @@ public final class Diag {
         }
     }
 
-    /** Min gap between interactive Intake flushes (session end / Setup). */
+    /** @deprecated Prefer {@link #syncDayBatchesOnOpen}; kept for call-site compatibility. */
     public static final long REMOTE_FLUSH_MIN_GAP_MS = 20_000L;
 
+    private static final AtomicBoolean DAY_BATCH_SYNC_RUNNING = new AtomicBoolean(false);
+
     /**
-     * Build payload + attempt Intake sync (no-op while upload flag / remote opt-in is off),
-     * then pull remote profile settings when sync is enabled.
-     * Call from a background thread when possible (network I/O).
+     * Build full diagnostic payload + optional legacy sync. Day rollups use
+     * {@link #syncDayBatchesOnOpen} instead (accurate per-day upserts).
      */
     public static void flushLocalOnly(Context ctx) {
         try {
-            TelemetryPayload p = buildPayload(ctx);
-            boolean uploaded = TelemetryUploader.maybeUpload(ctx, p);
             AppPrefs prefs = new AppPrefs(ctx);
-            if (uploaded || prefs.isRemoteUploadEnabled()
-                    || BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
+            if (prefs.isRemoteUploadEnabled() || BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
                 RemoteSettingsPull.maybePull(ctx);
             }
-            if (uploaded) {
-                prefs.setLastRemoteFlushAt(System.currentTimeMillis());
-            }
+            prefs.setLastRemoteFlushAt(System.currentTimeMillis());
         } catch (Exception e) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "flush failed", e);
         }
     }
 
     /**
-     * Progress sync only while the app is interactive (quiz unlock / Setup / onboarding).
-     * No WorkManager / idle alarms — if scheduled locks are not firing, absence of
-     * day batches is the signal. Opt-in via remote management prefs or compile flag.
+     * On-open / post-session: asynchronously upload any local day rollups that
+     * have not yet been upserted to Intake. No WorkManager / alarms.
+     * Closed days upload once; today at most once per local calendar day.
+     * Opt-in via remote management (or compile flag).
      */
     public static void flushAfterInteractiveSession(Context ctx) {
+        syncDayBatchesOnOpen(ctx);
+    }
+
+    /** Alias — fire-and-forget day-batch backfill when the UI is interactive. */
+    public static void syncDayBatchesOnOpen(Context ctx) {
         if (ctx == null) return;
         final Context app = ctx.getApplicationContext();
         AppPrefs prefs = new AppPrefs(app);
         if (!prefs.isRemoteUploadEnabled()) return;
-        long now = System.currentTimeMillis();
-        if (now - prefs.getLastRemoteFlushAt() < REMOTE_FLUSH_MIN_GAP_MS) {
-            Log.i(BuildFingerprint.DIAG_LOG_TAG, "intake_flush_throttled");
+        if (!DAY_BATCH_SYNC_RUNNING.compareAndSet(false, true)) {
+            Log.i(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_busy");
             return;
         }
-        // Reserve the slot before the network call so concurrent session ends don't pile up.
-        prefs.setLastRemoteFlushAt(now);
-        new Thread(() -> flushLocalOnly(app), "qg-intake-flush").start();
+        new Thread(() -> {
+            try {
+                runDayBatchSync(app);
+            } finally {
+                DAY_BATCH_SYNC_RUNNING.set(false);
+            }
+        }, "qg-day-batch-sync").start();
+    }
+
+    private static void runDayBatchSync(Context app) {
+        try {
+            AppPrefs prefs = new AppPrefs(app);
+            StatsStore store = stats(app);
+            TimeZone zone = TimeZone.getDefault();
+            long now = System.currentTimeMillis();
+            String today = StatsStore.dayKey(now, zone);
+            java.util.List<StatsStore.DayEntry> entries = store.allDayStats(zone);
+            java.util.List<String> localKeys = new java.util.ArrayList<>();
+            java.util.Map<String, StatsStore.DayStats> byDay = new java.util.HashMap<>();
+            for (StatsStore.DayEntry e : entries) {
+                String k = StatsStore.canonicalDayKey(e.dayKey);
+                localKeys.add(k);
+                byDay.put(k, e.stats);
+            }
+            DayUploadLedger ledger = new DayUploadLedger(store.getDir());
+            java.util.Set<String> uploaded = ledger.load();
+            String todaySnap = prefs.getTodayBatchSnapshotDay();
+            java.util.List<String> need = DayBatchSyncPolicy.daysNeedingUpload(
+                    localKeys, uploaded, today, todaySnap);
+            Log.i(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync need=" + need.size()
+                    + " today=" + today);
+            if (need.isEmpty()) {
+                RemoteSettingsPull.maybePull(app);
+                return;
+            }
+            String uuid = AnonUserId.getOrCreate(app);
+            String curriculum = prefs.getActiveCurriculumId();
+            int ok = 0;
+            for (String day : need) {
+                StatsStore.DayStats rollup = byDay.get(day);
+                if (rollup == null) rollup = new StatsStore.DayStats();
+                boolean uploadedOk = TelemetryUploader.uploadDayBatch(
+                        app, uuid, day, rollup, curriculum);
+                if (!uploadedOk) {
+                    Log.w(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_stop day=" + day);
+                    break;
+                }
+                ok++;
+                if (DayBatchSyncPolicy.isClosedDay(day, today)) {
+                    ledger.markUploaded(day);
+                } else if (day.equals(today)) {
+                    prefs.setTodayBatchSnapshotDay(today);
+                }
+            }
+            prefs.setLastRemoteFlushAt(System.currentTimeMillis());
+            Log.i(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_done ok=" + ok
+                    + "/" + need.size());
+            RemoteSettingsPull.maybePull(app);
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_failed", e);
+        }
     }
 
     public static TelemetryPayload buildPayload(Context ctx) throws Exception {

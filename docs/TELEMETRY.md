@@ -4,7 +4,7 @@ Privacy-safe on-device logging for Play Console crash/ANR triage and optional Cl
 **Compile kill-switch stays OFF** (`BuildFingerprint.TELEMETRY_UPLOAD_ENABLED = false`). Runtime **Share anonymous progress** (onboarding + Parents / Setup) opts in via `remote_management`.
 Intake is **`https://api.quizgate.app`** only (see [`DATA_PLANE.md`](DATA_PLANE.md)).
 
-**When it uploads:** only while the app is interactive — after a quiz session ends (lock unlock or practice) and while Parents/Setup is open (throttled). No WorkManager / idle alarms. If scheduled locks stop firing, day batches simply stop arriving.
+**When it uploads:** asynchronously when the app is open (quiz unlock / practice end / Parents). No WorkManager / idle alarms. Scans `days.jsonl` for rollups not yet upserted: **closed days upload once**; **today at most once per local calendar day**. Weeks/months of backlog are fine — accuracy over frequency. Server keeps one file per uuid+day (last-write-wins).
 
 **Live-debug goal:** structured, queryable fields (reason codes + numerics) so Play bugs and eventual uploads are easy to triage — not vague free-text. Prefer switch/session breadcrumbs over high-frequency sampling (especially in Slim).
 
@@ -81,7 +81,7 @@ Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
   - `last_switch_at` / `last_switch_from` / `last_switch_to`
   - Numerics: `battery_pct`, `charging`, `battery_saver`, `battery_low_broadcast`, `low_ram_device`, `ram_class_mb`, `total_ram_mb`, `cpu_count`, `thermal_severe`
 
-`TelemetryUploader.maybeUpload(ctx, …)` uploads when the compile flag **or** remote-management opt-in is on. `Diag.flushAfterInteractiveSession` is the UI entry point. Fields stay in the local snapshot shape either way.
+`Diag.syncDayBatchesOnOpen` / `flushAfterInteractiveSession` is the UI entry point. It POSTs lean day batches (`day` + `today` counts including lock/play) via `TelemetryUploader.uploadDayBatch`. A local `files/stats/uploaded_days.txt` ledger remembers closed days already sent.
 
 ### Media / overlay breadcrumbs (`kind=media`)
 
@@ -106,6 +106,6 @@ Names, emails, phones, account IDs, precise location, contacts, Wi‑Fi SSIDs, I
 
 1. Intake at `https://api.quizgate.app` + batch writer for `quizgate-users` ([DATA_PLANE.md](DATA_PLANE.md)) — live.
 2. Parent opts in: onboarding **Share anonymous progress**, or Parents checkbox (same pref). Optional parent email registers for admin.quizgate.app.
-3. Interactive flush POSTs JSON to `/v1/users/{uuid}/sync`; Intake stores a **day-batch aggregate** on the cache PVC and enqueues SI. Tip gets profile/settings only — not raw day/event trails.
+3. On-open async sync POSTs each pending day to `/v1/users/{uuid}/sync` (optional `day` for backfill); Intake upserts `{batches}/{day}/{uuid}.json` (LWW). Tip gets profile/settings only.
 4. `RemoteSettingsPull` GETs profile after a successful sync / while opted in.
 5. Keep Play Data safety + privacy policy updated before flipping the compile kill-switch or shipping store builds that advertise remote sync.
