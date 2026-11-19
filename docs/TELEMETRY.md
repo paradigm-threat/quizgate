@@ -49,7 +49,9 @@ SharedPreferences (including optional resume package) are **excluded** from back
 
 ### Quiz event (`events.jsonl`)
 
-`ts`, `session_id`, `type` (`shown`/`correct`/`wrong`/`skipped`/`bypass`/`consoling`), `question_id`, short `choice` (digits/catalog tokens / `true`|`false` only; free-text scrubbed), `miss_streak`, optional `latency_ms`, `curriculum_id`, `session_type` (`play`|`lock`), optional `render_format` (`equation`|`true_false`|`choice` — ask-time UI, not question text).
+`ts`, `session_id`, `type` (`shown`/`correct`/`wrong`/`skipped`/`bypass`/`consoling`), `question_id`, short `choice` (digits/catalog tokens / `true`|`false` only; free-text scrubbed), `miss_streak`, optional `latency_ms`, `curriculum_id`, `session_type` (`play` = voluntary / practice · `lock` = scheduled Hard quiz — **label only**, does not change ability), optional `render_format` (`equation`|`true_false`|`choice` — ask-time UI, not question text).
+
+Day rollups (`days.jsonl`) keep totals plus `asked_lock` / `asked_play` (and right/wrong/skipped splits) so Parents stats and Intake day-batches can tell scheduled vs self-started challenge seeking.
 
 ### Schedule (`schedule.jsonl`)
 
@@ -72,7 +74,7 @@ Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
 - Anonymous `user_uuid` (device-generated capability UUID)
 - Build fingerprint (`versionCode` / `versionName` / git SHA)
 - Coarse device model, locale/tz
-- Permission booleans, today rollup, recent quiz/schedule/exception lines, storage sizes
+- Permission booleans, today rollup (`asked`/`right`/`wrong`/`skipped` plus `*_lock` / `*_play` context), recent quiz/schedule/exception lines, storage sizes
 - Structured **`performance`** block for live debug / future server ingest:
   - `preference` (`auto`|`performance`|`slim`), `effective` (`performance`|`slim`)
   - `auto_reasons` (CSV reason codes)

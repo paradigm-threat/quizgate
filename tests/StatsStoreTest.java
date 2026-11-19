@@ -39,18 +39,33 @@ public class StatsStoreTest {
         Assert.eq(0.5, a.bypassRate(), 0.001, "bypass rate");
 
         long now = System.currentTimeMillis();
-        store.appendEvent(new StatsEvent(now, "d1", "shown", "m01", "", 0), utc);
-        store.appendEvent(new StatsEvent(now + 1, "d1", "wrong", "m01", "9", 1), utc);
-        store.appendEvent(new StatsEvent(now + 2, "d1", "shown", "m02", "", 1), utc);
-        store.appendEvent(new StatsEvent(now + 3, "d1", "correct", "m02", "3", 0), utc);
-        store.appendEvent(new StatsEvent(now + 4, "d1", "shown", "m03", "", 0), utc);
-        store.appendEvent(new StatsEvent(now + 5, "d1", "skipped", "m03", "", 0), utc);
+        store.appendEvent(new StatsEvent(now, "d1", "shown", "m01", "", 0, -1L, "basic-math",
+                StatsStore.SESSION_LOCK), utc);
+        store.appendEvent(new StatsEvent(now + 1, "d1", "wrong", "m01", "9", 1, 100L, "basic-math",
+                StatsStore.SESSION_LOCK), utc);
+        store.appendEvent(new StatsEvent(now + 2, "d1", "shown", "m02", "", 1, -1L, "basic-math",
+                StatsStore.SESSION_PLAY), utc);
+        store.appendEvent(new StatsEvent(now + 3, "d1", "correct", "m02", "3", 0, 50L, "basic-math",
+                StatsStore.SESSION_PLAY), utc);
+        store.appendEvent(new StatsEvent(now + 4, "d1", "shown", "m03", "", 0, -1L, "basic-math",
+                StatsStore.SESSION_LOCK), utc);
+        store.appendEvent(new StatsEvent(now + 5, "d1", "skipped", "m03", "", 0, 0L, "basic-math",
+                StatsStore.SESSION_LOCK), utc);
         StatsStore.DayStats day = store.dayStats(now, utc);
         Assert.eq(3, day.questionsAsked, "day asked");
         Assert.eq(1, day.answeredRight, "day right");
         Assert.eq(1, day.answeredWrong, "day wrong");
         Assert.eq(1, day.skipped, "day skipped");
         Assert.eq(StatsStore.Level.GOOD, day.level(), "day level ~50%");
+        Assert.eq(2, day.askedLock, "asked lock");
+        Assert.eq(1, day.askedPlay, "asked play");
+        Assert.eq(1, day.rightPlay, "right play");
+        Assert.eq(1, day.wrongLock, "wrong lock");
+        Assert.eq(1, day.skippedLock, "skipped lock");
+        Assert.isTrue(day.hasContextSplit(), "context split");
+        Assert.eq(StatsStore.SESSION_PLAY, StatsStore.normalizeSessionType("voluntary"), "alias");
+        Assert.eq(StatsStore.SESSION_LOCK, StatsStore.inferSessionTypeFromTrigger("interval"), "interval→lock");
+        Assert.eq(StatsStore.SESSION_PLAY, StatsStore.inferSessionTypeFromTrigger("play"), "play");
 
         // Historic days survive in days.jsonl even after raw event prune
         long older = now - 3L * 24L * 60L * 60L * 1000L;

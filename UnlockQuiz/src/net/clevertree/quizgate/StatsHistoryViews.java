@@ -88,6 +88,31 @@ final class StatsHistoryViews {
                 String.valueOf(day.skipped),
                 ctx.getString(R.string.stats_skipped_label),
                 color(ctx, R.color.header)));
+
+        if (day.hasContextSplit()) {
+            TextView context = new TextView(ctx);
+            context.setText(ctx.getString(R.string.stats_context_line,
+                    day.askedLock, day.askedPlay));
+            context.setTextColor(color(ctx, R.color.header));
+            context.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            context.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams ctxLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            ctxLp.topMargin = dp(ctx, 10);
+            card.addView(context, ctxLp);
+
+            TextView hint = new TextView(ctx);
+            hint.setText(R.string.stats_context_hint);
+            hint.setTextColor(color(ctx, R.color.header));
+            hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            hint.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            hintLp.topMargin = dp(ctx, 4);
+            card.addView(hint, hintLp);
+        }
         return card;
     }
 

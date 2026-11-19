@@ -137,6 +137,8 @@
     <string name="stats_right_label">right</string>
     <string name="stats_wrong_label">wrong</string>
     <string name="stats_skipped_label">skipped</string>
+    <string name="stats_context_line">Lock %1$d · Practice %2$d</string>
+    <string name="stats_context_hint">Practice means they opened QuizGate themselves (more challenge). Lock is a scheduled quiz.</string>
     <string name="stats_mood_ready">Ready to play!</string>
     <string name="stats_mood_great">Amazing day!</string>
     <string name="stats_mood_good">Nice work!</string>

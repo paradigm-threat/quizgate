@@ -166,6 +166,15 @@ public final class TelemetryPayload {
             sb.append(",\"right\":").append(today.answeredRight);
             sb.append(",\"wrong\":").append(today.answeredWrong);
             sb.append(",\"skipped\":").append(today.skipped);
+            // Lock vs voluntary (play) — behavioral context only; does not gate ability.
+            sb.append(",\"asked_lock\":").append(today.askedLock);
+            sb.append(",\"right_lock\":").append(today.rightLock);
+            sb.append(",\"wrong_lock\":").append(today.wrongLock);
+            sb.append(",\"skipped_lock\":").append(today.skippedLock);
+            sb.append(",\"asked_play\":").append(today.askedPlay);
+            sb.append(",\"right_play\":").append(today.rightPlay);
+            sb.append(",\"wrong_play\":").append(today.wrongPlay);
+            sb.append(",\"skipped_play\":").append(today.skippedPlay);
             sb.append('}');
         }
         appendJsonlArray(sb, "recent_quiz", recentQuiz);

@@ -306,7 +306,7 @@ public class QuizActivity extends Activity {
         unlockExitPrepared = false;
         inTransition = false;
         currentAnswered = false;
-        String sessionType = playMode ? "play" : "lock";
+        String sessionType = playMode ? StatsStore.SESSION_PLAY : StatsStore.SESSION_LOCK;
         Diag.schedule(this, new DiagnosticsStore.ScheduleEvent(
                 clock.nowMillis(), TimeZone.getDefault(), DiagnosticsStore.KIND_QUIZ_STARTED,
                 trigger, sessionType, prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs(),
@@ -1497,7 +1497,7 @@ public class QuizActivity extends Activity {
                 && ("correct".equals(type) || "wrong".equals(type) || "skipped".equals(type))) {
             latency = Math.max(0L, now - questionShownAt);
         }
-        String sessionType = playMode ? "play" : "lock";
+        String sessionType = playMode ? StatsStore.SESSION_PLAY : StatsStore.SESSION_LOCK;
         String curriculumId = prefs.getActiveCurriculumId();
         String trigger = session != null ? session.getTrigger() : "";
         boolean demo = StatsStore.isDemoTrigger(trigger);

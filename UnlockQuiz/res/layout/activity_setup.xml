@@ -214,6 +214,16 @@
                         android:gravity="center"/>
                 </LinearLayout>
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/stats_context"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/header"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:visibility="gone"/>
         </LinearLayout>
 
         <TextView

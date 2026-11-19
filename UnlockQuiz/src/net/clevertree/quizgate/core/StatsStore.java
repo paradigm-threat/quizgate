@@ -9,12 +9,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
 /**
  * Local quiz stats. Raw events/sessions are ring-buffered; per-day rollups in
- * {@code days.jsonl} persist historic asked/right/wrong/skipped within a day cap.
+ * {@code days.jsonl} persist historic asked/right/wrong/skipped within a day cap,
+ * plus lock vs voluntary ({@code play}) splits for behavioral analysis (no ability gate).
  * Paths: {@code files/stats/} (app-private). Never deleted on package replace.
  */
 public final class StatsStore {
@@ -24,10 +26,16 @@ public final class StatsStore {
     public static final long MAX_SESSION_BYTES = 256L * 1024L;
     public static final int MAX_DAY_ROLLUPS = 90;
 
+    /** Scheduled Hard lock quiz (restricts until unlock). */
+    public static final String SESSION_LOCK = "lock";
+    /** Voluntary / practice use (widget, Parents force, icon) — seeking challenge. */
+    public static final String SESSION_PLAY = "play";
+
     private final File dir;
     private final File eventsFile;
     private final File sessionsFile;
     private final File daysFile;
+    private final File contextMarker;
     private final BoundedJsonl eventsLog;
     private final BoundedJsonl sessionsLog;
     private boolean migrated;
@@ -46,6 +54,7 @@ public final class StatsStore {
         this.eventsFile = new File(dir, "events.jsonl");
         this.sessionsFile = new File(dir, "sessions.jsonl");
         this.daysFile = new File(dir, "days.jsonl");
+        this.contextMarker = new File(dir, ".day_context_v1");
         int every = Math.max(1, compactEvery);
         this.eventsLog = new BoundedJsonl(eventsFile, MAX_EVENT_LINES, MAX_EVENT_BYTES, every);
         this.sessionsLog = new BoundedJsonl(sessionsFile, MAX_SESSION_LINES, MAX_SESSION_BYTES, every);
@@ -56,6 +65,21 @@ public final class StatsStore {
     public File getSessionsFile() { return sessionsFile; }
     public File getDaysFile() { return daysFile; }
 
+    /** Normalize to {@link #SESSION_LOCK}, {@link #SESSION_PLAY}, or empty. */
+    public static String normalizeSessionType(String raw) {
+        if (raw == null) return "";
+        String s = raw.trim().toLowerCase(Locale.ROOT);
+        if (s.isEmpty()) return "";
+        if (SESSION_LOCK.equals(s) || "hard".equals(s) || "scheduled".equals(s)) {
+            return SESSION_LOCK;
+        }
+        if (SESSION_PLAY.equals(s) || "practice".equals(s) || "voluntary".equals(s)
+                || "widget".equals(s)) {
+            return SESSION_PLAY;
+        }
+        return "";
+    }
+
     public synchronized void appendEvent(StatsEvent e) throws IOException {
         appendEvent(e, TimeZone.getDefault());
     }
@@ -64,7 +88,8 @@ public final class StatsStore {
         eventsLog.append(e.toJsonLine());
         // Demo/seed traffic (adb_/prime_) stays in events but does not inflate day cards.
         if (e.ts > 0 && isDayCountedType(e.type) && !e.demo) {
-            upsertDayFromEvent(e.ts, zone == null ? TimeZone.getDefault() : zone, e.type);
+            upsertDayFromEvent(e.ts, zone == null ? TimeZone.getDefault() : zone,
+                    e.type, e.sessionType);
         }
     }
 
@@ -77,17 +102,30 @@ public final class StatsStore {
 
     public synchronized void appendSession(QuizSession session) throws IOException {
         boolean demo = isDemoTrigger(session.getTrigger());
+        String sessionType = inferSessionTypeFromTrigger(session.getTrigger());
         String line = "{\"session_id\":\"" + JsonUtil.esc(session.getSessionId()) + "\""
                 + ",\"trigger\":\"" + JsonUtil.esc(TelemetryRedaction.safeToken(session.getTrigger())) + "\""
+                + ",\"session_type\":\"" + JsonUtil.esc(sessionType) + "\""
                 + ",\"started_at\":" + session.getStartedAt()
                 + ",\"ended_at\":" + session.getEndedAt()
-                + ",\"outcome\":\"" + JsonUtil.esc(session.getOutcome().name().toLowerCase()) + "\""
+                + ",\"outcome\":\"" + JsonUtil.esc(session.getOutcome().name().toLowerCase(Locale.ROOT)) + "\""
                 + ",\"wrong_count\":" + session.getMissStreak()
                 + ",\"questions_shown\":" + toJsonArray(session.getQuestionsShown())
                 + ",\"duration_ms\":" + session.durationMs()
                 + (demo ? ",\"demo\":true" : "")
                 + "}";
         sessionsLog.append(line);
+    }
+
+    /**
+     * Map launch trigger → lock vs play. {@code play} / widget are voluntary;
+     * scheduled / wake / interval (and unknown) are lock.
+     */
+    public static String inferSessionTypeFromTrigger(String trigger) {
+        if (trigger == null || trigger.isEmpty()) return SESSION_LOCK;
+        String t = trigger.trim().toLowerCase(Locale.ROOT);
+        if (SESSION_PLAY.equals(t) || "widget".equals(t)) return SESSION_PLAY;
+        return SESSION_LOCK;
     }
 
     public synchronized void compact() throws IOException {
@@ -154,7 +192,8 @@ public final class StatsStore {
                 || "wrong".equals(type) || "skipped".equals(type);
     }
 
-    private void upsertDayFromEvent(long ts, TimeZone zone, String type) throws IOException {
+    private void upsertDayFromEvent(long ts, TimeZone zone, String type, String sessionType)
+            throws IOException {
         ensureMigrated(zone);
         String key = dayKey(ts, zone);
         Map<String, DayStats> map = loadDayRollups();
@@ -163,32 +202,47 @@ public final class StatsStore {
             d = new DayStats();
             map.put(key, d);
         }
-        applyEvent(d, type);
+        applyEvent(d, type, sessionType);
         writeDayRollups(map);
     }
 
     private void ensureMigrated(TimeZone zone) throws IOException {
         if (migrated) return;
         migrated = true;
-        if (daysFile.exists()) return;
+        if (!daysFile.exists()) {
+            rebuildDaysFromEvents(zone);
+            touchContextMarker();
+            return;
+        }
+        // Existing days.jsonl keeps totals; lock/play splits fill in from new events only
+        // (do not rebuild from pruned events — that would drop historic rollups).
+        if (!contextMarker.exists()) touchContextMarker();
+    }
+
+    private void rebuildDaysFromEvents(TimeZone zone) throws IOException {
         Map<String, DayStats> map = new HashMap<>();
         if (eventsFile.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
                 String line;
                 while ((line = br.readLine()) != null) {
+                    if (line.contains("\"demo\":true")) continue;
                     long ts = JsonUtil.extractLong(line, "ts");
                     if (ts <= 0) continue;
+                    String type = JsonUtil.extract(line, "type");
+                    if (!isDayCountedType(type)) continue;
                     String key = dayKey(ts, zone);
                     DayStats d = map.computeIfAbsent(key, k -> new DayStats());
-                    applyEvent(d, JsonUtil.extract(line, "type"));
+                    applyEvent(d, type, JsonUtil.extract(line, "session_type"));
                 }
             }
         }
-        if (!map.isEmpty()) writeDayRollups(map);
-        else {
-            FileWriter fw = new FileWriter(daysFile, false);
-            fw.close();
-        }
+        writeDayRollups(map);
+    }
+
+    private void touchContextMarker() throws IOException {
+        FileWriter fw = new FileWriter(contextMarker, false);
+        fw.write("v1\n");
+        fw.close();
     }
 
     private Map<String, DayStats> loadDayRollups() throws IOException {
@@ -204,6 +258,14 @@ public final class StatsStore {
                 d.answeredRight = (int) Math.max(0, JsonUtil.extractLong(line, "right"));
                 d.answeredWrong = (int) Math.max(0, JsonUtil.extractLong(line, "wrong"));
                 d.skipped = (int) Math.max(0, JsonUtil.extractLong(line, "skipped"));
+                d.askedLock = (int) Math.max(0, JsonUtil.extractLong(line, "asked_lock"));
+                d.rightLock = (int) Math.max(0, JsonUtil.extractLong(line, "right_lock"));
+                d.wrongLock = (int) Math.max(0, JsonUtil.extractLong(line, "wrong_lock"));
+                d.skippedLock = (int) Math.max(0, JsonUtil.extractLong(line, "skipped_lock"));
+                d.askedPlay = (int) Math.max(0, JsonUtil.extractLong(line, "asked_play"));
+                d.rightPlay = (int) Math.max(0, JsonUtil.extractLong(line, "right_play"));
+                d.wrongPlay = (int) Math.max(0, JsonUtil.extractLong(line, "wrong_play"));
+                d.skippedPlay = (int) Math.max(0, JsonUtil.extractLong(line, "skipped_play"));
                 map.put(day, d);
             }
         }
@@ -232,6 +294,22 @@ public final class StatsStore {
                 fw.write(Integer.toString(d.answeredWrong));
                 fw.write(",\"skipped\":");
                 fw.write(Integer.toString(d.skipped));
+                fw.write(",\"asked_lock\":");
+                fw.write(Integer.toString(d.askedLock));
+                fw.write(",\"right_lock\":");
+                fw.write(Integer.toString(d.rightLock));
+                fw.write(",\"wrong_lock\":");
+                fw.write(Integer.toString(d.wrongLock));
+                fw.write(",\"skipped_lock\":");
+                fw.write(Integer.toString(d.skippedLock));
+                fw.write(",\"asked_play\":");
+                fw.write(Integer.toString(d.askedPlay));
+                fw.write(",\"right_play\":");
+                fw.write(Integer.toString(d.rightPlay));
+                fw.write(",\"wrong_play\":");
+                fw.write(Integer.toString(d.wrongPlay));
+                fw.write(",\"skipped_play\":");
+                fw.write(Integer.toString(d.skippedPlay));
                 fw.write("}\n");
             }
         } finally {
@@ -260,14 +338,36 @@ public final class StatsStore {
         d.answeredRight = src.answeredRight;
         d.answeredWrong = src.answeredWrong;
         d.skipped = src.skipped;
+        d.askedLock = src.askedLock;
+        d.rightLock = src.rightLock;
+        d.wrongLock = src.wrongLock;
+        d.skippedLock = src.skippedLock;
+        d.askedPlay = src.askedPlay;
+        d.rightPlay = src.rightPlay;
+        d.wrongPlay = src.wrongPlay;
+        d.skippedPlay = src.skippedPlay;
         return d;
     }
 
-    private static void applyEvent(DayStats d, String type) {
-        if ("shown".equals(type)) d.questionsAsked++;
-        else if ("correct".equals(type)) d.answeredRight++;
-        else if ("wrong".equals(type)) d.answeredWrong++;
-        else if ("skipped".equals(type)) d.skipped++;
+    private static void applyEvent(DayStats d, String type, String sessionType) {
+        String ctx = normalizeSessionType(sessionType);
+        if ("shown".equals(type)) {
+            d.questionsAsked++;
+            if (SESSION_LOCK.equals(ctx)) d.askedLock++;
+            else if (SESSION_PLAY.equals(ctx)) d.askedPlay++;
+        } else if ("correct".equals(type)) {
+            d.answeredRight++;
+            if (SESSION_LOCK.equals(ctx)) d.rightLock++;
+            else if (SESSION_PLAY.equals(ctx)) d.rightPlay++;
+        } else if ("wrong".equals(type)) {
+            d.answeredWrong++;
+            if (SESSION_LOCK.equals(ctx)) d.wrongLock++;
+            else if (SESSION_PLAY.equals(ctx)) d.wrongPlay++;
+        } else if ("skipped".equals(type)) {
+            d.skipped++;
+            if (SESSION_LOCK.equals(ctx)) d.skippedLock++;
+            else if (SESSION_PLAY.equals(ctx)) d.skippedPlay++;
+        }
     }
 
     static int compareDayKeys(String a, String b) {
@@ -312,6 +412,17 @@ public final class StatsStore {
         public int answeredRight;
         public int answeredWrong;
         public int skipped;
+        /** Asked during scheduled lock. */
+        public int askedLock;
+        public int rightLock;
+        public int wrongLock;
+        public int skippedLock;
+        /** Asked during voluntary / practice play. */
+        public int askedPlay;
+        public int rightPlay;
+        public int wrongPlay;
+        public int skippedPlay;
+
         public int answeredTotal() { return answeredRight + answeredWrong; }
         public double successRate() {
             int n = answeredTotal();
@@ -324,6 +435,12 @@ public final class StatsStore {
             if (r >= 0.75) return Level.GREAT;
             if (r >= 0.45) return Level.GOOD;
             return Level.KEEP_TRYING;
+        }
+
+        /** True when any lock/play split was recorded. */
+        public boolean hasContextSplit() {
+            return askedLock + askedPlay + rightLock + rightPlay
+                    + wrongLock + wrongPlay + skippedLock + skippedPlay > 0;
         }
     }
 

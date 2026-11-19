@@ -47,6 +47,7 @@ public class SetupActivity extends Activity {
     private TextView statsRightNum;
     private TextView statsWrongNum;
     private TextView statsSkippedNum;
+    private TextView statsContext;
     private CheckBox syncEnabled;
     private CheckBox remoteManagement;
     private EditText parentEmail;
@@ -91,6 +92,7 @@ public class SetupActivity extends Activity {
         statsRightNum = findViewById(R.id.stats_right_num);
         statsWrongNum = findViewById(R.id.stats_wrong_num);
         statsSkippedNum = findViewById(R.id.stats_skipped_num);
+        statsContext = findViewById(R.id.stats_context);
         syncEnabled = findViewById(R.id.sync_enabled);
         remoteManagement = findViewById(R.id.remote_management);
         parentEmail = findViewById(R.id.parent_email);
@@ -766,6 +768,16 @@ public class SetupActivity extends Activity {
         statsRightNum.setText(String.valueOf(day.answeredRight));
         if (statsWrongNum != null) statsWrongNum.setText(String.valueOf(day.answeredWrong));
         if (statsSkippedNum != null) statsSkippedNum.setText(String.valueOf(day.skipped));
+        if (statsContext != null) {
+            if (day.hasContextSplit()) {
+                statsContext.setVisibility(android.view.View.VISIBLE);
+                statsContext.setText(getString(R.string.stats_context_line,
+                        day.askedLock, day.askedPlay)
+                        + "\n" + getString(R.string.stats_context_hint));
+            } else {
+                statsContext.setVisibility(android.view.View.GONE);
+            }
+        }
         switch (day.level()) {
             case GREAT:
                 statsCard.setBackgroundResource(R.drawable.stats_card_great);
