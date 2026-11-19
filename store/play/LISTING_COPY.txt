@@ -34,7 +34,7 @@ Built for families
 • Closed-loop SI helps curate curriculum packs; parents decide what runs
 
 Our direction (not a recognized nonprofit yet)
-QuizGate is shipped today by Clevertree. We intend to form a dedicated educational nonprofit — separate from Clevertree LLC — if this MVP succeeds. Future donations would fund world-scale curriculum and languages, education-oriented licenses, ongoing content guardrails (age-fit, education-worthy — not controversial topics out of context), practical deployment so families can use the app, and modest access infrastructure. Donations would not unlock features or add ads. Mission: https://quizgate.app/mission
+QuizGate is an educational technique: short age-fit practice unlocks screen time. Clevertree LLC ships the forever-free MVP today. If it succeeds, we intend a dedicated educational nonprofit (working name QuizGate Educational Foundation, Inc.) — separate from Clevertree LLC — to steward that program. Future gifts would fund curriculum and languages, education-oriented licenses, content guardrails, practical deployment, and modest access infrastructure — not a paywall or ads. Mission: https://quizgate.app/mission
 
 Permissions (why we ask)
 • Notifications & exact alarms — scheduled quizzes on your ~40±10 minute window + morning
