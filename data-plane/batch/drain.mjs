@@ -150,6 +150,12 @@ function applyAdminSettings(job) {
   if (patch.performance_preference) {
     profile.settings.performance_preference = String(patch.performance_preference);
   }
+  if (patch.time_earn_cap_minutes != null) {
+    const n = Number(patch.time_earn_cap_minutes);
+    if (Number.isFinite(n) && n >= 1) {
+      profile.settings.time_earn_cap_minutes = Math.min(Math.floor(n), 180);
+    }
+  }
   if (Array.isArray(patch.content_hints)) {
     profile.content_hints = patch.content_hints.slice(-20);
   }

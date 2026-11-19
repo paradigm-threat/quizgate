@@ -103,6 +103,7 @@ export function emptyProfile(uuid) {
       interval_ms: 2_400_000, // 40m
       jitter_ms: 600_000, // ±10m → 30–50m window
       performance_preference: "auto",
+      time_earn_cap_minutes: 120,
     },
     content_hints: [],
     remote_ai: false,

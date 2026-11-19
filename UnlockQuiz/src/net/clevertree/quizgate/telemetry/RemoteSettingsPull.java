@@ -76,6 +76,10 @@ public final class RemoteSettingsPull {
             if (perf != null && !perf.isEmpty()) {
                 prefs.setPerformanceMode(perf);
             }
+            if (settings.has("time_earn_cap_minutes")) {
+                prefs.setTimeEarnCapMinutes(settings.optInt("time_earn_cap_minutes",
+                        prefs.getTimeEarnCapMinutes()));
+            }
         }
         prefs.setLastRemoteProfileAt(System.currentTimeMillis());
         Log.i(BuildFingerprint.DIAG_LOG_TAG, "profile_pull_applied curriculum="

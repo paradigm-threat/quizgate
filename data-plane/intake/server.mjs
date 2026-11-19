@@ -197,6 +197,7 @@ const server = createServer(async (req, res) => {
           interval_ms: body.interval_ms,
           jitter_ms: body.jitter_ms,
           performance_preference: body.performance_preference,
+          time_earn_cap_minutes: body.time_earn_cap_minutes,
           content_hints: body.content_hints,
         },
       });

@@ -34,12 +34,18 @@ describe("admin jobs", () => {
         type: "admin_settings",
         user_uuid: uuid,
         actor: "human_admin",
-        patch: { curriculum_id: "basic-math", interval_ms: 2_700_000, jitter_ms: 900_000 },
+        patch: {
+          curriculum_id: "basic-math",
+          interval_ms: 2_700_000,
+          jitter_ms: 900_000,
+          time_earn_cap_minutes: 90,
+        },
       });
       await drainOnce(4);
       p = loadProfile(uuid);
       assert.equal(p.curriculum_id, "basic-math");
       assert.equal(p.settings.interval_ms, 2_700_000);
+      assert.equal(p.settings.time_earn_cap_minutes, 90);
     } finally {
       delete process.env.QUIZGATE_USERS_ROOT;
       delete process.env.QUIZGATE_QUEUE_DIR;

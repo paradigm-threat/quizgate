@@ -144,6 +144,21 @@ public final class AppPrefs {
     }
 
     /**
+     * Per-session rapid-fire time-earn cap (minutes). Admin-tunable via profile
+     * {@code settings.time_earn_cap_minutes}; clamped in {@link net.clevertree.quizgate.core.TimeEarnPolicy}.
+     */
+    public int getTimeEarnCapMinutes() {
+        int raw = sp.getInt("time_earn_cap_minutes",
+                net.clevertree.quizgate.core.TimeEarnPolicy.DEFAULT_CAP_MINUTES);
+        return net.clevertree.quizgate.core.TimeEarnPolicy.parseCapMinutes(raw);
+    }
+
+    public void setTimeEarnCapMinutes(int minutes) {
+        sp.edit().putInt("time_earn_cap_minutes",
+                net.clevertree.quizgate.core.TimeEarnPolicy.parseCapMinutes(minutes)).apply();
+    }
+
+    /**
      * Legacy helper: previously <em>replaced</em> the schedule with jar minutes (too short).
      * Prefer {@link #takeMinutesBonusMs()} — jar time adds on top of 40±10, never shrinks it.
      */

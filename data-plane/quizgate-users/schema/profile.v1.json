@@ -25,6 +25,12 @@
         "performance_preference": {
           "type": "string",
           "enum": ["auto", "performance", "slim"]
+        },
+        "time_earn_cap_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180,
+          "description": "Rapid-fire time-earn per-session cap (default 120)"
         }
       }
     },
