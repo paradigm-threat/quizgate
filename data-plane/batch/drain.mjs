@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 /**
  * QuizGate batch SI — sole permanent writer of quizgate-users tip.
- * Drains Intake PVC queue; commits profile/events/days as quizgate-batch.
+ * Drains Intake PVC queue; commits profile.json as quizgate-batch.
+ * Day aggregates live on cache PVC batches/ (Intake) — not tip days/events.
  */
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { listPending, leaseJob, completeJob, pendingCount } from "../lib/queue.mjs";
 import {
@@ -14,15 +13,8 @@ import {
   emptyProfile,
   commitUserFiles,
   publishRemotes,
-  readDays,
 } from "../lib/userStore.mjs";
 import { checkInbox, planAdminEmailAction } from "../lib/inboundMail.mjs";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-function dayKey(ts = Date.now()) {
-  return new Date(ts).toISOString().slice(0, 10);
-}
 
 function scoreReadiness(today, recentQuiz) {
   const asked = Number(today?.asked || 0);
@@ -45,37 +37,13 @@ function scoreReadiness(today, recentQuiz) {
   return { score, next_curriculum_id: next, reasons, recent_n: recentQuiz?.length || 0 };
 }
 
-function mergeDayLine(existingLines, today) {
-  if (!today || today.asked == null) return existingLines.join("\n") + (existingLines.length ? "\n" : "");
-  const key = today.day || dayKey();
-  const map = new Map();
-  for (const line of existingLines) {
-    try {
-      const o = JSON.parse(line);
-      if (o.day) map.set(o.day, o);
-    } catch {
-      /* skip */
-    }
-  }
-  map.set(key, {
-    day: key,
-    asked: today.asked,
-    right: today.right,
-    wrong: today.wrong,
-    skipped: today.skipped,
-    updated_at_ms: Date.now(),
-  });
-  return [...map.values()]
-    .sort((a, b) => String(a.day).localeCompare(String(b.day)))
-    .map((o) => JSON.stringify(o))
-    .join("\n") + "\n";
-}
-
 function applyProgressSync(job) {
   const uuid = job.user_uuid;
   if (!isUuid(uuid)) throw new Error("invalid_uuid");
   const p = job.payload || {};
   const profile = loadProfile(uuid) || emptyProfile(uuid);
+  // TODO(SI): score from cache PVC day batches ({QUIZGATE_CACHE_DIR}/batches/{day}/{uuid}.json)
+  // instead of job payload once batch scanner lands — never persist day/event trails on tip.
   const readiness = scoreReadiness(p.today, p.recent_quiz);
   profile.updated_at_ms = Date.now();
   profile.readiness = readiness;
@@ -102,49 +70,13 @@ function applyProgressSync(job) {
     profile.settings.performance_preference = p.performance.preference;
   }
 
-  const eventLines = (p.recent_quiz || [])
-    .slice(-50)
-    .map((line) => {
-      if (typeof line === "string") {
-        try {
-          return JSON.stringify({ ...JSON.parse(line), ingested_at_ms: Date.now() });
-        } catch {
-          return JSON.stringify({ raw: line, ingested_at_ms: Date.now() });
-        }
-      }
-      return JSON.stringify({ ...line, ingested_at_ms: Date.now() });
-    })
-    .join("\n");
-
-  const daysBody = mergeDayLine(readDays(uuid), p.today ? { ...p.today, day: dayKey() } : null);
-
-  const writes = {
-    "profile.json": JSON.stringify(profile, null, 2) + "\n",
-  };
-  if (eventLines) {
-    const prev = existsSync(
-      join(process.env.QUIZGATE_USERS_ROOT || join(__dirname, "../quizgate-users"), "users", uuid, "events.jsonl"),
-    )
-      ? readFileSync(
-          join(
-            process.env.QUIZGATE_USERS_ROOT || join(__dirname, "../quizgate-users"),
-            "users",
-            uuid,
-            "events.jsonl",
-          ),
-          "utf8",
-        )
-      : "";
-    const merged = (prev + (prev.endsWith("\n") || !prev ? "" : "\n") + eventLines + "\n")
-      .split("\n")
-      .filter(Boolean)
-      .slice(-2000)
-      .join("\n") + "\n";
-    writes["events.jsonl"] = merged;
-  }
-  if (daysBody.trim()) writes["days.jsonl"] = daysBody;
-
-  commitUserFiles(uuid, writes, `batch: progress_sync ${uuid}`, SERVICE_ID);
+  // Tip: profile/settings/readiness only — no days.jsonl / events.jsonl (PII-ish time trails).
+  commitUserFiles(
+    uuid,
+    { "profile.json": JSON.stringify(profile, null, 2) + "\n" },
+    `batch: progress_sync ${uuid}`,
+    SERVICE_ID,
+  );
   return { readiness, curriculum_id: profile.curriculum_id, settings: profile.settings };
 }
 

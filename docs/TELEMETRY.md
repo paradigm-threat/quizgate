@@ -102,5 +102,6 @@ Names, emails, phones, account IDs, precise location, contacts, Wi‑Fi SSIDs, I
 
 1. Run Intake at `https://api.quizgate.app` + batch writer for `quizgate-users` ([DATA_PLANE.md](DATA_PLANE.md)).
 2. Flip `BuildFingerprint.TELEMETRY_UPLOAD_ENABLED` to `true` (and/or a remote/prefs gate).
-3. `TelemetryUploader` POSTs JSON to `/v1/users/{uuid}/sync`; `RemoteSettingsPull` GETs profile.
-4. Update Play Data safety + privacy policy before shipping.
+3. `TelemetryUploader` POSTs JSON to `/v1/users/{uuid}/sync`; Intake stores a **day-batch aggregate** on the cache PVC and enqueues SI. Tip gets profile/settings only — not raw day/event trails.
+4. `RemoteSettingsPull` GETs profile.
+5. Update Play Data safety + privacy policy before shipping.

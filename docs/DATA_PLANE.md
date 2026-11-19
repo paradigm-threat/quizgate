@@ -15,8 +15,9 @@ Public hosts are **`*.quizgate.app` only**.
 2. Local stats stay on device ([TELEMETRY.md](TELEMETRY.md)).
 3. Upload is off by default. Runtime **remote management** (Setup) or the compile flag enables POSTs of privacy-safe snapshots to  
    `POST /v1/users/{uuid}/sync` on Intake. Optional parent email registers a hash for human admin.
-4. Intake **caches + enqueues** (PVC). It does **not** commit the tip.
-5. Batch SI drains the queue, writes `users/<uuid>/profile.json|events.jsonl|days.jsonl` as **`quizgate-batch`**, optionally pushes iad1.
+4. Intake **caches + enqueues** (PVC). It does **not** commit the tip. On each sync it also upserts an ephemeral **day batch** under the cache PVC:
+   `{QUIZGATE_CACHE_DIR}/batches/{YYYY-MM-DD}/{uuid}.json` (override root with `QUIZGATE_BATCH_DIR`) — aggregates only (`asked`/`right`/`wrong`/`skipped`), no quiz event trails.
+5. Batch SI drains the queue and writes **`users/<uuid>/profile.json` only** as **`quizgate-batch`** (readiness / curriculum / settings). It does **not** append tip `days.jsonl` / `events.jsonl` (those stay off git). SI will later scan day-batch folders for direction / proficient marks.
 6. App GETs `/v1/users/{uuid}/profile` for curriculum / frequency / performance preference.
 
 Realtime photo / ASR / TTS hit `/v1/users/{uuid}/realtime/{kind}` — results return immediately; tip write only if a follow-up job is enqueued and batch accepts.
@@ -27,7 +28,8 @@ Realtime photo / ASR / TTS hit `/v1/users/{uuid}/realtime/{kind}` — results re
 |------|------|
 | [`data-plane/quizgate-users/`](../data-plane/quizgate-users/) | Relay SoT hooks + schema |
 | [`data-plane/intake/server.mjs`](../data-plane/intake/server.mjs) | Always-on API |
-| [`data-plane/batch/drain.mjs`](../data-plane/batch/drain.mjs) | Sole tip writer |
+| [`data-plane/batch/drain.mjs`](../data-plane/batch/drain.mjs) | Sole tip writer (`profile.json`) |
+| [`data-plane/lib/dayBatch.mjs`](../data-plane/lib/dayBatch.mjs) | Intake day-batch upsert on cache PVC |
 | [`data-plane/batch/checkInbox.mjs`](../data-plane/batch/checkInbox.mjs) | Poll Relay Maildir (same as fleet Inbox) |
 | [`data-plane/lib/inboundMail.mjs`](../data-plane/lib/inboundMail.mjs) | Shared Maildir reader wrapper |
 | [`data-plane/infra/DNS.md`](../data-plane/infra/DNS.md) | DNS / TLS / MX |

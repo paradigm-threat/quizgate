@@ -11,6 +11,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { enqueue, pendingCount, listPending } from "../lib/queue.mjs";
 import { cacheGet, cacheSet, cacheDedupePost } from "../lib/cache.mjs";
+import { writeDayBatch } from "../lib/dayBatch.mjs";
 import {
   isUuid,
   loadProfile,
@@ -287,16 +288,35 @@ const server = createServer(async (req, res) => {
     if (payload.user_uuid && payload.user_uuid !== u.uuid) {
       return json(res, 400, { error: "uuid_mismatch" });
     }
+    const curriculumId =
+      payload.curriculumId ||
+      payload.curriculum_id ||
+      payload.prefs?.curriculum_id ||
+      null;
+    const today = payload.today || null;
+    // Ephemeral day aggregate on cache PVC — never the Relay tip.
+    let day_batch = null;
+    try {
+      day_batch = writeDayBatch(u.uuid, {
+        today,
+        curriculum_id: curriculumId,
+      });
+    } catch (err) {
+      return json(res, 500, {
+        error: "day_batch_write_failed",
+        detail: String(err?.message || err),
+      });
+    }
     const job = enqueue({
       type: "progress_sync",
       user_uuid: u.uuid,
       payload: {
         schema: payload.schemaVersion || payload.schema || 3,
-        today: payload.today || null,
+        today,
         recent_quiz: payload.recentQuiz || payload.recent_quiz || [],
         recent_schedule: payload.recentSchedule || payload.recent_schedule || [],
         performance: payload.performance || null,
-        curriculum_id: payload.curriculumId || payload.curriculum_id || null,
+        curriculum_id: curriculumId,
         interval_ms: payload.intervalMs || payload.interval_ms || null,
         jitter_ms: payload.jitterMs || payload.jitter_ms || null,
         built_at: payload.builtAt || Date.now(),
@@ -315,6 +335,10 @@ const server = createServer(async (req, res) => {
       queued: true,
       job_id: job.id,
       pending_jobs: pendingCount(),
+      day_batch: {
+        day: day_batch.day,
+        sync_count: day_batch.sync_count,
+      },
     };
     cacheSet("sync", `${u.uuid}:${hash}`, result);
     return json(res, 202, result);

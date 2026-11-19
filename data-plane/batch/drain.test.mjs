@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { enqueue } from "../lib/queue.mjs";
@@ -8,7 +8,7 @@ import { loadProfile } from "../lib/userStore.mjs";
 import { drainOnce } from "./drain.mjs";
 
 describe("batch drain", () => {
-  it("writes tip from progress_sync queue job", async () => {
+  it("writes tip profile only from progress_sync (no days/events)", async () => {
     const users = mkdtempSync(join(tmpdir(), "qg-u-"));
     const queue = mkdtempSync(join(tmpdir(), "qg-q-"));
     process.env.QUIZGATE_USERS_ROOT = users;
@@ -33,8 +33,13 @@ describe("batch drain", () => {
       const profile = loadProfile(uuid);
       assert.ok(profile);
       assert.equal(profile.user_uuid, uuid);
+      assert.equal(profile.curriculum_id, "basic-math");
       assert.ok(profile.readiness.score >= 0);
       assert.ok(Array.isArray(profile.readiness.reasons));
+      const userDir = join(users, "users", uuid);
+      assert.ok(existsSync(join(userDir, "profile.json")));
+      assert.equal(existsSync(join(userDir, "days.jsonl")), false);
+      assert.equal(existsSync(join(userDir, "events.jsonl")), false);
     } finally {
       delete process.env.QUIZGATE_USERS_ROOT;
       delete process.env.QUIZGATE_QUEUE_DIR;

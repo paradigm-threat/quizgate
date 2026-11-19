@@ -12,11 +12,12 @@ Relay SoT for anonymized QuizGate progress. **UUID = access** — no user listin
 
 ```
 users/<uuid>/profile.json
-users/<uuid>/days.jsonl
-users/<uuid>/events.jsonl
 ```
 
-Text only. Binaries live on Intake PVC (`cache://…`), never in git.
+Text only. Tip holds curriculum / readiness / settings (and future per-curriculum status).  
+**Do not** commit day rollups or quiz event trails here — those are ephemeral Intake day batches on the cache PVC (`batches/{day}/{uuid}.json`). Legacy `days.jsonl` / `events.jsonl` may exist historically; new drains no longer write them.
+
+Binaries live on Intake PVC (`cache://…`), never in git.
 
 ## Publish
 
