@@ -24,7 +24,23 @@ export function utcDayKey(ts = Date.now()) {
 }
 
 export function dayBatchPath(uuid, day = utcDayKey()) {
-  return join(batchesRoot(), day, `${uuid}.json`);
+  return join(batchesRoot(), assertDayKey(day), `${uuid}.json`);
+}
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Reject path traversal / non-calendar day keys. */
+export function assertDayKey(day) {
+  if (typeof day !== "string" || !DAY_RE.test(day)) {
+    throw new Error("invalid_day");
+  }
+  return day;
+}
+
+function nonNegInt(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(Math.floor(n), 1_000_000);
 }
 
 function normalizeToday(today) {
@@ -32,11 +48,18 @@ function normalizeToday(today) {
     return { asked: 0, right: 0, wrong: 0, skipped: 0 };
   }
   return {
-    asked: Number(today.asked || 0),
-    right: Number(today.right || 0),
-    wrong: Number(today.wrong || 0),
-    skipped: Number(today.skipped || 0),
+    asked: nonNegInt(today.asked),
+    right: nonNegInt(today.right),
+    wrong: nonNegInt(today.wrong),
+    skipped: nonNegInt(today.skipped),
   };
+}
+
+function normalizeCurriculumId(id, fallback = null) {
+  if (id == null) return fallback;
+  const s = String(id).trim().slice(0, 128);
+  if (!s || /[\\/\0]/.test(s)) return fallback;
+  return s;
 }
 
 /**
@@ -45,7 +68,7 @@ function normalizeToday(today) {
  */
 export function writeDayBatch(uuid, { today, curriculum_id, day } = {}) {
   if (!isUuid(uuid)) throw new Error("invalid_uuid");
-  const dayKey = day || utcDayKey();
+  const dayKey = assertDayKey(day || utcDayKey());
   const fp = dayBatchPath(uuid, dayKey);
   mkdirSync(dirname(fp), { recursive: true });
 
@@ -63,13 +86,13 @@ export function writeDayBatch(uuid, { today, curriculum_id, day } = {}) {
     schema: DAY_BATCH_SCHEMA,
     user_uuid: uuid,
     day: dayKey,
-    curriculum_id:
-      curriculum_id != null && String(curriculum_id)
-        ? String(curriculum_id)
-        : prev?.curriculum_id || null,
+    curriculum_id: normalizeCurriculumId(
+      curriculum_id,
+      prev?.curriculum_id || null
+    ),
     today: normalizeToday(today != null ? today : prev?.today),
     received_at_ms: now,
-    sync_count: Number(prev?.sync_count || 0) + 1,
+    sync_count: nonNegInt(prev?.sync_count) + 1,
   };
 
   const tmp = `${fp}.${process.pid}.${now}.tmp`;

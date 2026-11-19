@@ -59,8 +59,11 @@ export QUIZGATE_PUBLISH_REMOTES=git://iad1.relaygateway.net:9418/quizgate-users.
 | `QUIZGATE_USERS_ROOT` | Checkout of tip repo |
 | `QUIZGATE_QUEUE_DIR` | Ephemeral job PVC |
 | `QUIZGATE_CACHE_DIR` | Request + media cache |
+| `QUIZGATE_BATCH_DIR` | Day-batch root (default `$QUIZGATE_CACHE_DIR/batches`) |
 | `QUIZGATE_OPS_SECRET` | Protect `/v1/queue/pending` |
 | `QUIZGATE_PUBLISH_REMOTES` | Comma-separated git:// remotes for batch |
+
+Day aggregates: Intake upserts `{QUIZGATE_BATCH_DIR}/{YYYY-MM-DD}/{uuid}.json` on each `POST …/sync`. Tip stays profile-only; batch drain does not write `days.jsonl` / `events.jsonl`.
 
 ## Sole tip writer
 

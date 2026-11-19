@@ -56,6 +56,26 @@ describe("dayBatch", () => {
     assert.throws(() => writeDayBatch("not-a-uuid", { today: {} }), /invalid_uuid/);
   });
 
+  it("rejects path-like day keys and clamps bad counts", () => {
+    const root = mkdtempSync(join(tmpdir(), "qg-batches-bad-"));
+    process.env.QUIZGATE_BATCH_DIR = root;
+    const uuid = "851f35c3-2432-4e44-81cd-84050a403e50";
+    try {
+      assert.throws(
+        () => writeDayBatch(uuid, { day: "../etc", today: {} }),
+        /invalid_day/
+      );
+      const rec = writeDayBatch(uuid, {
+        day: "2026-11-18",
+        today: { asked: "nope", right: -3, wrong: 1.9, skipped: Infinity },
+      });
+      assert.deepEqual(rec.today, { asked: 0, right: 0, wrong: 1, skipped: 0 });
+    } finally {
+      delete process.env.QUIZGATE_BATCH_DIR;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("utcDayKey is YYYY-MM-DD", () => {
     assert.match(utcDayKey(Date.parse("2026-11-18T23:00:00Z")), /^\d{4}-\d{2}-\d{2}$/);
   });
