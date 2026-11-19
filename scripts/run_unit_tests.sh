@@ -28,6 +28,9 @@ echo "== DiagnosticsStoreTest =="
 java -cp "$OUT" DiagnosticsStoreTest
 echo "== TelemetryRedactionTest =="
 java -cp "$OUT" TelemetryRedactionTest
+echo "== BuildFingerprintTest =="
+java -cp "$OUT" BuildFingerprintTest
+
 echo "== DigitAnswerTest =="
 java -cp "$OUT" DigitAnswerTest
 echo "== QuestionPickerTest =="

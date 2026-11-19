@@ -13,8 +13,8 @@ Public hosts are **`*.quizgate.app` only**.
 
 1. App mints anon UUID (`AnonUserId`) — capability token, no PII.
 2. Local stats stay on device ([TELEMETRY.md](TELEMETRY.md)).
-3. Upload is off by default. Runtime **remote management** (Setup) or the compile flag enables POSTs of privacy-safe snapshots to  
-   `POST /v1/users/{uuid}/sync` on Intake. Optional parent email registers a hash for human admin.
+3. Upload is off by default. Runtime **Share anonymous progress** (onboarding + Parents/Setup `remote_management`) or the compile flag enables POSTs of privacy-safe snapshots to  
+   `POST /v1/users/{uuid}/sync` on Intake — only from interactive quiz/Setup paths (not idle). Optional parent email registers a hash for human admin.
 4. Intake **caches + enqueues** (PVC). It does **not** commit the tip. On each sync it also upserts an ephemeral **day batch** under the cache PVC:
    `{QUIZGATE_CACHE_DIR}/batches/{YYYY-MM-DD}/{uuid}.json` (override root with `QUIZGATE_BATCH_DIR`) — aggregates only (`asked`/`right`/`wrong`/`skipped`), no quiz event trails.
 5. Batch SI drains the queue and writes **`users/<uuid>/profile.json` only** as **`quizgate-batch`** (readiness / curriculum / settings). It does **not** append tip `days.jsonl` / `events.jsonl` (those stay off git). SI will later scan day-batch folders for direction / proficient marks.

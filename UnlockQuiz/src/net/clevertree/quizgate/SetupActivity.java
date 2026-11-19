@@ -424,6 +424,8 @@ public class SetupActivity extends Activity {
         refreshStatus();
         countdownHandler.removeCallbacks(countdownTick);
         countdownHandler.post(countdownTick);
+        // Parents screen is interactive — flush opted-in progress (throttled).
+        Diag.flushAfterInteractiveSession(this);
     }
 
     @Override protected void onPause() {
@@ -663,27 +665,29 @@ public class SetupActivity extends Activity {
         AppPrefs prefs = new AppPrefs(this);
         final boolean enable = remoteManagement != null && remoteManagement.isChecked();
         final String email = parentEmail != null ? parentEmail.getText().toString().trim() : "";
+        prefs.setParentEmail(email);
         if (!enable) {
             prefs.setRemoteManagementEnabled(false);
             Toast.makeText(this, R.string.setup_remote_saved, Toast.LENGTH_SHORT).show();
             return;
         }
+        prefs.setRemoteManagementEnabled(true);
         Toast.makeText(this, "Saving…", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             boolean ok = RemoteRegister.register(SetupActivity.this, true,
                     email.contains("@") ? email : null);
+            // Always attempt progress sync while Parents is open (opt-in already saved).
+            Diag.flushLocalOnly(SetupActivity.this);
+            final boolean registered = ok;
             runOnUiThread(() -> {
-                if (ok) {
+                if (registered) {
                     Toast.makeText(this, R.string.setup_remote_saved, Toast.LENGTH_LONG).show();
                     if (uuidLine != null) {
                         uuidLine.setText(getString(R.string.setup_uuid_line,
                                 AnonUserId.getOrCreate(this))
                                 + "\n" + BuildFingerprint.ADMIN_URL);
                     }
-                    // Pull any existing remote profile after register
-                    Diag.flushLocalOnly(this);
                 } else {
-                    prefs.setRemoteManagementEnabled(true); // local opt-in even if register queued later
                     Toast.makeText(this, R.string.setup_remote_failed, Toast.LENGTH_LONG).show();
                 }
             });

@@ -2,6 +2,7 @@ package net.clevertree.quizgate;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -13,10 +14,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import net.clevertree.quizgate.core.Scheduler;
+import net.clevertree.quizgate.telemetry.RemoteRegister;
 
 /**
  * Skippable first-run intro: welcome → photos → schedule → UI placement →
- * performance → lock explainer (Accessibility Hard) → permissions (one
+ * performance → lock explainer → anonymous progress share → permissions (one
  * ScheduleAuth gap at a time) → Setup.
  */
 public class OnboardingActivity extends Activity {
@@ -27,8 +29,9 @@ public class OnboardingActivity extends Activity {
     private static final int STEP_UI = 3;
     private static final int STEP_PERF = 4;
     private static final int STEP_GATE = 5;
-    private static final int STEP_PERMISSIONS = 6;
-    private static final int STEP_DONE = 7;
+    private static final int STEP_REMOTE = 6;
+    private static final int STEP_PERMISSIONS = 7;
+    private static final int STEP_DONE = 8;
 
     private AppPrefs prefs;
     private TextView title;
@@ -42,6 +45,7 @@ public class OnboardingActivity extends Activity {
     private LinearLayout uiActions;
     private LinearLayout perfActions;
     private LinearLayout gateActions;
+    private LinearLayout remoteActions;
     private LinearLayout permActions;
     private TextView intervalValue;
     private TextView jitterValue;
@@ -52,6 +56,8 @@ public class OnboardingActivity extends Activity {
     private String draftPerfMode = PerformanceMode.AUTO;
     private long draftIntervalMs = Scheduler.DEFAULT_INTERVAL_MS;
     private long draftJitterMs = Scheduler.DEFAULT_JITTER_MS;
+    /** Parent opted into anonymous Intake progress share (default off). */
+    private boolean draftRemoteShare = false;
     /** Gap currently shown on the permissions step (NONE when all granted). */
     private ScheduleAuth.Gap currentPermGap = ScheduleAuth.Gap.NONE;
 
@@ -75,6 +81,7 @@ public class OnboardingActivity extends Activity {
         uiActions = findViewById(R.id.onboard_ui_actions);
         perfActions = findViewById(R.id.onboard_perf_actions);
         gateActions = findViewById(R.id.onboard_gate_actions);
+        remoteActions = findViewById(R.id.onboard_remote_actions);
         permActions = findViewById(R.id.onboard_perm_actions);
         intervalValue = findViewById(R.id.onboard_interval_value);
         jitterValue = findViewById(R.id.onboard_jitter_value);
@@ -118,6 +125,14 @@ public class OnboardingActivity extends Activity {
         if (btnSlim != null) {
             btnSlim.setOnClickListener(v -> choosePerfAndContinue(PerformanceMode.SLIM));
         }
+        View btnRemoteShare = findViewById(R.id.btn_onboard_remote_share);
+        View btnRemoteLocal = findViewById(R.id.btn_onboard_remote_local);
+        if (btnRemoteShare != null) {
+            btnRemoteShare.setOnClickListener(v -> chooseRemoteAndContinue(true));
+        }
+        if (btnRemoteLocal != null) {
+            btnRemoteLocal.setOnClickListener(v -> chooseRemoteAndContinue(false));
+        }
         if (permAllow != null) {
             permAllow.setOnClickListener(v -> allowCurrentPermission());
         }
@@ -155,6 +170,9 @@ public class OnboardingActivity extends Activity {
             choosePerfAndContinue(draftPerfMode);
         } else if (step == STEP_GATE) {
             chooseGateAndContinue();
+        } else if (step == STEP_REMOTE) {
+            // Continue without tapping a button keeps progress local.
+            chooseRemoteAndContinue(false);
         } else if (step == STEP_DONE) {
             finishOnboarding(pendingPhotoSource, false);
         } else {
@@ -196,6 +214,16 @@ public class OnboardingActivity extends Activity {
     private void chooseGateAndContinue() {
         // Hard-only: persist early so permission walk includes Accessibility.
         prefs.setGateMode(GateMode.HARD);
+        goRemote();
+    }
+
+    private void goRemote() {
+        step = STEP_REMOTE;
+        showStep();
+    }
+
+    private void chooseRemoteAndContinue(boolean share) {
+        draftRemoteShare = share;
         goPermissions();
     }
 
@@ -251,6 +279,7 @@ public class OnboardingActivity extends Activity {
         if (uiActions != null) uiActions.setVisibility(View.GONE);
         if (perfActions != null) perfActions.setVisibility(View.GONE);
         if (gateActions != null) gateActions.setVisibility(View.GONE);
+        if (remoteActions != null) remoteActions.setVisibility(View.GONE);
         if (permActions != null) permActions.setVisibility(View.GONE);
         next.setVisibility(View.VISIBLE);
         if (step == STEP_WELCOME) {
@@ -284,6 +313,11 @@ public class OnboardingActivity extends Activity {
             if (gateActions != null) gateActions.setVisibility(View.GONE);
             next.setVisibility(View.VISIBLE);
             next.setText(R.string.onboard_continue);
+        } else if (step == STEP_REMOTE) {
+            title.setText(R.string.onboard_remote_title);
+            body.setText(R.string.onboard_remote_body);
+            if (remoteActions != null) remoteActions.setVisibility(View.VISIBLE);
+            next.setVisibility(View.GONE);
         } else if (step == STEP_PERMISSIONS) {
             showPermissionStep();
         } else if (step == STEP_DONE) {
@@ -406,6 +440,7 @@ public class OnboardingActivity extends Activity {
             prefs.setUiPlacement(AppPrefs.UI_PLACEMENT_TOP);
             prefs.setPerformanceMode(PerformanceMode.AUTO);
             prefs.setGateMode(GateMode.HARD);
+            // Skip leaves progress local unless they already chose Share.
         } else {
             prefs.setIntervalMs(draftIntervalMs);
             prefs.setJitterMs(draftJitterMs);
@@ -413,10 +448,18 @@ public class OnboardingActivity extends Activity {
             prefs.setPerformanceMode(draftPerfMode);
             prefs.setGateMode(GateMode.HARD);
         }
+        prefs.setRemoteManagementEnabled(draftRemoteShare);
         try {
             PerformanceMode.reevaluate(this, "onboarding");
         } catch (Exception ignored) {}
         prefs.setOnboardingDone(true);
+        if (draftRemoteShare) {
+            final Context app = getApplicationContext();
+            new Thread(() -> {
+                RemoteRegister.register(app, true, null);
+                Diag.flushLocalOnly(app);
+            }, "qg-onboard-remote").start();
+        }
         // First-run: parents arm on Setup; later launches open play quiz
         goSetup();
     }

@@ -311,15 +311,27 @@ const server = createServer(async (req, res) => {
       type: "progress_sync",
       user_uuid: u.uuid,
       payload: {
-        schema: payload.schemaVersion || payload.schema || 3,
+        schema:
+          payload.schemaVersion ||
+          payload.schema_version ||
+          payload.schema ||
+          3,
         today,
         recent_quiz: payload.recentQuiz || payload.recent_quiz || [],
         recent_schedule: payload.recentSchedule || payload.recent_schedule || [],
         performance: payload.performance || null,
         curriculum_id: curriculumId,
-        interval_ms: payload.intervalMs || payload.interval_ms || null,
-        jitter_ms: payload.jitterMs || payload.jitter_ms || null,
-        built_at: payload.builtAt || Date.now(),
+        interval_ms:
+          payload.intervalMs ||
+          payload.interval_ms ||
+          payload.prefs?.interval_ms ||
+          null,
+        jitter_ms:
+          payload.jitterMs ||
+          payload.jitter_ms ||
+          payload.prefs?.jitter_ms ||
+          null,
+        built_at: payload.builtAt || payload.built_at || Date.now(),
       },
       skills: ["readiness", "frequency", "curriculum"],
     });

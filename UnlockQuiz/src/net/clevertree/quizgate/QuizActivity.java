@@ -1407,6 +1407,8 @@ public class QuizActivity extends Activity {
             Diag.compactLocal(this);
         }
         AlarmScheduler.scheduleAfterSessionEnd(this);
+        // Active quiz UI only — no idle/background upload.
+        Diag.flushAfterInteractiveSession(this);
         // Do not ForegroundApp.restore() here — that would steal focus mid-celebration.
         // Restore runs in completeUnlockExit when the party has had its hold time.
         Log.i(AlarmScheduler.TAG, "unlock exit prepared during celebration");
@@ -1469,6 +1471,7 @@ public class QuizActivity extends Activity {
             if (PerformanceMode.isSlim(prefs)) {
                 Diag.compactLocal(this);
             }
+            Diag.flushAfterInteractiveSession(this);
             AppPrefs clear = new AppPrefs(this);
             clear.setResumePackage(null);
             clear.setResumeClass(null);

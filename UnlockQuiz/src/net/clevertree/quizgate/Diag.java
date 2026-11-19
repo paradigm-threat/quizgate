@@ -24,7 +24,8 @@ import java.util.TimeZone;
 
 /**
  * App-facing diagnostics helper: local breadcrumbs, schedule events, crash summary.
- * Never logs package names or PII. Upload is a no-op until the feature flag flips.
+ * Never logs package names or PII. Network upload requires remote-management opt-in
+ * (or the compile flag) and is only kicked from interactive UI paths.
  */
 public final class Diag {
     private Diag() {}
@@ -121,9 +122,13 @@ public final class Diag {
         }
     }
 
+    /** Min gap between interactive Intake flushes (session end / Setup). */
+    public static final long REMOTE_FLUSH_MIN_GAP_MS = 20_000L;
+
     /**
-     * Build payload + attempt Intake sync (no-op while upload flag is false),
+     * Build payload + attempt Intake sync (no-op while upload flag / remote opt-in is off),
      * then pull remote profile settings when sync is enabled.
+     * Call from a background thread when possible (network I/O).
      */
     public static void flushLocalOnly(Context ctx) {
         try {
@@ -134,9 +139,32 @@ public final class Diag {
                     || BuildFingerprint.TELEMETRY_UPLOAD_ENABLED) {
                 RemoteSettingsPull.maybePull(ctx);
             }
+            if (uploaded) {
+                prefs.setLastRemoteFlushAt(System.currentTimeMillis());
+            }
         } catch (Exception e) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "flush failed", e);
         }
+    }
+
+    /**
+     * Progress sync only while the app is interactive (quiz unlock / Setup / onboarding).
+     * No WorkManager / idle alarms — if scheduled locks are not firing, absence of
+     * day batches is the signal. Opt-in via remote management prefs or compile flag.
+     */
+    public static void flushAfterInteractiveSession(Context ctx) {
+        if (ctx == null) return;
+        final Context app = ctx.getApplicationContext();
+        AppPrefs prefs = new AppPrefs(app);
+        if (!prefs.isRemoteUploadEnabled()) return;
+        long now = System.currentTimeMillis();
+        if (now - prefs.getLastRemoteFlushAt() < REMOTE_FLUSH_MIN_GAP_MS) {
+            Log.i(BuildFingerprint.DIAG_LOG_TAG, "intake_flush_throttled");
+            return;
+        }
+        // Reserve the slot before the network call so concurrent session ends don't pile up.
+        prefs.setLastRemoteFlushAt(now);
+        new Thread(() -> flushLocalOnly(app), "qg-intake-flush").start();
     }
 
     public static TelemetryPayload buildPayload(Context ctx) throws Exception {

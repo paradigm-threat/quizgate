@@ -66,6 +66,10 @@ public class DiagnosticsStoreTest {
         String json = p.toJson();
         Assert.isTrue(json.contains("\"schema_version\":" + net.clevertree.quizgate.core.BuildFingerprint.SCHEMA_VERSION),
                 "schema");
+        Assert.isTrue(json.contains("\"schemaVersion\":" + net.clevertree.quizgate.core.BuildFingerprint.SCHEMA_VERSION),
+                "schema camel");
+        Assert.isTrue(json.contains("\"curriculumId\":") || json.contains("\"curriculum_id\":"),
+                "curriculum dual keys");
         Assert.isTrue(json.contains("\"performance\":"), "performance block");
         Assert.isTrue(json.contains("\"upload_enabled\":false"), "upload off");
         Assert.isTrue(json.contains("recent_schedule"), "has schedule");

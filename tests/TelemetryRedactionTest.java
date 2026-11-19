@@ -4,6 +4,7 @@ import net.clevertree.quizgate.core.TelemetryRedaction;
 public class TelemetryRedactionTest {
     public static void main(String[] args) {
         Assert.isTrue(!BuildFingerprint.TELEMETRY_UPLOAD_ENABLED, "upload default off");
+        Assert.isTrue(BuildFingerprint.uploadAllowed(true), "runtime opt-in allows upload");
         Assert.eq("QuizGateDiag", BuildFingerprint.DIAG_LOG_TAG, "diag tag");
         Assert.eq(3, BuildFingerprint.SCHEMA_VERSION, "schema");
 

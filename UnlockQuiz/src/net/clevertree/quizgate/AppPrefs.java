@@ -449,4 +449,13 @@ public final class AppPrefs {
     public void setLastRemoteRegisterAt(long ms) {
         sp.edit().putLong("last_remote_register_at", Math.max(0L, ms)).apply();
     }
+
+    /** Last interactive Intake progress flush (ms). Used only for client throttle. */
+    public long getLastRemoteFlushAt() {
+        return sp.getLong("last_remote_flush_at", 0L);
+    }
+
+    public void setLastRemoteFlushAt(long ms) {
+        sp.edit().putLong("last_remote_flush_at", Math.max(0L, ms)).apply();
+    }
 }

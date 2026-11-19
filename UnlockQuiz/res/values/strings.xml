@@ -93,8 +93,8 @@
     <string name="setup_window_label">Next quiz between</string>
     <string name="setup_minutes_label">Minutes jar</string>
     <string name="setup_sync_label">Auto-sync curricula (Wi‑Fi only)</string>
-    <string name="setup_remote_label">Enable remote management</string>
-    <string name="setup_remote_help">Turns on AI sync to api.quizgate.app. Optional parent email unlocks human admin at admin.quizgate.app (UUID + email + 2FA). Email is stored only as a hash.</string>
+    <string name="setup_remote_label">Share anonymous progress</string>
+    <string name="setup_remote_help">When on, QuizGate sends today\'s asked/right/wrong/skipped (and schedule health) to api.quizgate.app only while a quiz or Parents is open — not in the background. Optional parent email unlocks human admin at admin.quizgate.app (UUID + email + 2FA). Email is stored only as a hash. Change anytime here.</string>
     <string name="setup_parent_email_hint">Parent email (optional, for human admin)</string>
     <string name="setup_remote_save">Save remote management</string>
     <string name="setup_remote_saved">Remote management updated</string>
@@ -125,6 +125,10 @@
     <string name="onboard_perf_slim">Slim</string>
     <string name="onboard_gate_title">Quizzes stay until answered</string>
     <string name="onboard_gate_body">When a scheduled quiz opens, it stays on screen until your child answers (or you open Parents).\n\nAccessibility keeps the quiz on top if they tap Home or switch apps. You will turn on QuizGate under Accessibility next.\n\nPractice from the home-screen score widget or Parents is unlocked — Home leaves freely.</string>
+    <string name="onboard_remote_title">Share progress?</string>
+    <string name="onboard_remote_body">Optionally send anonymous daily counts (asked / right / wrong / skipped) to QuizGate so we can improve curricula. No names, emails, or question text.\n\nUpdates go only while a quiz or Parents is open — not while the tablet sits idle. If quizzes stop firing, we simply stop seeing new counts.\n\nYou can change this later under Parents.</string>
+    <string name="onboard_remote_share">Share anonymous progress</string>
+    <string name="onboard_remote_local">Keep progress on this tablet</string>
     <string name="setup_curriculum_label">Curriculum</string>
     <string name="setup_tier_label">Tier / age band</string>
     <string name="setup_sync_now">Sync now</string>

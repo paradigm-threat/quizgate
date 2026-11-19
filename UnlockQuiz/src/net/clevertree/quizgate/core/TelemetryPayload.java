@@ -103,9 +103,16 @@ public final class TelemetryPayload {
 
     public String toJson() {
         StringBuilder sb = new StringBuilder(768);
+        // Dual keys so Intake accepts either camelCase smoke clients or APK snake_case.
         sb.append("{\"schema_version\":").append(schemaVersion);
+        sb.append(",\"schemaVersion\":").append(schemaVersion);
         sb.append(",\"built_at\":").append(builtAt);
+        sb.append(",\"builtAt\":").append(builtAt);
         sb.append(",\"user_uuid\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(nullToEmpty(userUuid)))).append('"');
+        sb.append(",\"curriculum_id\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(curriculumId))).append('"');
+        sb.append(",\"curriculumId\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(curriculumId))).append('"');
+        sb.append(",\"interval_ms\":").append(intervalMs);
+        sb.append(",\"jitter_ms\":").append(jitterMs);
         sb.append(",\"build\":{");
         sb.append("\"version_code\":").append(versionCode);
         sb.append(",\"version_name\":\"").append(JsonUtil.esc(TelemetryRedaction.safeToken(versionName))).append('"');

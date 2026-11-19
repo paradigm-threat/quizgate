@@ -26,7 +26,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks wake/reintercept relaunch; pending cleared; FSI notif cancelled. Screen-off during grace cancels alarms but does not pend; wake restores schedule (no second jail). Next quiz only after normal interval or a later screen-off→wake past grace |
 | Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
-| Stats | `files/stats/` capped JSONL; day rollups 90d; upload OFF |
+| Stats | `files/stats/` capped JSONL; day rollups 90d; Intake sync opt-in (`remote_management`) interactive-only |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |
 | Quiz UI | Pref `ui_placement` top (default) / bottom as initial anchor; critical column is 2D-pannable with snap-back so answers stay reachable |
 | Curriculum | bundled `basic-math` v4 (add / subtract / light multiply; division later) |
@@ -36,7 +36,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 - [`README.md`](README.md) — build, install, behavior overview
 - [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — Auto / Performance / Slim
 - [`docs/TELEMETRY.md`](docs/TELEMETRY.md) — diagnostics paths + payload (live-debug)
-- [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — `api.quizgate.app` Intake + `quizgate-users` Relay tip (upload OFF until publish)
+- [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — `api.quizgate.app` Intake + `quizgate-users` Relay tip (compile upload flag OFF; runtime opt-in)
 - [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md)
 - [`docs/CURRICULUM.md`](docs/CURRICULUM.md) · [`docs/WIDGET.md`](docs/WIDGET.md)
 
