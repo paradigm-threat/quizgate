@@ -565,7 +565,7 @@ public class QuizActivity extends Activity {
         bg.setStroke(dp(3), Color.parseColor("#1A3A4A"));
         btn.setBackground(bg);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-        lp.setMargins(dp(20), dp(land ? 8 : 12), dp(20), dp(land ? 8 : 12));
+        lp.setMargins(dp(12), dp(land ? 4 : 8), dp(12), dp(land ? 4 : 8));
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
         btn.setContentDescription(PresentedQuestion.CHOICE_TRUE.equals(choice)
@@ -580,10 +580,6 @@ public class QuizActivity extends Activity {
      */
     private void applyUiPlacement() {
         final boolean bottom = prefs != null && prefs.isUiBottom();
-        if (quizPan != null) {
-            quizPan.setAnchorBottom(bottom);
-            quizPan.resetPan(false);
-        }
         if (quizStatsBar != null) {
             FrameLayout.LayoutParams lp = quizStatsBar.getLayoutParams() instanceof FrameLayout.LayoutParams
                     ? (FrameLayout.LayoutParams) quizStatsBar.getLayoutParams()
@@ -592,32 +588,62 @@ public class QuizActivity extends Activity {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.gravity = bottom ? Gravity.TOP | Gravity.CENTER_HORIZONTAL
                     : Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-            lp.leftMargin = dp(16);
-            lp.rightMargin = dp(16);
-            lp.topMargin = dp(12);
-            lp.bottomMargin = dp(12);
+            // Tight margins — large pads + pan clamp previously hid the question in portrait.
+            lp.leftMargin = dp(8);
+            lp.rightMargin = dp(8);
+            lp.topMargin = dp(8);
+            lp.bottomMargin = dp(8);
             quizStatsBar.setLayoutParams(lp);
+            quizStatsBar.post(this::syncPanEdgeReserves);
+        }
+        if (quizPan != null) {
+            quizPan.setAnchorBottom(bottom);
+            syncPanEdgeReserves();
+            quizPan.resetPan(false);
+        }
+    }
+
+    /** Keep the quiz column out from under the stats chrome. */
+    private void syncPanEdgeReserves() {
+        if (quizPan == null) return;
+        int reserve = dp(56);
+        if (quizStatsBar != null && quizStatsBar.getHeight() > 0) {
+            ViewGroup.MarginLayoutParams mlp = quizStatsBar.getLayoutParams()
+                    instanceof ViewGroup.MarginLayoutParams
+                    ? (ViewGroup.MarginLayoutParams) quizStatsBar.getLayoutParams()
+                    : null;
+            int margins = mlp == null ? dp(16) : mlp.topMargin + mlp.bottomMargin;
+            reserve = quizStatsBar.getHeight() + margins;
+        }
+        boolean bottom = prefs != null && prefs.isUiBottom();
+        if (bottom) {
+            quizPan.setEdgeReservesPx(reserve, 0);
+        } else {
+            quizPan.setEdgeReservesPx(0, reserve);
         }
     }
 
     private void buildDigitPad() {
         // rows: 1 2 3 / 4 5 6 / 7 8 9 / Clear 0 OK
-        // Landscape: compact keys so the pad fits on short screens.
+        // Compact keys on short/narrow viewports so the pad never forces the
+        // question off-screen (portrait tablets were worst).
         boolean land = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-        int keyH = land ? dp(48) : dp(68);
-        int keySp = land ? 22 : 28;
-        int clearSp = land ? 15 : 18;
-        int keyMargin = land ? dp(4) : dp(6);
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        boolean compact = land || screenH < dp(700) || screenW < dp(420);
+        int keyH = compact ? dp(48) : dp(64);
+        int keySp = compact ? 22 : 28;
+        int clearSp = compact ? 15 : 18;
+        int keyMargin = compact ? dp(3) : dp(4);
         int[][] rows = {
                 {1, 2, 3},
                 {4, 5, 6},
                 {7, 8, 9},
                 {-1, 0, -2} // -1 clear, -2 enter/OK
         };
-        // Cap width and keep the pad centered horizontally.
-        int screenW = getResources().getDisplayMetrics().widthPixels;
-        int padW = Math.min(screenW - dp(48), dp(land ? 520 : 720));
+        // Near full-bleed width — avoid nested side pads that made options look narrow.
+        int padW = Math.max(dp(200), screenW - dp(8));
         LinearLayout.LayoutParams padLp = new LinearLayout.LayoutParams(
                 padW, LinearLayout.LayoutParams.WRAP_CONTENT);
         padLp.gravity = Gravity.CENTER_HORIZONTAL;
@@ -687,7 +713,7 @@ public class QuizActivity extends Activity {
         btn.setBackground(bg);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(72));
-        lp.setMargins(dp(8), dp(10), dp(8), dp(10));
+        lp.setMargins(dp(4), dp(6), dp(4), dp(6));
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
         return btn;

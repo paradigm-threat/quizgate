@@ -13,22 +13,19 @@ import android.view.ViewConfiguration;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 
+import net.clevertree.quizgate.core.QuizLayoutPolicy;
+
 /**
  * 2D pannable host for the critical quiz column. Children can be dragged
  * anywhere on the page; translation is rubber-banded past the usable region
  * and snapped back on release so answer controls stay reachable.
  *
  * <p>Top/Bottom preference only sets the initial vertical anchor — pan is the
- * primary way to clear overlays.
+ * primary way to clear overlays. Pan limits are edge-based (see
+ * {@link QuizLayoutPolicy}) so tall portrait panels do not shove the question
+ * off-screen.
  */
 public final class QuizPanView extends FrameLayout {
-    /**
-     * Keep the panel center at least this far inside the viewport so answer
-     * controls cannot sit fully off an edge.
-     */
-    private static final int CENTER_INSET_DP = 96;
-    /** Soft overscroll past the hard clamp while dragging. */
-    private static final float RUBBER = 0.35f;
     private static final long SNAP_MS = 240L;
 
     private final int touchSlop;
@@ -43,6 +40,8 @@ public final class QuizPanView extends FrameLayout {
     private float lastY;
     private boolean dragging;
     private boolean anchorBottom;
+    private int topReservePx;
+    private int bottomReservePx;
     private VelocityTracker velocityTracker;
     private ValueAnimator snapAnim;
 
@@ -58,9 +57,14 @@ public final class QuizPanView extends FrameLayout {
         super(context, attrs, defStyleAttr);
         setClipChildren(false);
         setClipToPadding(false);
+        // No host padding — padding here shrinks the column and was stacking with
+        // nested panel pads until portrait looked narrow / obscured.
+        setPadding(0, 0, 0, 0);
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         minVisiblePx = Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, CENTER_INSET_DP, getResources().getDisplayMetrics()));
+                TypedValue.COMPLEX_UNIT_DIP,
+                QuizLayoutPolicy.DEFAULT_MIN_VISIBLE_PX,
+                getResources().getDisplayMetrics()));
     }
 
     /** Prefer packing the panel toward the bottom (false = top, default). */
@@ -73,6 +77,19 @@ public final class QuizPanView extends FrameLayout {
 
     public boolean isAnchorBottom() {
         return anchorBottom;
+    }
+
+    /**
+     * Reserve edges for sibling chrome (stats bar) so the question never lays
+     * out underneath it.
+     */
+    public void setEdgeReservesPx(int topPx, int bottomPx) {
+        int t = Math.max(0, topPx);
+        int b = Math.max(0, bottomPx);
+        if (t == topReservePx && b == bottomReservePx) return;
+        topReservePx = t;
+        bottomReservePx = b;
+        requestLayout();
     }
 
     /** Clear pan offset and re-anchor (optionally animated). */
@@ -96,22 +113,21 @@ public final class QuizPanView extends FrameLayout {
             if (child.getVisibility() == GONE) continue;
             int cw = child.getMeasuredWidth();
             int ch = child.getMeasuredHeight();
-            int childLeft = (w - cw) / 2;
-            int childTop = anchorBottom
-                    ? Math.max(0, h - ch - getPaddingBottom())
-                    : getPaddingTop();
-            // Leave a little room for the stats bar when bottom-anchored.
-            if (anchorBottom) {
-                childTop = Math.max(0, childTop - dp(72));
-            } else {
-                childTop = Math.min(childTop + dp(8), Math.max(0, h - ch));
-            }
+            int childLeft = QuizLayoutPolicy.initialChildLeft(w, cw);
+            int childTop = QuizLayoutPolicy.initialChildTop(
+                    anchorBottom, h, ch, topReservePx, bottomReservePx);
             child.layout(childLeft, childTop, childLeft + cw, childTop + ch);
         }
-        // Re-clamp after size/orientation changes so content stays recoverable.
-        float[] clamped = clamp(panX, panY, false);
-        panX = clamped[0];
-        panY = clamped[1];
+        // After size/orientation changes, rest at a readable pan (usually 0,0).
+        View content = contentChild();
+        if (content != null && w > 0 && h > 0) {
+            float[] rest = QuizLayoutPolicy.restingPan(w, h,
+                    content.getLeft(), content.getTop(),
+                    content.getRight(), content.getBottom(),
+                    minVisiblePx, anchorBottom);
+            panX = rest[0];
+            panY = rest[1];
+        }
         applyPan();
     }
 
@@ -120,8 +136,8 @@ public final class QuizPanView extends FrameLayout {
         int w = MeasureSpec.getSize(widthMeasureSpec);
         int h = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(w, h);
-        int childWSpec = MeasureSpec.makeMeasureSpec(Math.max(0, w - getPaddingLeft() - getPaddingRight()),
-                MeasureSpec.AT_MOST);
+        // EXACTLY full width — AT_MOST let nested wrap shrink the column in portrait.
+        int childWSpec = MeasureSpec.makeMeasureSpec(Math.max(0, w), MeasureSpec.EXACTLY);
         int childHSpec = MeasureSpec.makeMeasureSpec(Math.max(0, h), MeasureSpec.AT_MOST);
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
@@ -203,7 +219,6 @@ public final class QuizPanView extends FrameLayout {
                         vx = velocityTracker.getXVelocity();
                         vy = velocityTracker.getYVelocity();
                     }
-                    // Light fling projection, then snap into the hard usable region.
                     float projectedX = panX + vx / 8f;
                     float projectedY = panY + vy / 8f;
                     float[] hard = clamp(projectedX, projectedY, false);
@@ -232,59 +247,17 @@ public final class QuizPanView extends FrameLayout {
         }
     }
 
-    /**
-     * @param soft when true, allow rubber-band past the hard usable region while dragging
-     */
     private float[] clamp(float x, float y, boolean soft) {
         View child = contentChild();
         if (child == null || getWidth() == 0 || getHeight() == 0) {
             return new float[] { x, y };
         }
-        int parentW = getWidth();
-        int parentH = getHeight();
-        // Clamp so the panel's center stays inside the viewport (with inset).
-        // Full-width panels would otherwise allow "45% visible" while the
-        // centered answer keys sit completely off-screen.
-        float cx = (child.getLeft() + child.getRight()) * 0.5f;
-        float cy = (child.getTop() + child.getBottom()) * 0.5f;
-        float insetX = Math.min(minVisiblePx, parentW * 0.5f);
-        float insetY = Math.min(minVisiblePx, parentH * 0.5f);
-        float minX = insetX - cx;
-        float maxX = parentW - insetX - cx;
-        float minY = insetY - cy;
-        float maxY = parentH - insetY - cy;
-        if (minX > maxX) {
-            float mid = (minX + maxX) / 2f;
-            minX = maxX = mid;
-        }
-        if (minY > maxY) {
-            float mid = (minY + maxY) / 2f;
-            minY = maxY = mid;
-        }
-
-        if (!soft) {
-            return new float[] {
-                    Math.max(minX, Math.min(maxX, x)),
-                    Math.max(minY, Math.min(maxY, y))
-            };
-        }
-
-        // Rubber-band: ease past the edge so the child never fully vanishes mid-drag.
-        float softX = rubber(x, minX, maxX);
-        float softY = rubber(y, minY, maxY);
-        return new float[] { softX, softY };
-    }
-
-    private static float rubber(float v, float min, float max) {
-        if (v < min) {
-            float over = min - v;
-            return min - over * RUBBER;
-        }
-        if (v > max) {
-            float over = v - max;
-            return max + over * RUBBER;
-        }
-        return v;
+        QuizLayoutPolicy.PanLimits lim = QuizLayoutPolicy.panLimits(
+                getWidth(), getHeight(),
+                child.getLeft(), child.getTop(),
+                child.getRight(), child.getBottom(),
+                minVisiblePx);
+        return QuizLayoutPolicy.clampPan(x, y, lim, soft);
     }
 
     private void animateTo(float targetX, float targetY) {
@@ -344,10 +317,5 @@ public final class QuizPanView extends FrameLayout {
             velocityTracker.recycle();
             velocityTracker = null;
         }
-    }
-
-    private int dp(int dp) {
-        return Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics()));
     }
 }

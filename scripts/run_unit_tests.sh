@@ -47,5 +47,7 @@ echo "== CurriculumParserTest =="
 java -cp "$OUT" CurriculumParserTest "$ROOT/UnlockQuiz/assets/curricula/basic-math"
 echo "== TimeEarnTest =="
 java -cp "$OUT" TimeEarnTest
+echo "== QuizLayoutPolicyTest =="
+java -cp "$OUT" QuizLayoutPolicyTest
 
 echo "ALL UNIT TESTS PASSED"

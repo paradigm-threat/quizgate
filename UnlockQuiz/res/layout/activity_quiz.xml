@@ -24,19 +24,17 @@
         android:id="@+id/quiz_pan"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp">
+        android:padding="0dp">
 
+        <!-- No host/panel padding: nested pads made portrait narrow and let the
+             pan clamp shove the question off-screen under the stats bar. -->
         <LinearLayout
             android:id="@+id/quiz_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:padding="0dp">
 
             <TextView
                 android:id="@+id/header"
@@ -53,13 +51,10 @@
                 android:id="@+id/question_balloon"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp">
+                android:padding="0dp">
 
                 <TextView
                     android:id="@+id/spoken"
@@ -73,7 +68,7 @@
                     android:id="@+id/symbolic"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:textColor="@color/symbolic"
                     android:textSize="36sp"
                     android:textStyle="bold"
@@ -84,12 +79,12 @@
                     android:id="@+id/digit_answer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="4dp"
                     android:textColor="@color/accent_dark"
                     android:textSize="44sp"
                     android:textStyle="bold"
                     android:gravity="center"
-                    android:minHeight="56dp"
+                    android:minHeight="48dp"
                     android:visibility="gone"/>
             </LinearLayout>
 
@@ -99,7 +94,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:layout_marginTop="16dp"/>
+                android:layout_marginTop="8dp"/>
 
             <LinearLayout
                 android:id="@+id/digit_pad"
@@ -107,8 +102,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="0dp"
                 android:visibility="gone"/>
 
             <!-- Available for every ask format; counts as a skip then shows another. -->
@@ -116,12 +111,12 @@
                 android:id="@+id/btn_skip_question"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="4dp"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="0dp"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:text="@string/quiz_skip"
                 android:textColor="@color/header"
                 android:textSize="16sp"
@@ -138,16 +133,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginBottom="12dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingLeft="14dp"
-        android:paddingRight="14dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:background="@drawable/stats_card_ready"
         android:elevation="4dp">
 
