@@ -48,18 +48,19 @@ That continual worldwide curriculum + compliance work is why donations matter la
 
 Checklist: [`docs/TODO.md`](TODO.md). Fold PR/handoff TODOs into that file.
 
-## Phase 1 — Educational record + public intent (now)
-1. Mission / “Why this exists” + **nonprofit intent** on quizgate.app (and `/mission`).
-2. Play listing copy states forever-free + nonprofit direction if MVP succeeds.
-3. Pedagogy doc: objectives, age bands, time-earn mastery design.
-4. Surface no-tracking / no-ads / no-IAP on the site.
-5. Soft ask later: support educational expansion (curriculum, licenses, guardrails) — not paywalls.
+## Phase 1 — Educational record + public intent (now) — **done in-repo**
+1. ~~Mission / nonprofit intent on quizgate.app~~ → `/mission`
+2. ~~Play listing draft~~ → `store/play/LISTING_COPY.txt`
+3. ~~Pedagogy~~ → `docs/PEDAGOGY.md` + `/pedagogy`
+4. ~~Forever-free / no ads / no IAP on site~~
+5. ~~Soft support path (no fake receipts)~~ → `/support`
 
 ## Phase 2 — Form nonprofit when ready (near term, before Form 1023)
+**Drafts** in [`docs/nonprofit/`](nonprofit/). Humans still must:
 1. Legal name + Georgia registered agent.
-2. Articles (educational purpose + dissolution language).
-3. Bylaws + conflict-of-interest policy; 3+ directors.
-4. IP license/assignment from Clevertree LLC.
+2. File Articles (educational purpose + dissolution language).
+3. Adopt bylaws + conflict-of-interest policy; 3+ directors.
+4. Sign IP license/assignment from Clevertree LLC.
 5. Nonprofit bank account; EIN.
 
 ## Phase 3 — Federal exemption (later)

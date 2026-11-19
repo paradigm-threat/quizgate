@@ -40,6 +40,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 - [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — `api.quizgate.app` Intake + `quizgate-users` Relay tip (compile upload flag OFF; runtime opt-in)
 - [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md)
 - [`docs/CURRICULUM.md`](docs/CURRICULUM.md) · [`docs/WIDGET.md`](docs/WIDGET.md)
+- [`docs/PEDAGOGY.md`](docs/PEDAGOGY.md) · [`docs/501C3_PLAN.md`](docs/501C3_PLAN.md) · [`docs/TODO.md`](docs/TODO.md) · [`docs/nonprofit/`](docs/nonprofit/) — educational nonprofit (Form 1023 later)
 
 ## Device smoke (manual)
 

@@ -43,7 +43,7 @@ Permissions (why we ask)
 • Usage access (optional) — pause media during a quiz and return to the app your child was just using
 • Battery unrestricted — so the schedule stays reliable on some devices
 
-QuizGate is open source. Privacy: https://quizgate.app/privacy · Mission: https://quizgate.app/mission
+QuizGate is open source. Privacy: https://quizgate.app/privacy · Mission: https://quizgate.app/mission · Pedagogy: https://quizgate.app/pedagogy · Support: https://quizgate.app/support
 
 
 APP CATEGORY

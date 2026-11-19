@@ -19,35 +19,37 @@ place. Do not leave parallel TODO lists that diverge from `docs/TODO.md`.
 - [x] clevertree/quizgate **public** (GitLab)
 - [x] paradigm-threat/clevertree-chat **public**
 - [x] myproblem + clevertree-site confirmed **public**
-- [ ] Keep secret stores private (`clevertree-chat-auth`, etc.)
+- [x] Keep secret stores private (`clevertree-chat-auth`, etc.) — policy noted; do not flip auth repos public
 
 ## Phase 1 — Now (public intent + educational record)
 - [x] Mission / nonprofit-intent copy on quizgate.app (`/` + `/mission`)
 - [x] Play listing draft states forever-free + nonprofit direction (`store/play/LISTING_COPY.txt`)
-- [ ] Pedagogy doc: learning objectives per pack, age bands, time-earn mastery design
-- [ ] Soft “support the mission” path (no fake 501c3 receipts until recognized)
-- [ ] Collect usage stats / parent-teacher feedback as MVP grows
+- [x] Pedagogy doc + site page (`docs/PEDAGOGY.md`, `/pedagogy`)
+- [x] Soft support path — no fake 501c3 receipts (`/support`)
+- [x] Feedback channel for parents/teachers (email + GitHub issues on `/support`)
+- [ ] Collect usage stats / testimonials as MVP grows (ongoing after Play)
 
 ## Phase 2 — Near term (form entity; still before Form 1023)
-- [ ] Choose legal name + Georgia registered agent
-- [ ] File Articles of Incorporation (Georgia nonprofit)
-- [ ] Adopt bylaws + conflict-of-interest policy
-- [ ] Appoint 3+ directors (prefer independence from LLC owners alone)
-- [ ] Written IP license/assignment: QuizGate from Clevertree LLC → nonprofit
-- [ ] Open nonprofit bank account; obtain EIN
+In-repo **drafts** ready under [`docs/nonprofit/`](nonprofit/). Humans must file/sign:
+- [x] Draft name options, Articles, bylaws, COI, IP license term sheet
+- [ ] **Human:** choose legal name + Georgia registered agent ([`nonprofit/HUMAN_NEXT_STEPS.md`](nonprofit/HUMAN_NEXT_STEPS.md))
+- [ ] **Human:** file Articles of Incorporation (Georgia nonprofit)
+- [ ] **Human:** adopt bylaws + COI; appoint 3+ directors
+- [ ] **Human:** sign IP license/assignment (Clevertree LLC → nonprofit)
+- [ ] **Human:** open nonprofit bank account; obtain EIN
 
 ## Phase 3 — Later (federal exemption)
 - [ ] Confirm 1023-EZ eligibility
 - [ ] **File** Form 1023-EZ or full 1023 when fundraising is real
-- [ ] Financial projections: donations for curriculum research, licenses, guardrails, deployment/access — not product paywalls
-- [ ] Narrative: QuizGate only; no MyProblem; no “LLC converted”
+- [ ] Financial projections for educational expansion
+- [ ] Narrative: QuizGate only
 
 ## Phase 4 — When soliciting donations
 - [ ] GA charitable solicitation registration
 - [ ] Annual renewal reminder
 
 ## Risk Watch
-- [ ] Never claim current 501(c)(3) status before the determination letter
-- [ ] No paid tiers or ads on QuizGate
-- [ ] Document arm’s-length LLC↔nonprofit IP deals
-- [ ] Donations = educational expansion (languages, curricula, legal licenses, guardrails, hardware/deployment, access servers) — not Relay geo-vision
+- [x] Public copy never claims current 501(c)(3) status
+- [x] Forever-free / no ads / no IAP stated on site + Play draft
+- [ ] Document arm’s-length LLC↔nonprofit IP when signing
+- [x] Donation purpose = curriculum, licenses, guardrails, deployment/access — not Relay geo-vision
