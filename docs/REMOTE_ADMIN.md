@@ -6,7 +6,7 @@ Public hosts: **`*.quizgate.app` only**.
 |------|------|
 | https://admin.quizgate.app | Parent/human admin UI (UUID + email + 2FA) |
 | https://api.quizgate.app | Intake: register, OTP, stats, settings patch |
-| App Setup | “Enable remote management” + optional parent email |
+| App Setup | "Enable remote management" + optional parent email |
 
 ## Model
 
@@ -15,7 +15,7 @@ Public hosts: **`*.quizgate.app` only**.
 3. Optional **parent email** → server stores `sha256(pepper:email:uuid)` only — never plaintext email on the tip.
 4. Human login: must know UUID **and** email matching the hash → 6-digit code via `clevertreellc@gmail.com` SMTP → session token.
 5. **No user directory / search.** Wrong UUID → generic failure.
-6. Stats are read-only in admin; curriculum / interval / jitter / performance preference are writable (queued `admin_settings` → `quizgate-batch`).
+6. Stats are read-only in admin; curriculum / interval / jitter / performance preference / **time earn cap** (`time_earn_cap_minutes`, default 120) are writable (queued `admin_settings` → `quizgate-batch`). See [`TIME_EARN.md`](TIME_EARN.md).
 7. App periodically pulls `profile.json` when remote upload is enabled.
 
 ## SMTP (2FA)
