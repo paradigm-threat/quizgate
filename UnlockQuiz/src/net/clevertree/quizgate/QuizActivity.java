@@ -185,7 +185,7 @@ public class QuizActivity extends Activity {
         quizPan = findViewById(R.id.quiz_pan);
         quizPanel = findViewById(R.id.quiz_panel);
         quizStatsBar = findViewById(R.id.quiz_stats_bar);
-        applyUiPlacement();
+        applyQuizChrome();
         quizStatsMood = findViewById(R.id.quiz_stats_mood);
         quizStatsAsked = findViewById(R.id.quiz_stats_asked);
         quizStatsRight = findViewById(R.id.quiz_stats_right);
@@ -301,7 +301,7 @@ public class QuizActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         OverlayGate.onFocus(this);
-        applyUiPlacement();
+        applyQuizChrome();
         if (browsingStats) browsingStats = false;
     }
 
@@ -575,20 +575,17 @@ public class QuizActivity extends Activity {
     }
 
     /**
-     * Initial Top/Bottom anchor from parent preference. Kids can then pan the
-     * question UI freely in 2D; {@link QuizPanView} snaps back if dragged too far.
+     * Stats chrome at the bottom; quiz column centered in the remaining band.
+     * Kids can still pan in 2D; {@link QuizPanView} snaps back if dragged too far.
      */
-    private void applyUiPlacement() {
-        final boolean bottom = prefs != null && prefs.isUiBottom();
+    private void applyQuizChrome() {
         if (quizStatsBar != null) {
             FrameLayout.LayoutParams lp = quizStatsBar.getLayoutParams() instanceof FrameLayout.LayoutParams
                     ? (FrameLayout.LayoutParams) quizStatsBar.getLayoutParams()
                     : new FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.gravity = bottom ? Gravity.TOP | Gravity.CENTER_HORIZONTAL
-                    : Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-            // Tight margins — large pads + pan clamp previously hid the question in portrait.
+            lp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
             lp.leftMargin = dp(8);
             lp.rightMargin = dp(8);
             lp.topMargin = dp(8);
@@ -597,13 +594,12 @@ public class QuizActivity extends Activity {
             quizStatsBar.post(this::syncPanEdgeReserves);
         }
         if (quizPan != null) {
-            quizPan.setAnchorBottom(bottom);
             syncPanEdgeReserves();
             quizPan.resetPan(false);
         }
     }
 
-    /** Keep the quiz column out from under the stats chrome. */
+    /** Keep the quiz column out from under the bottom stats chrome. */
     private void syncPanEdgeReserves() {
         if (quizPan == null) return;
         int reserve = dp(56);
@@ -615,12 +611,7 @@ public class QuizActivity extends Activity {
             int margins = mlp == null ? dp(16) : mlp.topMargin + mlp.bottomMargin;
             reserve = quizStatsBar.getHeight() + margins;
         }
-        boolean bottom = prefs != null && prefs.isUiBottom();
-        if (bottom) {
-            quizPan.setEdgeReservesPx(reserve, 0);
-        } else {
-            quizPan.setEdgeReservesPx(0, reserve);
-        }
+        quizPan.setEdgeReservesPx(0, reserve);
     }
 
     private void buildDigitPad() {

@@ -29,7 +29,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Stats | `files/stats/` capped JSONL; day rollups 90d; Intake sync opt-in (`remote_management`) interactive-only |
 | Time earn | Standalone rapid-fire jar minutes: `TimeEarnPolicy` bands + session cap (default 120m, admin `time_earn_cap_minutes`); play success **Earn more time** when remaining &lt; cap |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |
-| Quiz UI | Pref `ui_placement` top (default) / bottom as initial anchor; full-bleed column (no host pad); edge-based pan + stats reserve so portrait never hides the question (`QuizLayoutPolicy`) |
+| Quiz UI | Centered in the usable band (stats reserved at bottom); full-bleed column; 2D pan with snap-back; overlays via MediaGate + OverlayGate — not placement skew (`QuizLayoutPolicy`) |
 | Curriculum | bundled `basic-math` v4 (add / subtract / light multiply; division later) |
 
 ## Key docs

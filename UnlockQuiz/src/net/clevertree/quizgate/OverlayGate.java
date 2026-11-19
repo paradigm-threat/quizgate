@@ -19,8 +19,8 @@ import android.view.WindowManager;
  *   <li>Immersive sticky + high-priority fullscreen layout so the quiz owns the display.</li>
  * </ol>
  *
- * <p>Layout placement (top/bottom) is a parent preference — this class does not
- * reserve corners or chase PiP position. System PiP cannot be force-closed.
+ * <p>Quiz UI is centered; this class does not reserve corners or chase PiP
+ * position. System PiP cannot be force-closed — kids can pan the quiz column.
  *
  * <p>Does not add a new Appear-on-top requirement; {@code SYSTEM_ALERT_WINDOW} remains
  * launch-only (BAL). {@code HIDE_OVERLAY_WINDOWS} is a normal install-time permission.

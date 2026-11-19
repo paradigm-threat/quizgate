@@ -16,14 +16,10 @@ import android.widget.FrameLayout;
 import net.clevertree.quizgate.core.QuizLayoutPolicy;
 
 /**
- * 2D pannable host for the critical quiz column. Children can be dragged
- * anywhere on the page; translation is rubber-banded past the usable region
- * and snapped back on release so answer controls stay reachable.
- *
- * <p>Top/Bottom preference only sets the initial vertical anchor — pan is the
- * primary way to clear overlays. Pan limits are edge-based (see
- * {@link QuizLayoutPolicy}) so tall portrait panels do not shove the question
- * off-screen.
+ * 2D pannable host for the critical quiz column. Children are vertically
+ * centered in the usable band; kids can drag anywhere and snap back so answer
+ * controls stay reachable. Overlay/PiP clearance is MediaGate + OverlayGate —
+ * this view does not skew to top/bottom.
  */
 public final class QuizPanView extends FrameLayout {
     private static final long SNAP_MS = 240L;
@@ -39,7 +35,6 @@ public final class QuizPanView extends FrameLayout {
     private float lastX;
     private float lastY;
     private boolean dragging;
-    private boolean anchorBottom;
     private int topReservePx;
     private int bottomReservePx;
     private VelocityTracker velocityTracker;
@@ -57,26 +52,12 @@ public final class QuizPanView extends FrameLayout {
         super(context, attrs, defStyleAttr);
         setClipChildren(false);
         setClipToPadding(false);
-        // No host padding — padding here shrinks the column and was stacking with
-        // nested panel pads until portrait looked narrow / obscured.
         setPadding(0, 0, 0, 0);
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         minVisiblePx = Math.round(TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 QuizLayoutPolicy.DEFAULT_MIN_VISIBLE_PX,
                 getResources().getDisplayMetrics()));
-    }
-
-    /** Prefer packing the panel toward the bottom (false = top, default). */
-    public void setAnchorBottom(boolean bottom) {
-        if (anchorBottom == bottom) return;
-        anchorBottom = bottom;
-        requestLayout();
-        resetPan(false);
-    }
-
-    public boolean isAnchorBottom() {
-        return anchorBottom;
     }
 
     /**
@@ -92,7 +73,7 @@ public final class QuizPanView extends FrameLayout {
         requestLayout();
     }
 
-    /** Clear pan offset and re-anchor (optionally animated). */
+    /** Clear pan offset and re-center (optionally animated). */
     public void resetPan(boolean animate) {
         cancelSnap();
         if (!animate || (panX == 0f && panY == 0f)) {
@@ -115,16 +96,15 @@ public final class QuizPanView extends FrameLayout {
             int ch = child.getMeasuredHeight();
             int childLeft = QuizLayoutPolicy.initialChildLeft(w, cw);
             int childTop = QuizLayoutPolicy.initialChildTop(
-                    anchorBottom, h, ch, topReservePx, bottomReservePx);
+                    h, ch, topReservePx, bottomReservePx);
             child.layout(childLeft, childTop, childLeft + cw, childTop + ch);
         }
-        // After size/orientation changes, rest at a readable pan (usually 0,0).
         View content = contentChild();
         if (content != null && w > 0 && h > 0) {
             float[] rest = QuizLayoutPolicy.restingPan(w, h,
                     content.getLeft(), content.getTop(),
                     content.getRight(), content.getBottom(),
-                    minVisiblePx, anchorBottom);
+                    minVisiblePx);
             panX = rest[0];
             panY = rest[1];
         }
@@ -136,7 +116,6 @@ public final class QuizPanView extends FrameLayout {
         int w = MeasureSpec.getSize(widthMeasureSpec);
         int h = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(w, h);
-        // EXACTLY full width — AT_MOST let nested wrap shrink the column in portrait.
         int childWSpec = MeasureSpec.makeMeasureSpec(Math.max(0, w), MeasureSpec.EXACTLY);
         int childHSpec = MeasureSpec.makeMeasureSpec(Math.max(0, h), MeasureSpec.AT_MOST);
         for (int i = 0; i < getChildCount(); i++) {

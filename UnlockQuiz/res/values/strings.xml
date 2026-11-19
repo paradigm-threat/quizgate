@@ -102,15 +102,6 @@
     <string name="setup_remote_saved">Remote management updated</string>
     <string name="setup_remote_failed">Could not reach api.quizgate.app</string>
     <string name="setup_uuid_line">Device UUID: %1$s</string>
-    <string name="setup_ui_placement_label">Quiz UI placement</string>
-    <string name="setup_ui_placement_top">Top (default)</string>
-    <string name="setup_ui_placement_bottom">Bottom</string>
-    <string name="setup_ui_placement_top_detail">Starts the question near the top. Kids can drag it anywhere; it snaps back if pulled too far off-screen.</string>
-    <string name="setup_ui_placement_bottom_detail">Starts the question near the bottom. Kids can drag it anywhere; it snaps back if pulled too far off-screen.</string>
-    <string name="onboard_ui_title">Quiz UI placement</string>
-    <string name="onboard_ui_body">Where should the question start?\n\n• Top — recommended. Starts near the top of the screen.\n• Bottom — starts near the bottom instead.\n\nKids can drag the question anywhere to clear a video or sticky finger. It snaps back if it goes too far. Change this later under Parents.</string>
-    <string name="onboard_ui_top">Top (recommended)</string>
-    <string name="onboard_ui_bottom">Bottom</string>
     <string name="setup_perf_label">Performance mode</string>
     <string name="setup_perf_auto">Auto (recommended)</string>
     <string name="setup_perf_performance">Performance</string>

@@ -4,9 +4,9 @@ package net.clevertree.quizgate.core;
  * Pure layout math for the quiz column: keep question + answers readable at any
  * viewport size / orientation. Used by {@code QuizPanView} and JVM regression tests.
  *
- * <p>Previously, pan limits were center-based and collapsed to a midpoint when the
- * panel was taller than the screen — that shoved the question off the top in
- * portrait while the stats bar (a sibling view) still looked fine.
+ * <p>The column is vertically centered in the usable band (viewport minus stats
+ * reserves). When the panel is taller than that band, it pins to the top of the
+ * band so the question stays on-screen — never top/bottom parent skew.
  */
 public final class QuizLayoutPolicy {
 
@@ -57,7 +57,7 @@ public final class QuizLayoutPolicy {
     /**
      * Edge-based pan limits: keep at least {@code minVisiblePx} of the child
      * overlapping the parent on each axis. When the child is larger than the
-     * parent, {@code pan = 0} with a top-left anchored child stays valid so the
+     * parent, {@code pan = 0} with a top-pinned tall child stays valid so the
      * question remains on-screen.
      */
     public static PanLimits panLimits(int parentW, int parentH,
@@ -68,7 +68,6 @@ public final class QuizLayoutPolicy {
             return new PanLimits(0f, 0f, 0f, 0f);
         }
         int inset = Math.max(1, Math.min(minVisiblePx, Math.min(parentW, parentH) / 2));
-        // After translation t: edge' = edge + t. Require overlap ≥ inset.
         float minX = inset - childRight;
         float maxX = parentW - inset - childLeft;
         float minY = inset - childBottom;
@@ -122,19 +121,18 @@ public final class QuizLayoutPolicy {
 
     /**
      * Initial Y for the quiz panel inside the usable band (viewport minus
-     * reserved stats / system edges). Top anchor pins to {@code topReserve};
-     * bottom anchor packs above {@code bottomReserve}.
+     * reserved stats / system edges). Centers when the child fits; when taller
+     * than the band, pins to {@code topReserve} so the question stays visible.
      */
-    public static int initialChildTop(boolean anchorBottom, int parentH, int childH,
+    public static int initialChildTop(int parentH, int childH,
                                       int topReserve, int bottomReserve) {
         if (parentH <= 0) return 0;
         int top = Math.max(0, topReserve);
         int bottom = Math.max(top, parentH - Math.max(0, bottomReserve));
+        int usable = bottom - top;
         if (childH <= 0) return top;
-        if (anchorBottom) {
-            return Math.max(top, bottom - childH);
-        }
-        return top;
+        if (childH >= usable) return top;
+        return top + (usable - childH) / 2;
     }
 
     /** Horizontal center for a full-width (or nearly full-width) child. */
@@ -161,14 +159,13 @@ public final class QuizLayoutPolicy {
     }
 
     /**
-     * True when enough of the content intersects the viewport and the top of a
-     * tall top-anchored panel has not been shoved off-screen.
+     * True when enough of the content intersects the viewport. Tall panels must
+     * keep the question (top) near the top of the screen.
      */
     public static boolean isReadable(int parentW, int parentH,
                                      int childLeft, int childTop,
                                      int childRight, int childBottom,
-                                     float panX, float panY,
-                                     boolean anchorBottom) {
+                                     float panX, float panY) {
         if (parentW <= 0 || parentH <= 0) return false;
         int cw = childRight - childLeft;
         int ch = childBottom - childTop;
@@ -182,35 +179,27 @@ public final class QuizLayoutPolicy {
         float denom = Math.min(contentArea, viewportArea);
         if (denom <= 0f || overlap / denom < MIN_OVERLAP_FRACTION) return false;
 
-        // Tall top-anchored panels: question lives at the top — keep it in view.
-        if (!anchorBottom && ch >= parentH) {
+        if (ch >= parentH) {
             if (bounds.top > DEFAULT_MIN_VISIBLE_PX) return false;
-        }
-        // Tall bottom-anchored: keep the bottom (answers) reachable.
-        if (anchorBottom && ch >= parentH) {
-            if (bounds.bottom < parentH - DEFAULT_MIN_VISIBLE_PX) return false;
         }
         return true;
     }
 
     /**
      * Default pan after layout/orientation change: prefer 0,0 when readable,
-     * otherwise clamp into limits (never center-shove a tall panel).
+     * otherwise pin so the top of a tall panel stays in view.
      */
     public static float[] restingPan(int parentW, int parentH,
                                      int childLeft, int childTop,
                                      int childRight, int childBottom,
-                                     int minVisiblePx,
-                                     boolean anchorBottom) {
+                                     int minVisiblePx) {
         PanLimits lim = panLimits(parentW, parentH, childLeft, childTop,
                 childRight, childBottom, minVisiblePx);
         float[] zero = clampPan(0f, 0f, lim, false);
         if (isReadable(parentW, parentH, childLeft, childTop, childRight, childBottom,
-                zero[0], zero[1], anchorBottom)) {
+                zero[0], zero[1])) {
             return zero;
         }
-        // Prefer pinning the critical edge into view.
-        float y = anchorBottom ? lim.maxY : lim.minY;
-        return clampPan(zero[0], y, lim, false);
+        return clampPan(zero[0], lim.minY, lim, false);
     }
 }

@@ -189,33 +189,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/onboard_ui_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/btn_onboard_ui_top"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:backgroundTint="@color/accent"
-                android:text="@string/onboard_ui_top"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-
-            <Button
-                android:id="@+id/btn_onboard_ui_bottom"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/symbolic"
-                android:text="@string/onboard_ui_bottom"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-        </LinearLayout>
-
-        <LinearLayout
             android:id="@+id/onboard_perf_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

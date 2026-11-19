@@ -17,21 +17,20 @@ import net.clevertree.quizgate.core.Scheduler;
 import net.clevertree.quizgate.telemetry.RemoteRegister;
 
 /**
- * Skippable first-run intro: welcome → photos → schedule → UI placement →
- * performance → lock explainer → anonymous progress share → permissions (one
- * ScheduleAuth gap at a time) → Setup.
+ * Skippable first-run intro: welcome → photos → schedule → performance →
+ * lock explainer → anonymous progress share → permissions (one ScheduleAuth
+ * gap at a time) → Setup. Quiz UI is always centered (no placement step).
  */
 public class OnboardingActivity extends Activity {
     private static final int REQ_PHOTOS = 41;
     private static final int STEP_WELCOME = 0;
     private static final int STEP_PHOTOS = 1;
     private static final int STEP_SCHEDULE = 2;
-    private static final int STEP_UI = 3;
-    private static final int STEP_PERF = 4;
-    private static final int STEP_GATE = 5;
-    private static final int STEP_REMOTE = 6;
-    private static final int STEP_PERMISSIONS = 7;
-    private static final int STEP_DONE = 8;
+    private static final int STEP_PERF = 3;
+    private static final int STEP_GATE = 4;
+    private static final int STEP_REMOTE = 5;
+    private static final int STEP_PERMISSIONS = 6;
+    private static final int STEP_DONE = 7;
 
     private AppPrefs prefs;
     private TextView title;
@@ -42,7 +41,6 @@ public class OnboardingActivity extends Activity {
     private Button permLater;
     private LinearLayout photoActions;
     private LinearLayout scheduleActions;
-    private LinearLayout uiActions;
     private LinearLayout perfActions;
     private LinearLayout gateActions;
     private LinearLayout remoteActions;
@@ -52,7 +50,6 @@ public class OnboardingActivity extends Activity {
     private TextView windowValue;
     private int step;
     private String pendingPhotoSource = PhotoLibrary.SOURCE_BUNDLED;
-    private String draftUiPlacement = AppPrefs.UI_PLACEMENT_TOP;
     private String draftPerfMode = PerformanceMode.AUTO;
     private long draftIntervalMs = Scheduler.DEFAULT_INTERVAL_MS;
     private long draftJitterMs = Scheduler.DEFAULT_JITTER_MS;
@@ -78,7 +75,6 @@ public class OnboardingActivity extends Activity {
         permLater = findViewById(R.id.btn_onboard_perm_later);
         photoActions = findViewById(R.id.onboard_photo_actions);
         scheduleActions = findViewById(R.id.onboard_schedule_actions);
-        uiActions = findViewById(R.id.onboard_ui_actions);
         perfActions = findViewById(R.id.onboard_perf_actions);
         gateActions = findViewById(R.id.onboard_gate_actions);
         remoteActions = findViewById(R.id.onboard_remote_actions);
@@ -91,7 +87,6 @@ public class OnboardingActivity extends Activity {
 
         draftIntervalMs = prefs.getIntervalMs();
         draftJitterMs = prefs.getJitterMs();
-        draftUiPlacement = prefs.getUiPlacement();
         draftPerfMode = prefs.getPerformanceMode();
 
         skip.setOnClickListener(v -> finishOnboarding(pendingPhotoSource, true));
@@ -105,14 +100,6 @@ public class OnboardingActivity extends Activity {
         findViewById(R.id.btn_interval_plus).setOnClickListener(v -> bumpInterval(1));
         findViewById(R.id.btn_jitter_minus).setOnClickListener(v -> bumpJitter(-1));
         findViewById(R.id.btn_jitter_plus).setOnClickListener(v -> bumpJitter(1));
-        View btnUiTop = findViewById(R.id.btn_onboard_ui_top);
-        View btnUiBottom = findViewById(R.id.btn_onboard_ui_bottom);
-        if (btnUiTop != null) {
-            btnUiTop.setOnClickListener(v -> chooseUiAndContinue(AppPrefs.UI_PLACEMENT_TOP));
-        }
-        if (btnUiBottom != null) {
-            btnUiBottom.setOnClickListener(v -> chooseUiAndContinue(AppPrefs.UI_PLACEMENT_BOTTOM));
-        }
         View btnAuto = findViewById(R.id.btn_onboard_perf_auto);
         View btnPerf = findViewById(R.id.btn_onboard_perf_performance);
         View btnSlim = findViewById(R.id.btn_onboard_perf_slim);
@@ -161,10 +148,7 @@ public class OnboardingActivity extends Activity {
             pendingPhotoSource = PhotoLibrary.SOURCE_BUNDLED;
             goSchedule();
         } else if (step == STEP_SCHEDULE) {
-            goUiPlacement();
-        } else if (step == STEP_UI) {
-            // Continue keeps Top if they didn't tap a button (default).
-            chooseUiAndContinue(draftUiPlacement);
+            goPerf();
         } else if (step == STEP_PERF) {
             // Continue keeps Auto if they didn't tap a button (default).
             choosePerfAndContinue(draftPerfMode);
@@ -183,17 +167,6 @@ public class OnboardingActivity extends Activity {
     private void goSchedule() {
         step = STEP_SCHEDULE;
         showStep();
-    }
-
-    private void goUiPlacement() {
-        step = STEP_UI;
-        showStep();
-    }
-
-    private void chooseUiAndContinue(String placement) {
-        draftUiPlacement = AppPrefs.UI_PLACEMENT_BOTTOM.equals(placement)
-                ? AppPrefs.UI_PLACEMENT_BOTTOM : AppPrefs.UI_PLACEMENT_TOP;
-        goPerf();
     }
 
     private void goPerf() {
@@ -276,7 +249,6 @@ public class OnboardingActivity extends Activity {
     private void showStep() {
         photoActions.setVisibility(View.GONE);
         scheduleActions.setVisibility(View.GONE);
-        if (uiActions != null) uiActions.setVisibility(View.GONE);
         if (perfActions != null) perfActions.setVisibility(View.GONE);
         if (gateActions != null) gateActions.setVisibility(View.GONE);
         if (remoteActions != null) remoteActions.setVisibility(View.GONE);
@@ -297,11 +269,6 @@ public class OnboardingActivity extends Activity {
             scheduleActions.setVisibility(View.VISIBLE);
             next.setText(R.string.onboard_continue);
             refreshScheduleLabels();
-        } else if (step == STEP_UI) {
-            title.setText(R.string.onboard_ui_title);
-            body.setText(R.string.onboard_ui_body);
-            if (uiActions != null) uiActions.setVisibility(View.VISIBLE);
-            next.setVisibility(View.GONE);
         } else if (step == STEP_PERF) {
             title.setText(R.string.onboard_perf_title);
             body.setText(R.string.onboard_perf_body);
@@ -437,14 +404,12 @@ public class OnboardingActivity extends Activity {
         if (useDefaultSchedule) {
             prefs.setIntervalMs(Scheduler.DEFAULT_INTERVAL_MS);
             prefs.setJitterMs(Scheduler.DEFAULT_JITTER_MS);
-            prefs.setUiPlacement(AppPrefs.UI_PLACEMENT_TOP);
             prefs.setPerformanceMode(PerformanceMode.AUTO);
             prefs.setGateMode(GateMode.HARD);
             // Skip leaves progress local unless they already chose Share.
         } else {
             prefs.setIntervalMs(draftIntervalMs);
             prefs.setJitterMs(draftJitterMs);
-            prefs.setUiPlacement(draftUiPlacement);
             prefs.setPerformanceMode(draftPerfMode);
             prefs.setGateMode(GateMode.HARD);
         }
