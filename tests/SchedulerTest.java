@@ -32,19 +32,19 @@ public class SchedulerTest {
         Assert.isTrue(s.needsMorningGate(t10, "2026-11-14"), "needs morning other day");
         Assert.isTrue(!s.needsMorningGate(t10, s.dayKey(t10)), "cleared today");
 
-        // Default 60 ± 15 → window 45–75 min
-        Assert.eq(Scheduler.DEFAULT_INTERVAL_MS, 60L * 60L * 1000L, "default interval 60m");
-        Assert.eq(Scheduler.DEFAULT_JITTER_MS, 15L * 60L * 1000L, "default jitter 15m");
+        // Default 40 ± 10 → window 30–50 min
+        Assert.eq(Scheduler.DEFAULT_INTERVAL_MS, 40L * 60L * 1000L, "default interval 40m");
+        Assert.eq(Scheduler.DEFAULT_JITTER_MS, 10L * 60L * 1000L, "default jitter 10m");
         Scheduler def = new Scheduler(tz, Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS);
-        Assert.eq(45L * 60L * 1000L, def.windowMinMs(), "window min 45m");
-        Assert.eq(75L * 60L * 1000L, def.windowMaxMs(), "window max 75m");
+        Assert.eq(30L * 60L * 1000L, def.windowMinMs(), "window min 30m");
+        Assert.eq(50L * 60L * 1000L, def.windowMaxMs(), "window max 50m");
 
         Random fixed = new Random(7L);
         Scheduler jittered = new Scheduler(tz, Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS, fixed);
         for (int i = 0; i < 40; i++) {
             long delay = jittered.sampleDelayMs();
-            Assert.isTrue(delay >= 45L * 60L * 1000L && delay <= 75L * 60L * 1000L,
-                    "sample in [45,75] got=" + delay);
+            Assert.isTrue(delay >= 30L * 60L * 1000L && delay <= 50L * 60L * 1000L,
+                    "sample in [30,50] got=" + delay);
         }
 
         // Daytime next stays inside the jitter window
@@ -58,7 +58,7 @@ public class SchedulerTest {
         Scheduler exact = new Scheduler(tz, 45L * 60L * 1000L, 0L, new Random(99L));
         Assert.eq(45L * 60L * 1000L, exact.sampleDelayMs(), "zero jitter exact");
 
-        Assert.eq("45 min – 75 min",
+        Assert.eq("30 min – 50 min",
                 Scheduler.formatWindow(Scheduler.DEFAULT_INTERVAL_MS, Scheduler.DEFAULT_JITTER_MS),
                 "format window");
 

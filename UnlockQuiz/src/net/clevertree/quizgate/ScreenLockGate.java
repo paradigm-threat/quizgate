@@ -121,7 +121,7 @@ public final class ScreenLockGate {
         }
         if (!ScreenLockPolicy.shouldLaunchOnWake(
                 prefs.isArmed(), prefs.isPendingScreenLock(), hardActive, inGrace)) {
-            // Screen-off during grace cancels alarms; restore 60±15 while interactive.
+            // Screen-off during grace cancels alarms; restore 40±10 while interactive.
             if (ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(
                     inGrace, prefs.isPendingScreenLock())) {
                 AlarmScheduler.armWhileInteractive(app);

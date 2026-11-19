@@ -180,7 +180,7 @@ Field notes if asked: without Appear on top → schedule may fire but UI may not
 
 | Permission | Why | Critical? |
 |------------|-----|-----------|
-| Exact alarms | Schedule quizzes (60±15 + morning) while interactive | Yes — schedule |
+| Exact alarms | Schedule quizzes (40±10 + morning) while interactive | Yes — schedule |
 | `POST_NOTIFICATIONS` + High channel | Alarm cue / FGS / FSI | Yes — cue |
 | Battery unrestricted | OEM reliability for in-use alarms | Yes — schedule |
 | **Accessibility** | Confine quiz during active lock; screen off/on → pending wake lock | Yes — **Hard confine + screen events** |

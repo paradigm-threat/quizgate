@@ -36,7 +36,7 @@ public final class AppPrefs {
         sp.edit().putLong("interval_ms", net.clevertree.quizgate.core.Scheduler.clampInterval(ms)).apply();
     }
 
-    /** Randomness around {@link #getIntervalMs()} — default 15 minutes (±). */
+    /** Randomness around {@link #getIntervalMs()} — default 10 minutes (±). */
     public long getJitterMs() {
         return net.clevertree.quizgate.core.Scheduler.clampJitter(
                 sp.getLong("jitter_ms", net.clevertree.quizgate.core.Scheduler.DEFAULT_JITTER_MS));
@@ -145,7 +145,7 @@ public final class AppPrefs {
 
     /**
      * Legacy helper: previously <em>replaced</em> the schedule with jar minutes (too short).
-     * Prefer {@link #takeMinutesBonusMs()} — jar time adds on top of 60±15, never shrinks it.
+     * Prefer {@link #takeMinutesBonusMs()} — jar time adds on top of 40±10, never shrinks it.
      */
     public long consumeMinutesForNextInterval(long fallbackIntervalMs) {
         long bonus = takeMinutesBonusMs();

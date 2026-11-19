@@ -228,7 +228,7 @@ public final class AlarmScheduler {
             return;
         }
 
-        // Always keep configured interval±jitter (default 60±15). Banked minutes
+        // Always keep configured interval±jitter (default 40±10). Banked minutes
         // ADD free time on top — never replace the window with a 2–5 min jar delay.
         long interval = prefs.getIntervalMs();
         long jitterUsed = prefs.getJitterMs();

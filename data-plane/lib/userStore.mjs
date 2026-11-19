@@ -100,8 +100,8 @@ export function emptyProfile(uuid) {
     curriculum_id: "basic-math",
     readiness: { score: 0, next_curriculum_id: null, reasons: [] },
     settings: {
-      interval_ms: 1_800_000,
-      jitter_ms: 900_000,
+      interval_ms: 2_400_000, // 40m
+      jitter_ms: 600_000, // ±10m → 30–50m window
       performance_preference: "auto",
     },
     content_hints: [],

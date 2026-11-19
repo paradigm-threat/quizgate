@@ -1,6 +1,6 @@
 # QuizGate
 
-Clevertree quiz lock for young kids: about every hour (±15m → next fire in **45–75 min**) while the tablet is already in use + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). **One correct answer unlocks** a lock session — never stack another quiz immediately after. **Screen off** cancels schedule alarms (no idle wake); **power on** opens the Hard quiz (not during the short post-unlock grace). Widget and Setup practice stay unlocked. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
+Clevertree quiz lock for young kids: about every **40 min (±10m → next fire in 30–50 min)** while the tablet is already in use + morning gate (07:00; quiet hours 20:00–07:00), math digit pad, local/bundled photo transitions. **Hard lock:** Accessibility confines scheduled quizzes until unlock / consoling / parent override (Home/Back do not dismiss). **One correct answer unlocks** a lock session — never stack another quiz immediately after. **Screen off** cancels schedule alarms (no idle wake); **power on** opens the Hard quiz (not during the short post-unlock grace). Widget and Setup practice stay unlocked. Today’s stats on the home screen (right / wrong / skipped). No MacroDroid. **Forever free — no ads, no IAP, no subscription.**
 
 **Positioning:** compete with [Pickles](https://pickles.to/) (math for screen time · no accounts · no tracking · no fees) on **Android**, where Pickles is unavailable. Play peers like [Screenwise](https://play.google.com/store/apps/details?id=com.makeme.learn.screenwise) are heavier parental-control suites — not the same education-first narrative. Curriculum packs sync optionally; **SI** (Super Intelligence, i.e. AI) batch-curates packs — parents keep final decisions. See [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
 
@@ -58,7 +58,7 @@ Agent orientation: [`AGENTS.md`](AGENTS.md).
 
 ## Install / test
 
-First launch opens skippable onboarding: photos → schedule (default 60±15) → UI placement (Top default / Bottom) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
+First launch opens skippable onboarding: photos → schedule (default 40±10) → UI placement (Top default / Bottom) → performance (**Auto** / Performance / Slim) → grants one-at-a-time (`ScheduleAuth`: exact alarm, notifications, battery unrestricted, full-screen intent, appear-on-top, usage access) → Setup. Drop ChatGPT exports into `UnlockQuiz/assets/backdrop_catalog/{success,fail}/` using the filenames in that folder’s README.
 
 **Fully working** Hard lock needs those grants (photos optional). Setup shows a requirements checklist and prompts the next missing gap with a cooldown.
 
@@ -115,7 +115,7 @@ Logcat triage tag: **`QuizGateDiag`**. Network upload of diagnostics stays **OFF
 
 ## Behavior
 
-- Schedule: default **60±15 min** (fire window 45–75) while interactive; morning alarm; minutes jar adds free time on top of that window (never shrinks it); screen-off cancels alarms + pending lock; wake opens Hard quiz; unlock grace blocks stacked wake locks and restores the schedule if screen-off cancelled alarms; re-arm after unlock / boot / app update / time change / grace wake-skip only while interactive
+- Schedule: default **40±10 min** (fire window 30–50) while interactive; morning alarm; minutes jar adds free time on top of that window (never shrinks it); screen-off cancels alarms + pending lock; wake opens Hard quiz; unlock grace blocks stacked wake locks and restores the schedule if screen-off cancelled alarms; re-arm after unlock / boot / app update / time change / grace wake-skip only while interactive
 - Header: “Please answer this question”
 - Curriculum: bundled **basic-math v4** — addition under 10, expanded subtraction, light multiplication; math asks as fill-in (`equation`), Pickles-style **True/False**, or multi-answer **choice** (same catalog rows — see [`docs/CURRICULUM.md`](docs/CURRICULUM.md))
 - Math: spoken + `2 + 5 = _` (digit pad by default)

@@ -404,7 +404,7 @@ public class SetupActivity extends Activity {
             armNow();
             skipAuthWarn = false;
         }
-        // Smoke: schedule next interval fire in N ms without changing stored 60±15 prefs.
+        // Smoke: schedule next interval fire in N ms without changing stored 40±10 prefs.
         if (in.hasExtra("next_in_ms")) {
             long delay = in.getLongExtra("next_in_ms", 0);
             if (delay > 0) {
