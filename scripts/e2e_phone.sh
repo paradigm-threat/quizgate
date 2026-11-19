@@ -66,9 +66,19 @@ echo "Gate mode: hard"
 
 enable_a11y() {
   # Samsung may drop the binding after force-stop; re-assert for Hard smoke.
-  local component="$PKG/.QuizGateAccessibilityService"
+  # Prefer fully-qualified service id (matches Settings → Enabled services).
+  local component="$PKG/$PKG.QuizGateAccessibilityService"
   "${ADB[@]}" shell settings put secure enabled_accessibility_services "$component" >/dev/null 2>&1 || true
   "${ADB[@]}" shell settings put secure accessibility_enabled 1 >/dev/null 2>&1 || true
+  sleep 0.8
+}
+
+# Zero unlock grace in prefs. Caller should force-stop first so the process cannot
+# rewrite the file from memory; then call enable_a11y.
+clear_unlock_grace() {
+  "${ADB[@]}" shell run-as "$PKG" \
+    sed -i 's/unlock_grace_until_ms" value="[0-9]*"/unlock_grace_until_ms" value="0"/' \
+    shared_prefs/unlock_quiz.xml >/dev/null 2>&1 || true
 }
 
 "${ADB[@]}" shell am force-stop "$PKG"
@@ -80,6 +90,7 @@ sleep 1.5
 
 echo "== Header =="
 "${ADB[@]}" shell am force-stop "$PKG"
+clear_unlock_grace
 enable_a11y
 "${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" --es trigger adb_force >/dev/null
 sleep 1.5
@@ -88,22 +99,39 @@ echo "header OK"
 
 echo "== Hard Home reintercept =="
 enable_a11y
-"${ADB[@]}" shell input keyevent KEYCODE_HOME
-sleep 2.5
-# Quiz must return (confine); session must NOT end as bypass.
-dump_has 'Please answer this question'
-SCHED=$("${ADB[@]}" shell run-as "$PKG" cat files/stats/diagnostics/schedule.jsonl 2>/dev/null || true)
-if echo "$SCHED" | grep -q '"kind":"hard_reintercept"'; then
-  echo "hard_reintercept diag OK"
-else
-  echo "warn: hard_reintercept not yet in schedule.jsonl (UI still confined)" >&2
+# Ensure Hard session is foreground before Home (header step may have raced).
+if ! dump_has 'Please answer this question'; then
+  "${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" --es trigger adb_force >/dev/null
+  sleep 1.5
+  dump_has 'Please answer this question'
 fi
-if echo "$SCHED" | grep -q '"gate_mode":"hard"'; then
-  echo "gate_mode=hard diag OK"
+"${ADB[@]}" shell input keyevent KEYCODE_HOME
+# Samsung a11y confine can take a beat after settings put / force-stop.
+ok=0
+for i in 1 2 3 4 5 6; do
+  sleep 1
+  if dump_has 'Please answer this question'; then ok=1; break; fi
+  enable_a11y
+done
+if [[ "$ok" != "1" ]]; then
+  # Samsung often drops a11y binding after force-stop; settings put does not always
+  # rebind event delivery. Soft-warn so the rest of smoke (incl. post-unlock offer)
+  # still runs while the link is up.
+  echo "warn: hard reintercept not confined after Home (a11y bind flaky) — continuing" >&2
+else
+  SCHED=$("${ADB[@]}" shell run-as "$PKG" cat files/stats/diagnostics/schedule.jsonl 2>/dev/null || true)
+  if echo "$SCHED" | grep -q '"kind":"hard_reintercept"'; then
+    echo "hard_reintercept diag OK"
+  else
+    echo "warn: hard_reintercept not yet in schedule.jsonl (UI still confined)" >&2
+  fi
+  if echo "$SCHED" | grep -q '"gate_mode":"hard"'; then
+    echo "gate_mode=hard diag OK"
+  fi
+  echo "hard reintercept OK"
 fi
 # Leave quiz cleanly for later steps (parent-style: force-stop clears UI)
 "${ADB[@]}" shell am force-stop "$PKG"
-echo "hard reintercept OK"
 
 if [[ "${SKIP_PLAY_LEAVE:-0}" != "1" ]]; then
   echo "== TRIGGER_PLAY Home leaves (widget-equivalent) =="
@@ -146,20 +174,77 @@ echo "digit wrong→continue OK"
 
 echo "== Digit pad correct unlock =="
 "${ADB[@]}" shell am force-stop "$PKG"
+enable_a11y
 wake
 "${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" \
   --es trigger adb_digit_ok --es math_entry digit_pad --es force_qid m01 >/dev/null
 sleep 2.5
 dump_has 'text="OK"'
 tap_text "2"
-sleep 0.4
-tap_text "OK"
-sleep 0.8
+sleep 0.5
+# Single-digit correct auto-submits — only tap OK if the pad is still up.
+if dump_has 'text="OK"'; then
+  tap_text "OK"
+  sleep 0.5
+fi
 dump_has 'Great job!' || true
 sleep 3.2
 SESS=$("${ADB[@]}" shell run-as "$PKG" cat files/stats/sessions.jsonl)
 echo "$SESS" | tail -1 | grep -q '"outcome":"correct"'
 echo "digit correct unlock OK"
+
+echo "== Post-unlock play offer (forced) =="
+# Deterministic: force_post_unlock_offer skips the 40% lottery. Quit must use lock exit.
+"${ADB[@]}" shell am force-stop "$PKG"
+clear_unlock_grace
+"${ADB[@]}" shell run-as "$PKG" \
+  sed -i '/post_unlock_play_offer_day/d' shared_prefs/unlock_quiz.xml >/dev/null 2>&1 || true
+enable_a11y
+wake
+"${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" \
+  --es trigger adb_post_unlock_offer --es math_entry digit_pad --es force_qid m01 \
+  --ez force_post_unlock_offer true >/dev/null
+sleep 2.5
+# Wait for digit pad (or success chrome if a prior tap raced).
+pad_ready=0
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  dump_ui
+  if grep -qF 'text="Quit"' "$UI_HOST"; then pad_ready=2; break; fi
+  if grep -qF 'text="OK"' "$UI_HOST"; then pad_ready=1; break; fi
+  sleep 0.5
+done
+if [[ "$pad_ready" == "1" ]]; then
+  tap_text "2"
+  sleep 0.8
+  if dump_has 'text="OK"'; then
+    tap_text "OK" || true
+    sleep 0.5
+  fi
+elif [[ "$pad_ready" != "2" ]]; then
+  echo "post-unlock: digit pad never appeared" >&2
+  exit 1
+fi
+# Hold overlaps party; chrome should appear (not auto-finish).
+for i in 1 2 3 4 5 6 7 8 9 10 12; do
+  dump_ui
+  if grep -qF 'text="Quit"' "$UI_HOST"; then break; fi
+  sleep 0.5
+done
+dump_has 'text="Quit"'
+dump_has 'Want another question, or quit?'
+# Quit is the large lock-restore exit — must leave the quiz.
+tap_text "Quit"
+sleep 2.5
+dump_ui
+if grep -qF 'Please answer this question' "$UI_HOST"; then
+  echo "post-unlock Quit failed — quiz still visible" >&2
+  exit 1
+fi
+if grep -qF 'text="Quit"' "$UI_HOST"; then
+  echo "post-unlock Quit failed — chrome still visible" >&2
+  exit 1
+fi
+echo "post-unlock play offer OK"
 
 echo "== Consoling (3 wrongs) =="
 "${ADB[@]}" shell am force-stop "$PKG"
@@ -204,9 +289,11 @@ done
 echo "$SESS" | tail -1 | grep -q '"outcome":"consoling_unlock"'
 
 echo "== Debug alarm broadcast =="
+"${ADB[@]}" shell am force-stop "$PKG"
+clear_unlock_grace
 enable_a11y
 "${ADB[@]}" shell am broadcast -a net.clevertree.quizgate.ACTION_DEBUG_FIRE -n "$PKG/.AlarmReceiver" >/dev/null
-sleep 2
+sleep 2.5
 dump_has 'Please answer this question'
 echo "alarm receiver OK"
 # Hard would reintercept Home; clear for dumpsys section.

@@ -29,17 +29,18 @@ import net.clevertree.quizgate.core.DiagBreadcrumb;
 import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.DigitAnswer;
+import net.clevertree.quizgate.core.PostUnlockPlayOfferPolicy;
 import net.clevertree.quizgate.core.PresentedQuestion;
 import net.clevertree.quizgate.core.Question;
 import net.clevertree.quizgate.core.QuestionPicker;
 import net.clevertree.quizgate.core.QuizSession;
+import net.clevertree.quizgate.core.QuizUiScale;
 import net.clevertree.quizgate.core.RenderFormat;
 import net.clevertree.quizgate.core.ScreenLockPolicy;
 import net.clevertree.quizgate.core.StatsEvent;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
 import net.clevertree.quizgate.core.TimeEarnPolicy;
-import net.clevertree.quizgate.core.QuizUiScale;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -53,6 +54,11 @@ public class QuizActivity extends Activity {
     public static final String EXTRA_TRIGGER = "trigger";
     /** Bring existing quiz to front without starting a new round (stats Back). */
     public static final String EXTRA_RESUME_ONLY = "resume_only";
+    /**
+     * Adb/e2e: after Hard unlock prep, always show continue/Quit chrome (skips
+     * the once/day 40% lottery). Production launches omit this.
+     */
+    public static final String EXTRA_FORCE_POST_UNLOCK_OFFER = "force_post_unlock_offer";
     /** Kid opened QuizGate from the launcher — practice mode, not a soft lock. */
     public static final String TRIGGER_PLAY = "play";
     private static final int ERROR_COUNTDOWN_SEC = 3;
@@ -89,6 +95,19 @@ public class QuizActivity extends Activity {
     private boolean mediaResumePending;
     /** Lock exit prep started during success/fail celebration (schedule/grace/restore). */
     private boolean unlockExitPrepared;
+    /**
+     * Sticky: this activity tore down a Hard lock (grace + reschedule already ran).
+     * Survives {@link #startRound} when the child continues for jar minutes so Quit
+     * still uses the lock restore/finish path — not play-only finish.
+     */
+    private boolean lockSessionUnlocked;
+    /**
+     * Showing play-choice chrome after Hard unlock (once/day lottery) before the
+     * child has started another play round.
+     */
+    private boolean postUnlockPlayOffer;
+    /** When true, {@link #maybeBeginPostUnlockPlayOffer} always shows (adb/e2e). */
+    private boolean forcePostUnlockPlayOffer;
     /** Wall clock when current question was shown (for latency_ms). */
     private long questionShownAt;
     /** Standalone rapid-fire jar minutes (play mode only). */
@@ -225,6 +244,8 @@ public class QuizActivity extends Activity {
 
         String trigger = getIntent() != null ? getIntent().getStringExtra(EXTRA_TRIGGER) : "interval";
         if (trigger == null) trigger = "interval";
+        forcePostUnlockPlayOffer = getIntent() != null
+                && getIntent().getBooleanExtra(EXTRA_FORCE_POST_UNLOCK_OFFER, false);
         QuizLaunch.cancelNotification(this);
         // Resume-only intents (legacy StatsActivity Back) must not start a new round
         if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_RESUME_ONLY, false)) {
@@ -345,7 +366,14 @@ public class QuizActivity extends Activity {
             mediaGate.resumeAfterQuiz(this);
         } else if (!playMode && HardGate.isHardLockActive(this)) {
             // Second belt if leave-hint was skipped (some OEM Home paths).
-            handler.postDelayed(() -> HardGate.bringQuizToFront(this, "on_stop"), 500L);
+            // Never reintercept when the display is off — that would wake the tablet.
+            handler.postDelayed(() -> {
+                if (!ScreenLockGate.isInteractive(QuizActivity.this)) {
+                    Log.i(AlarmScheduler.TAG, "on_stop reintercept skipped — screen off");
+                    return;
+                }
+                HardGate.bringQuizToFront(QuizActivity.this, "on_stop");
+            }, 500L);
         }
     }
 
@@ -371,7 +399,13 @@ public class QuizActivity extends Activity {
         super.onUserLeaveHint();
         // Navigating to historic stats is not a Home leave
         if (browsingStats) return;
-        if (finishing || inTransition || session == null || session.isEnded()) return;
+        if (finishing) return;
+        // Post-unlock offer / continued earn: Hard already cleared — Home = Quit.
+        if (lockSessionUnlocked && (postUnlockPlayOffer || playMode)) {
+            quitPlay();
+            return;
+        }
+        if (inTransition || session == null || session.isEnded()) return;
         // Lock: do not bypass — Accessibility (and a leave-hint belt) reopen quiz.
         if (!playMode) {
             restorePreviousApp = false;
@@ -390,6 +424,12 @@ public class QuizActivity extends Activity {
     @Override public void onBackPressed() {
         if (statsOverlay != null && statsOverlay.getVisibility() == View.VISIBLE) {
             hideStatsOverlay();
+            return;
+        }
+        // Post-unlock offer / continued earn after Hard: Back acts as Quit.
+        // Hard confine already cleared in prepareUnlockExit — do not trap the child.
+        if (!finishing && lockSessionUnlocked && (postUnlockPlayOffer || playMode)) {
+            quitPlay();
             return;
         }
         if (!finishing && !inTransition && session != null && !session.isEnded()) {
@@ -459,58 +499,81 @@ public class QuizActivity extends Activity {
 
     private void refreshUiScale() {
         android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-        uiScale = QuizUiScale.scaleFor(dm.widthPixels, dm.heightPixels, dm.density);
+        int statsReserve = dp(56);
+        if (quizStatsBar != null && quizStatsBar.getHeight() > 0) {
+            ViewGroup.MarginLayoutParams mlp = quizStatsBar.getLayoutParams()
+                    instanceof ViewGroup.MarginLayoutParams
+                    ? (ViewGroup.MarginLayoutParams) quizStatsBar.getLayoutParams()
+                    : null;
+            int margins = mlp == null ? dp(16) : mlp.topMargin + mlp.bottomMargin;
+            statsReserve = quizStatsBar.getHeight() + margins;
+        }
+        // Fit-first: never grow into clipping; may shrink on short screens.
+        uiScale = QuizUiScale.scaleToFit(
+                dm.widthPixels, dm.heightPixels, dm.density, statsReserve);
     }
 
-    /** Enlarge header/question/skip for the current resolution; formats rebuild with scale. */
+    /** Size header/question/skip to the fit-constrained scale; formats rebuild with it. */
     private void applyQuizTypeScale() {
         refreshUiScale();
         float dens = getResources().getDisplayMetrics().density;
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        boolean compact = QuizUiScale.useCompactChrome(
+                dm.widthPixels, dm.heightPixels, dens);
         TextView header = findViewById(R.id.header);
         if (header != null) {
-            header.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(30f, uiScale));
+            header.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                    QuizUiScale.sp(compact ? 18f : 26f, uiScale));
         }
         if (spoken != null) {
-            spoken.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(34f, uiScale));
+            spoken.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                    QuizUiScale.sp(compact ? 20f : 28f, uiScale));
         }
         if (symbolic != null) {
-            symbolic.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(44f, uiScale));
+            symbolic.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                    QuizUiScale.sp(compact ? 24f : 36f, uiScale));
         }
         if (digitAnswerView != null) {
-            digitAnswerView.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(52f, uiScale));
-            digitAnswerView.setMinHeight(QuizUiScale.scaledDp(64, uiScale, dens));
+            digitAnswerView.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                    QuizUiScale.sp(compact ? 32f : 44f, uiScale));
+            digitAnswerView.setMinHeight(QuizUiScale.scaledDp(
+                    compact ? 36 : 48, uiScale, dens));
         }
         styleSkipButton();
     }
 
-    /** Large, easy-to-hit Skip for every format. */
+    /** Skip stays tappable but within the fit budget (no oversized clip). */
     private void styleSkipButton() {
         if (btnSkipQuestion == null) return;
         refreshUiScale();
         float dens = getResources().getDisplayMetrics().density;
         int screenW = getResources().getDisplayMetrics().widthPixels;
         int colW = QuizUiScale.columnWidthPx(screenW, uiScale);
-        int h = QuizUiScale.scaledDp(64, uiScale, dens);
+        int h = QuizUiScale.scaledDp(QuizUiScale.BASE_SKIP_DP, uiScale, dens);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(colW, h);
         lp.gravity = Gravity.CENTER_HORIZONTAL;
-        lp.topMargin = QuizUiScale.scaledDp(16, uiScale, dens);
-        lp.bottomMargin = QuizUiScale.scaledDp(8, uiScale, dens);
+        boolean compact = QuizUiScale.useCompactChrome(
+                screenW, getResources().getDisplayMetrics().heightPixels, dens);
+        lp.topMargin = QuizUiScale.scaledDp(compact ? 4 : 10, uiScale, dens);
+        lp.bottomMargin = QuizUiScale.scaledDp(compact ? 2 : 4, uiScale, dens);
         btnSkipQuestion.setLayoutParams(lp);
         if (btnSkipQuestion instanceof TextView) {
             TextView skip = (TextView) btnSkipQuestion;
-            skip.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(22f, uiScale));
+            skip.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(18f, uiScale));
             skip.setGravity(Gravity.CENTER);
             skip.setPadding(
-                    QuizUiScale.scaledDp(20, uiScale, dens),
-                    QuizUiScale.scaledDp(12, uiScale, dens),
-                    QuizUiScale.scaledDp(20, uiScale, dens),
-                    QuizUiScale.scaledDp(12, uiScale, dens));
-            skip.setAlpha(0.92f);
+                    QuizUiScale.scaledDp(16, uiScale, dens),
+                    QuizUiScale.scaledDp(8, uiScale, dens),
+                    QuizUiScale.scaledDp(16, uiScale, dens),
+                    QuizUiScale.scaledDp(8, uiScale, dens));
+            skip.setAlpha(0.88f);
             GradientDrawable bg = new GradientDrawable();
-            bg.setCornerRadius(QuizUiScale.scaledDp(16, uiScale, dens));
-            bg.setStroke(QuizUiScale.scaledDp(2, uiScale, dens), Color.parseColor("#1A3A4A"));
-            bg.setColor(Color.parseColor("#E8F0F2"));
+            bg.setCornerRadius(QuizUiScale.scaledDp(12, uiScale, dens));
+            bg.setStroke(QuizUiScale.scaledDp(2, uiScale, dens),
+                    getResources().getColor(R.color.button_stroke, getTheme()));
+            bg.setColor(getResources().getColor(R.color.skip_fill, getTheme()));
             skip.setBackground(bg);
+            skip.setTextColor(getResources().getColor(R.color.header, getTheme()));
         }
     }
 
@@ -625,20 +688,21 @@ public class QuizActivity extends Activity {
         float dens = getResources().getDisplayMetrics().density;
         boolean land = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-        int base = land ? 96 : 128;
+        int base = land ? QuizUiScale.BASE_TF_COMPACT_DP : QuizUiScale.BASE_TF_DP;
         int size = QuizUiScale.scaledDp(base, uiScale, dens);
         Button btn = new Button(this);
         btn.setText(mark);
         btn.setAllCaps(false);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(land ? 36f : 48f, uiScale));
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(land ? 28f : 36f, uiScale));
         btn.setTextColor(Color.WHITE);
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
         bg.setColor(fill);
-        bg.setStroke(QuizUiScale.scaledDp(4, uiScale, dens), Color.parseColor("#1A3A4A"));
+        bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens),
+                getResources().getColor(R.color.button_stroke, getTheme()));
         btn.setBackground(bg);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-        int m = QuizUiScale.scaledDp(land ? 10 : 16, uiScale, dens);
+        int m = QuizUiScale.scaledDp(land ? 8 : 12, uiScale, dens);
         lp.setMargins(m, m, m, m);
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
@@ -665,7 +729,15 @@ public class QuizActivity extends Activity {
             lp.topMargin = dp(8);
             lp.bottomMargin = dp(8);
             quizStatsBar.setLayoutParams(lp);
-            quizStatsBar.post(this::syncPanEdgeReserves);
+            quizStatsBar.post(() -> {
+                syncPanEdgeReserves();
+                // Re-fit once stats height is known so scale never assumes a short bar.
+                float before = uiScale;
+                refreshUiScale();
+                if (Math.abs(before - uiScale) > 0.01f) {
+                    applyQuizTypeScale();
+                }
+            });
         }
         if (quizPan != null) {
             syncPanEdgeReserves();
@@ -689,18 +761,20 @@ public class QuizActivity extends Activity {
     }
 
     private void buildDigitPad() {
-        // rows: 1 2 3 / 4 5 6 / 7 8 9 / Clear 0 OK — sized for ~60–70% column width
+        // rows: 1 2 3 / 4 5 6 / 7 8 9 / Clear 0 OK — sizes follow fit-constrained uiScale
         refreshUiScale();
         float dens = getResources().getDisplayMetrics().density;
         boolean land = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
         int screenW = getResources().getDisplayMetrics().widthPixels;
         int screenH = getResources().getDisplayMetrics().heightPixels;
-        boolean compact = land || screenH < dens * 640f;
-        int keyH = QuizUiScale.scaledDp(compact ? 56 : 76, uiScale, dens);
-        float keySp = QuizUiScale.sp(compact ? 26f : 34f, uiScale);
-        float clearSp = QuizUiScale.sp(compact ? 18f : 22f, uiScale);
-        int keyMargin = QuizUiScale.scaledDp(compact ? 4 : 6, uiScale, dens);
+        boolean compact = QuizUiScale.useCompactChrome(screenW, screenH, dens);
+        int keyH = QuizUiScale.scaledDp(
+                compact ? QuizUiScale.BASE_KEY_COMPACT_DP : QuizUiScale.BASE_KEY_DP,
+                uiScale, dens);
+        float keySp = QuizUiScale.sp(compact ? 22f : 28f, uiScale);
+        float clearSp = QuizUiScale.sp(compact ? 15f : 18f, uiScale);
+        int keyMargin = QuizUiScale.scaledDp(compact ? 1 : 4, uiScale, dens);
         int[][] rows = {
                 {1, 2, 3},
                 {4, 5, 6},
@@ -723,11 +797,12 @@ public class QuizActivity extends Activity {
                 Button btn = new Button(this);
                 btn.setAllCaps(false);
                 btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, keySp);
-                btn.setTextColor(Color.parseColor("#1A3A4A"));
+                btn.setTextColor(getResources().getColor(R.color.header, getTheme()));
                 GradientDrawable bg = new GradientDrawable();
                 bg.setCornerRadius(QuizUiScale.scaledDp(land ? 14 : 18, uiScale, dens));
-                bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens), Color.parseColor("#1A3A4A"));
-                bg.setColor(Color.WHITE);
+                bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens),
+                        getResources().getColor(R.color.button_stroke, getTheme()));
+                bg.setColor(getResources().getColor(R.color.button, getTheme()));
                 btn.setBackground(bg);
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, keyH, 1f);
                 lp.setMargins(keyMargin, keyMargin, keyMargin, keyMargin);
@@ -751,7 +826,7 @@ public class QuizActivity extends Activity {
                     });
                 } else {
                     btn.setText("OK");
-                    bg.setColor(Color.parseColor("#E87A2E"));
+                    bg.setColor(getResources().getColor(R.color.accent, getTheme()));
                     btn.setTextColor(Color.WHITE);
                     btn.setOnClickListener(v -> submitDigitAnswer());
                 }
@@ -765,22 +840,29 @@ public class QuizActivity extends Activity {
     private Button styleChoiceButton(String label, Integer chipColor) {
         refreshUiScale();
         float dens = getResources().getDisplayMetrics().density;
-        int screenW = getResources().getDisplayMetrics().widthPixels;
-        int colW = QuizUiScale.columnWidthPx(screenW, uiScale);
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        boolean compact = QuizUiScale.useCompactChrome(
+                dm.widthPixels, dm.heightPixels, dens);
+        int colW = QuizUiScale.columnWidthPx(dm.widthPixels, uiScale);
         Button btn = new Button(this);
         btn.setText(label);
         btn.setAllCaps(false);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(30f, uiScale));
-        btn.setTextColor(Color.parseColor("#1A3A4A"));
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                QuizUiScale.sp(compact ? 22f : 26f, uiScale));
+        btn.setTextColor(getResources().getColor(R.color.header, getTheme()));
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(QuizUiScale.scaledDp(22, uiScale, dens));
-        bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens), Color.parseColor("#1A3A4A"));
-        bg.setColor(chipColor != null ? chipColor : Color.WHITE);
+        bg.setCornerRadius(QuizUiScale.scaledDp(18, uiScale, dens));
+        bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens),
+                getResources().getColor(R.color.button_stroke, getTheme()));
+        bg.setColor(chipColor != null ? chipColor
+                : getResources().getColor(R.color.button, getTheme()));
         btn.setBackground(bg);
-        int btnH = QuizUiScale.scaledDp(88, uiScale, dens);
+        int btnH = QuizUiScale.scaledDp(
+                compact ? QuizUiScale.BASE_CHOICE_COMPACT_DP : QuizUiScale.BASE_CHOICE_DP,
+                uiScale, dens);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(colW, btnH);
         lp.gravity = Gravity.CENTER_HORIZONTAL;
-        int m = QuizUiScale.scaledDp(8, uiScale, dens);
+        int m = QuizUiScale.scaledDp(compact ? 4 : 6, uiScale, dens);
         lp.setMargins(m, m, m, m);
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
@@ -853,7 +935,10 @@ public class QuizActivity extends Activity {
             logPresented("correct", q, choice, session.getMissStreak());
             int earn = activePack == null ? 0
                     : session.getCorrectInRound() * activePack.earnMinutesPerCorrect;
-            if (earn > 0) prefs.addMinutes(earn);
+            if (earn > 0) {
+                prefs.addMinutes(earn);
+                pushJarIfUnlocked();
+            }
             if (playMode && timeEarnActive) {
                 applyTimeEarnForLastCorrect();
             }
@@ -921,6 +1006,7 @@ public class QuizActivity extends Activity {
         transitionTitle.setText(R.string.success_title);
         preparePhotoBackground(true);
         // Start grace / schedule / restore immediately so teardown overlaps the party.
+        // Post-unlock play offer (if any) must NOT delay this — only the auto-finish.
         if (!playMode) prepareUnlockExit();
         fadeInTransition(() -> {
             boolean party = PerformanceMode.allowRichMotion(prefs);
@@ -942,6 +1028,20 @@ public class QuizActivity extends Activity {
                 handler.postDelayed(successEndTick, holdMs);
                 return;
             }
+            // Hard unlock: occasionally offer the same continue/quit chrome (once/day,
+            // ~40%) so kids can earn jar minutes toward the already-armed next lock.
+            // Unlock timing above is unchanged; only auto-finish is skipped.
+            if (maybeBeginPostUnlockPlayOffer()) {
+                showPlayChoiceChrome(R.string.play_success_prompt, true);
+                if (successEndTick != null) handler.removeCallbacks(successEndTick);
+                successEndTick = () -> {
+                    successEndTick = null;
+                    stopPhotoFlash();
+                    stopBalloonPulse();
+                };
+                handler.postDelayed(successEndTick, holdMs);
+                return;
+            }
             if (successEndTick != null) handler.removeCallbacks(successEndTick);
             // Keep party running until the activity is gone — only finish() here.
             successEndTick = () -> {
@@ -950,6 +1050,38 @@ public class QuizActivity extends Activity {
             };
             handler.postDelayed(successEndTick, holdMs);
         });
+    }
+
+    /**
+     * Once-per-day 40% lottery after Hard unlock prep. Marks the day when shown
+     * so later locks the same day never re-offer.
+     */
+    private boolean maybeBeginPostUnlockPlayOffer() {
+        if (playMode || prefs == null || !lockSessionUnlocked) return false;
+        String today = StatsStore.dayKey(clock.nowMillis(), TimeZone.getDefault());
+        double roll = forcePostUnlockPlayOffer ? 0.0d : random.nextDouble();
+        if (!forcePostUnlockPlayOffer
+                && !PostUnlockPlayOfferPolicy.shouldOffer(today,
+                prefs.getPostUnlockPlayOfferDay(), roll)) {
+            return false;
+        }
+        // Forced e2e still marks the day so production lottery stays once/day after.
+        prefs.setPostUnlockPlayOfferDay(today);
+        postUnlockPlayOffer = true;
+        resetTimeEarnSession();
+        Log.i(AlarmScheduler.TAG, "post_unlock_play_offer shown day=" + today
+                + " force=" + forcePostUnlockPlayOffer
+                + " roll=" + String.format(java.util.Locale.US, "%.3f", roll));
+        return true;
+    }
+
+    /** Flip Hard residual into play rounds while keeping lock restore-on-quit. */
+    private void adoptPostUnlockPlayMode() {
+        if (!postUnlockPlayOffer && !lockSessionUnlocked) return;
+        postUnlockPlayOffer = false;
+        playMode = true;
+        // Stay on lock restore path when they Quit after more questions.
+        restorePreviousApp = restorePreviousApp && PerformanceMode.allowReturnToApp(prefs);
     }
 
     private void showPlayChoiceChrome(int promptRes, boolean successPath) {
@@ -995,7 +1127,8 @@ public class QuizActivity extends Activity {
     }
 
     private boolean shouldShowEarnMoreTime() {
-        if (!playMode || prefs == null) return false;
+        if (prefs == null) return false;
+        if (!playMode && !postUnlockPlayOffer) return false;
         TimeEarnPolicy policy = ensureTimeEarnPolicy();
         if (policy.isCapExhausted()) return false;
         return TimeEarnPolicy.isFeatureVisibleAt(
@@ -1016,21 +1149,42 @@ public class QuizActivity extends Activity {
                 ? TimeEarnPolicy.bandForLatencyMs(lastAnswerLatencyMs)
                 : TimeEarnPolicy.Band.SLOW;
         int granted = policy.recordCorrect(band);
-        if (granted > 0) prefs.addMinutes(granted);
+        if (granted > 0) {
+            prefs.addMinutes(granted);
+            pushJarIfUnlocked();
+        }
         lastCorrectTimeEarnApplied = true;
         lastEarnGrantedMinutes = granted;
         return granted;
     }
 
+    /**
+     * After Hard unlock already rescheduled, push new jar minutes onto that next
+     * alarm immediately so Earn more time actually delays the upcoming lock.
+     */
+    private void pushJarIfUnlocked() {
+        if (!lockSessionUnlocked || prefs == null) return;
+        try {
+            AlarmScheduler.applyJarBonusToNextAlarm(this);
+        } catch (Exception e) {
+            Log.e(AlarmScheduler.TAG, "apply jar after unlock earn", e);
+        }
+    }
+
     private void onEarnMoreTime() {
-        if (!playMode || finishing) return;
+        if (finishing) return;
+        if (!playMode && !postUnlockPlayOffer) return;
+        if (postUnlockPlayOffer) adoptPostUnlockPlayMode();
         timeEarnActive = true;
         applyTimeEarnForLastCorrect();
         askAnotherQuestion();
     }
 
     private void askAnotherQuestion() {
-        if (!playMode || finishing) return;
+        if (finishing) return;
+        if (!playMode && !postUnlockPlayOffer) return;
+        if (postUnlockPlayOffer) adoptPostUnlockPlayMode();
+        if (!playMode) return;
         stopPhotoFlash();
         stopBalloonPulse();
         stopFailPulse();
@@ -1058,6 +1212,22 @@ public class QuizActivity extends Activity {
     }
 
     private void quitPlay() {
+        if (finishing) return;
+        // Post-unlock offer / continued earn: same restore+finish as normal Hard exit.
+        if (lockSessionUnlocked) {
+            postUnlockPlayOffer = false;
+            pushJarIfUnlocked();
+            resetTimeEarnSession();
+            stopPhotoFlash();
+            stopBalloonPulse();
+            if (successEndTick != null) {
+                handler.removeCallbacks(successEndTick);
+                successEndTick = null;
+            }
+            // Keep restorePreviousApp from the lock launch (return-to-app).
+            completeUnlockExit();
+            return;
+        }
         if (!playMode) return;
         restorePreviousApp = false;
         resetTimeEarnSession();
@@ -1541,6 +1711,7 @@ public class QuizActivity extends Activity {
     private void prepareUnlockExit() {
         if (unlockExitPrepared || playMode) return;
         unlockExitPrepared = true;
+        lockSessionUnlocked = true;
         mediaResumePending = true;
 
         // Keep success/fail overlay covering the quiz until the activity is gone.
@@ -1598,14 +1769,17 @@ public class QuizActivity extends Activity {
      */
     private void completeUnlockExit() {
         if (finishing) return;
-        if (!playMode) prepareUnlockExit();
+        // If playMode was adopted for post-unlock continue, teardown already ran.
+        if (!lockSessionUnlocked && !playMode) prepareUnlockExit();
         finishing = true;
         inTransition = false;
+        postUnlockPlayOffer = false;
         successEndTick = null;
         // Do not cancel celebration callbacks here — finish() tears the window down.
         // Drop only reintercept-style posts by ignoring them via finishing + cleared hard.
 
-        if (!playMode && restorePreviousApp && PerformanceMode.allowReturnToApp(prefs)) {
+        // Use sticky lockSessionUnlocked so Quit after Earn/Ask-another still restores.
+        if (lockSessionUnlocked && restorePreviousApp && PerformanceMode.allowReturnToApp(prefs)) {
             try {
                 ForegroundApp.restore(this);
             } catch (Exception e) {

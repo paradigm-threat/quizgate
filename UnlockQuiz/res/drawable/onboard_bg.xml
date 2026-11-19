@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft page wash: solid bg + warm accent glow at the top (DayNight via colors). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bg"/>
+        </shape>
+    </item>
+    <item android:bottom="420dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="@color/onboard_wash"
+                android:endColor="@android:color/transparent"/>
+        </shape>
+    </item>
+</layer-list>

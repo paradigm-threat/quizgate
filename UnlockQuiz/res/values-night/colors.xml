@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark (follows OS night mode). System nav uses light icons. -->
+    <color name="bg">#12181C</color>
+    <color name="system_bar">#0A0E10</color>
+    <color name="header">#E8F0F2</color>
+    <!-- Accent/success darkened so white CTA labels clear WCAG AA 4.5:1. -->
+    <color name="accent">#B85A18</color>
+    <color name="accent_dark">#FFB074</color>
+    <color name="success">#267043</color>
+    <color name="on_accent">#FFFFFF</color>
+    <color name="button">#1E2A30</color>
+    <color name="button_stroke">#E8F0F2</color>
+    <color name="symbolic">#7EC8CF</color>
+    <color name="consoling_bg">#2A2218</color>
+    <color name="quiz_scrim">#CC12181C</color>
+    <color name="skip_fill">#243038</color>
+    <color name="surface_setup_card">#1A242A</color>
+    <color name="surface_setup_row">#243038</color>
+    <color name="surface_onboard_panel">#1E2A30</color>
+    <color name="onboard_wash">#66B85A18</color>
+    <color name="body_muted">#B0C4CE</color>
+    <color name="btn_secondary_fill">#2A6A72</color>
+    <color name="surface_stats_ready">#1E2A30</color>
+    <color name="surface_stats_great">#1A3024</color>
+    <color name="surface_stats_good">#302818</color>
+    <color name="surface_stats_trying">#30201C</color>
+    <color name="transition_title">#FFFFFFFF</color>
+    <color name="transition_body">#FFFFF3E0</color>
+    <color name="transition_countdown">#FFFFD54F</color>
+    <color name="success_title">#FFFFFFFF</color>
+    <color name="success_body">#FFFFFDE7</color>
+    <color name="success_countdown">#FFFFF59D</color>
+    <color name="success_scrim">#992E9B5A</color>
+    <color name="stats_mood_ready">#B0C4CE</color>
+    <color name="stats_mood_great">#6BD89A</color>
+    <color name="stats_mood_good">#F0C060</color>
+    <color name="stats_mood_trying">#F0A080</color>
+</resources>

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.util.Log;
 
 import net.clevertree.quizgate.core.DiagnosticsStore;
+import net.clevertree.quizgate.core.ScreenLockPolicy;
 
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicLong;
@@ -68,10 +69,16 @@ public final class HardGate {
         Context app = ctx.getApplicationContext();
         AppPrefs prefs = new AppPrefs(app);
         long now = System.currentTimeMillis();
-        // Never reintercept during post-unlock grace (prevents jail→jail).
-        if (prefs.inUnlockGrace(now)) return;
-        // Race: session may have cleared (unlock / parent / play) between a11y event and here.
-        if (!isHardLockActive(app)) return;
+        boolean interactive = ScreenLockGate.isInteractive(app);
+        boolean inGrace = prefs.inUnlockGrace(now);
+        boolean hard = isHardLockActive(app);
+        // Never relaunch while the screen is off — that turns the display back on.
+        if (!ScreenLockPolicy.shouldReintercept(hard, interactive, inGrace)) {
+            if (hard && !interactive) {
+                Log.i(AlarmScheduler.TAG, "hard_reintercept skipped — screen off");
+            }
+            return;
+        }
 
         long prev = lastReinterceptAt.get();
         if (now - prev < REINTERCEPT_DEBOUNCE_MS) return;
@@ -81,17 +88,24 @@ public final class HardGate {
             lastReinterceptAt.set(now);
         }
 
-        // Re-check after debounce window — unlock may have won the race.
-        if (prefs.inUnlockGrace(System.currentTimeMillis())) return;
-        if (!isHardLockActive(app)) return;
+        // Re-check after debounce — unlock or screen-off may have won the race.
+        now = System.currentTimeMillis();
+        interactive = ScreenLockGate.isInteractive(app);
+        inGrace = prefs.inUnlockGrace(now);
+        hard = isHardLockActive(app);
+        if (!ScreenLockPolicy.shouldReintercept(hard, interactive, inGrace)) return;
 
         String trig = trigger == null || trigger.isEmpty() ? "hard_reintercept" : trigger;
         try {
             Intent quiz = QuizLaunch.quizIntent(app, "interval");
             quiz.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             // Final race check immediately before launch.
-            if (prefs.inUnlockGrace(System.currentTimeMillis())) return;
-            if (!isHardLockActive(app)) return;
+            if (!ScreenLockPolicy.shouldReintercept(
+                    isHardLockActive(app),
+                    ScreenLockGate.isInteractive(app),
+                    prefs.inUnlockGrace(System.currentTimeMillis()))) {
+                return;
+            }
             app.startActivity(quiz);
             Diag.schedule(app, new DiagnosticsStore.ScheduleEvent(
                     System.currentTimeMillis(), TimeZone.getDefault(),

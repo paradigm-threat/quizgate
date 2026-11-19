@@ -26,13 +26,17 @@ Policy core is pure JVM: [`TimeEarnPolicy`](../UnlockQuiz/src/net/clevertree/qui
 
 Written by human admin PATCH → queue → `quizgate-batch`; applied on device by `RemoteSettingsPull`.
 
+## UI scope
+
+Standalone / practice: success overlay offers **Earn more time** / Ask another / **Quit** (Quit is the largest button).
+
+**Post-unlock offer (Hard):** After a scheduled lock unlock, teardown (grace + `scheduleAfterSessionEnd`) still runs at the same moment as before. Separately, a once-per-local-day **40%** lottery (`PostUnlockPlayOfferPolicy` / pref `post_unlock_play_offer_day`) may show the same play-choice chrome instead of auto-finishing. Quit uses the normal lock restore/finish path. Choosing Earn / Ask another continues as play; new jar minutes call `AlarmScheduler.applyJarBonusToNextAlarm` so they extend the already-armed next lock (up to the session cap, default two hours remaining-visibility rule unchanged). If the offer is shown once, later Hard unlocks that day skip it.
+
 ## Files
 
 - `UnlockQuiz/.../core/TimeEarnPolicy.java` — bands, rewards, cap, visibility, format map, session counters
-- `UnlockQuiz/.../AppPrefs.java` — `get/setTimeEarnCapMinutes`
-- `tests/TimeEarnTest.java` — regression gate via `scripts/run_unit_tests.sh`
+- `UnlockQuiz/.../core/PostUnlockPlayOfferPolicy.java` — once/day + 40% lottery
+- `UnlockQuiz/.../core/JarSchedulePolicy.java` — extend next-alarm math
+- `UnlockQuiz/.../AppPrefs.java` — `get/setTimeEarnCapMinutes`, `post_unlock_play_offer_day`
+- `tests/TimeEarnTest.java`, `tests/PostUnlockPlayOfferTest.java` — regression via `scripts/run_unit_tests.sh`
 - Tip schema: `data-plane/quizgate-users/schema/profile.v1.json`
-
-## UI scope
-
-Standalone / practice only for v1. Lock-screen Hard sessions unchanged. Entry: `btn_earn_more_time` on `transition_play_actions`.

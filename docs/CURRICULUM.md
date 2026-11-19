@@ -32,6 +32,8 @@ Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQu
 
 **basic-math v4:** addition under 10, expanded subtraction (`subtract_within_10`), and light multiplication (`multiply_within_10`) — no color / “which one is red” items (those return in a later pack with chip-only UI, no text labels). Division is deferred; pack is unfinished until that pass, then SI may mark curricula **proficient**.
 
+**Zero identity (`n + 0` / `0 + n`):** treated as tricky — skill `add_with_zero`, tier **1** only (not Kindergarten). Weight `1`.
+
 Optional per-item `weight` (integer ≥1, default 1): `QuestionPicker` uses weighted random selection so rarer skills stay uncommon as the pool grows. basic-math sets addition `weight: 2` and subtraction/multiplication typically `weight: 1`.
 
 ## Render formats (ask-time)

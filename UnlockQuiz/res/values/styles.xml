@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+      Follows OS light/dark via values-night/. Light theme forces dark status/nav
+      icons so system navigation stays visible on the cream background.
+    -->
     <style name="Theme.UnlockQuiz" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/bg</item>
-        <item name="android:statusBarColor">@color/bg</item>
-        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/system_bar</item>
+        <item name="android:navigationBarColor">@color/system_bar</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:enforceNavigationBarContrast">true</item>
+        <item name="android:enforceStatusBarContrast">true</item>
     </style>
     <style name="Theme.UnlockQuiz.Fullscreen" parent="Theme.UnlockQuiz">
         <item name="android:windowFullscreen">true</item>

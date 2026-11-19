@@ -16,7 +16,7 @@
         android:id="@+id/quiz_bg_scrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#D9F7F1E8"/>
+                android:background="@color/quiz_scrim"/>
 
     <!-- 2D pan host: drag the question/answers anywhere; snap-back keeps
          critical controls recoverable if panned too far off-screen. -->
@@ -42,16 +42,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/header"
                 android:textColor="@color/header"
-                android:textSize="30sp"
+                android:textSize="26sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
 
-            <!-- Question “balloon”: inflate / relax pulse; runtime QuizUiScale enlarges further on tablets -->
+            <!-- Question balloon; QuizUiScale fit-constrains runtime sizes so nothing clips -->
             <LinearLayout
                 android:id="@+id/question_balloon"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="8dp"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
                 android:padding="0dp">
@@ -61,16 +61,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/header"
-                    android:textSize="34sp"
+                    android:textSize="28sp"
                     android:gravity="center"/>
 
                 <TextView
                     android:id="@+id/symbolic"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:textColor="@color/symbolic"
-                    android:textSize="44sp"
+                    android:textSize="36sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:visibility="gone"/>
@@ -79,12 +79,12 @@
                     android:id="@+id/digit_answer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="4dp"
                     android:textColor="@color/accent_dark"
-                    android:textSize="52sp"
+                    android:textSize="44sp"
                     android:textStyle="bold"
                     android:gravity="center"
-                    android:minHeight="64dp"
+                    android:minHeight="48dp"
                     android:visibility="gone"/>
             </LinearLayout>
 
@@ -106,23 +106,23 @@
                 android:layout_marginBottom="0dp"
                 android:visibility="gone"/>
 
-            <!-- Available for every ask format; QuizActivity.styleSkipButton enlarges for tablets. -->
+            <!-- Skip; runtime QuizUiScale keeps it inside the fit budget. -->
             <TextView
                 android:id="@+id/btn_skip_question"
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="8dp"
-                android:paddingLeft="20dp"
-                android:paddingRight="20dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="4dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:gravity="center"
                 android:text="@string/quiz_skip"
                 android:textColor="@color/header"
-                android:textSize="22sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:alpha="0.92"
+                android:alpha="0.88"
                 android:clickable="true"
                 android:focusable="true"
                 android:contentDescription="@string/quiz_skip_cd"/>
@@ -334,13 +334,14 @@
                 <Button
                     android:id="@+id/btn_quit_play"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_height="72dp"
+                    android:layout_marginTop="14dp"
                     android:backgroundTint="@color/symbolic"
                     android:text="@string/play_quit"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF"
-                    android:textSize="17sp"/>
+                    android:textSize="22sp"
+                    android:textStyle="bold"/>
 
                 <Button
                     android:id="@+id/btn_view_stats"

@@ -8,6 +8,7 @@ import android.os.Build;
 import android.util.Log;
 
 import net.clevertree.quizgate.core.DiagnosticsStore;
+import net.clevertree.quizgate.core.JarSchedulePolicy;
 import net.clevertree.quizgate.core.Scheduler;
 import net.clevertree.quizgate.core.ScreenLockPolicy;
 import net.clevertree.quizgate.core.SystemClock;
@@ -210,8 +211,8 @@ public final class AlarmScheduler {
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         // Unlock / consoling / parent override clears the wake-pending latch.
-        // Do NOT re-pend during unlock grace even if interactive flickers — that
-        // was stacking a second Hard quiz right after the first unlock.
+        // Grace blocks reintercept while the screen stays on; intentional
+        // screen-off clears grace and pends (see ScreenLockGate.onScreenOff).
         long now = new SystemClock().nowMillis();
         prefs.setPendingScreenLock(false);
         if (!prefs.inUnlockGrace(now)) {
@@ -221,10 +222,10 @@ public final class AlarmScheduler {
         prefs.setLastClearedDay(base.dayKey(now));
 
         if (!ScreenLockGate.isInteractive(ctx)) {
-            // Screen already off after unlock: keep grace, stay pending for *next*
-            // real wake only after grace expires (onScreenOff will pend again).
+            // Already off after unlock: cancel alarms; next SCREEN_OFF/ON (or a
+            // later off) will pend + clear grace so wake locks.
             cancelAllAlarms(ctx);
-            Log.i(TAG, "session end while screen off — grace held, no immediate re-pend");
+            Log.i(TAG, "session end while screen off — grace held until next screen-off");
             return;
         }
 
@@ -256,6 +257,38 @@ public final class AlarmScheduler {
                 + " jarBonusMs=" + bonusMs
                 + " sampledWindow=" + Scheduler.formatWindow(delayBase, jitterUsed)
                 + " " + auth.compactNote());
+    }
+
+    /**
+     * Push any banked jar minutes onto the already-armed next interval alarm.
+     * Used when the child earns after Hard unlock teardown already ran
+     * {@link #scheduleAfterSessionEnd} (post-unlock continue / Earn more time).
+     * Refunds the jar when there is no future alarm to extend.
+     *
+     * @return bonus ms applied, or 0 when nothing changed
+     */
+    public static long applyJarBonusToNextAlarm(Context ctx) {
+        if (ctx == null) return 0L;
+        AppPrefs prefs = new AppPrefs(ctx);
+        int bal = prefs.getMinutesBalance();
+        long bonusMs = JarSchedulePolicy.bonusMsFromMinutes(bal);
+        if (bonusMs <= 0L) return 0L;
+        // Consume jar first so concurrent callers cannot double-apply.
+        long taken = prefs.takeMinutesBonusMs();
+        if (taken <= 0L) return 0L;
+        long now = new SystemClock().nowMillis();
+        long next = prefs.nextAlarmAt();
+        long extended = JarSchedulePolicy.extendNextAlarm(next, now, taken);
+        if (extended <= 0L) {
+            int refund = JarSchedulePolicy.minutesFromBonusMs(taken);
+            if (refund > 0) prefs.addMinutes(refund);
+            Log.i(TAG, "jar bonus held — no future alarm to extend (refunded=" + refund + ")");
+            return 0L;
+        }
+        scheduleInterval(ctx, extended);
+        prefs.setNextAlarmAt(extended);
+        Log.i(TAG, "jar bonus applied to next +" + taken + "ms next=" + extended);
+        return taken;
     }
 
     public static void scheduleInterval(Context ctx, long atMs) {

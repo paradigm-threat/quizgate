@@ -30,8 +30,8 @@ public class QuizGateAccessibilityService extends AccessibilityService {
 
     @Override
     public boolean onUnbind(android.content.Intent intent) {
-        ScreenLockGate.unregister(this);
-        Log.i(TAG, "a11y unbound — screen_lock receiver off");
+        // Keep SCREEN_OFF/ON receiver — power-cycle lock must not depend on a11y.
+        Log.i(TAG, "a11y unbound — screen_lock receiver kept");
         return super.onUnbind(intent);
     }
 
@@ -45,6 +45,8 @@ public class QuizGateAccessibilityService extends AccessibilityService {
         }
         // Session may have ended (unlock / parent / Soft switch) — never confine then.
         if (!HardGate.isHardLockActive(this)) return;
+        // Screen-off window churn must not relaunch the quiz (that turns the display on).
+        if (!ScreenLockGate.isInteractive(this)) return;
 
         // Prefer event package (works with canRetrieveWindowContent=false).
         String pkg = packageFromEvent(event);

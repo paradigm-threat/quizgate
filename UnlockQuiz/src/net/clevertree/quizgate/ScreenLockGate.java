@@ -16,9 +16,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Screen-off → pending Hard lock; wake → open quiz. Registered dynamically from
- * {@link QuizGateAccessibilityService} because modern Android does not deliver
- * {@code SCREEN_OFF}/{@code SCREEN_ON} to manifest receivers.
+ * Screen-off → pending Hard lock; wake → open quiz.
+ *
+ * <p>Registered from {@link QuizGateApp} (always) and reinforced from
+ * {@link QuizGateAccessibilityService}. Dynamic registration is required —
+ * modern Android does not deliver {@code SCREEN_OFF}/{@code SCREEN_ON} to
+ * manifest receivers. Do not unregister when Accessibility unbinds.
  */
 public final class ScreenLockGate {
     private static final AtomicLong lastWakeAt = new AtomicLong(0L);
@@ -75,6 +78,10 @@ public final class ScreenLockGate {
         }
     }
 
+    /**
+     * Kept for tests / process teardown. Accessibility unbind must <em>not</em>
+     * call this — power-cycle lock must keep working without a11y.
+     */
     public static void unregister(Context ctx) {
         if (ctx == null || !receiverRegistered.get() || screenReceiver == null) return;
         try {
@@ -91,20 +98,19 @@ public final class ScreenLockGate {
         AppPrefs prefs = new AppPrefs(app);
         if (!ScreenLockPolicy.shouldPendOnScreenOff(prefs.isArmed())) return;
         long now = System.currentTimeMillis();
-        // Still cancel wake alarms during grace, but do not pend a new lock until
-        // grace ends — otherwise unlock→screen-off→immediate wake stacks jails.
         AlarmScheduler.cancelAllAlarms(app);
-        if (prefs.inUnlockGrace(now)) {
-            prefs.setPendingScreenLock(false);
-            Log.i(AlarmScheduler.TAG, "screen_off during unlock grace — alarms cancelled, no pend");
-            return;
+        // Drop FSI/ongoing quiz notif — CATEGORY_ALARM heads-up can fight power-off on OEMs.
+        QuizLaunch.cancelNotification(app);
+        // Power-off ends the post-unlock free window — next wake must lock.
+        if (ScreenLockPolicy.shouldClearGraceOnScreenOff(true)) {
+            prefs.clearUnlockGrace();
         }
         prefs.setPendingScreenLock(true);
         Diag.schedule(app, new DiagnosticsStore.ScheduleEvent(
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_SKIP_FIRE, "screen_off",
                 "lock", 0L, prefs.getIntervalMs(), prefs.getJitterMs(),
                 null, "screen_off_pending"));
-        Log.i(AlarmScheduler.TAG, "screen_off → pending lock, alarms cancelled");
+        Log.i(AlarmScheduler.TAG, "screen_off → pending lock (grace cleared), alarms cancelled");
     }
 
     public static void onWake(Context ctx, String action) {
@@ -114,16 +120,20 @@ public final class ScreenLockGate {
         long now = System.currentTimeMillis();
         boolean inGrace = prefs.inUnlockGrace(now);
         boolean hardActive = HardGate.isHardLockActive(app);
-        if (inGrace && prefs.isPendingScreenLock()) {
-            // Just unlocked — drop stale pending; do not open another jail.
-            prefs.setPendingScreenLock(false);
-            Log.i(AlarmScheduler.TAG, "wake during unlock grace — pending cleared, no launch");
+        boolean pending = prefs.isPendingScreenLock();
+
+        if (ScreenLockPolicy.shouldBringHardOnWake(
+                prefs.isArmed(), pending, hardActive, inGrace)) {
+            long prev = lastWakeAt.get();
+            if (now - prev < WAKE_DEBOUNCE_MS) return;
+            if (!lastWakeAt.compareAndSet(prev, now)) return;
+            Log.i(AlarmScheduler.TAG, "wake → bring existing Hard quiz action=" + action);
+            HardGate.bringQuizToFront(app, "wake_resume");
+            return;
         }
         if (!ScreenLockPolicy.shouldLaunchOnWake(
-                prefs.isArmed(), prefs.isPendingScreenLock(), hardActive, inGrace)) {
-            // Screen-off during grace cancels alarms; restore 40±10 while interactive.
-            if (ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(
-                    inGrace, prefs.isPendingScreenLock())) {
+                prefs.isArmed(), pending, hardActive, inGrace)) {
+            if (ScreenLockPolicy.shouldRearmScheduleOnWakeSkip(inGrace, pending)) {
                 AlarmScheduler.armWhileInteractive(app);
             }
             return;
@@ -132,7 +142,6 @@ public final class ScreenLockGate {
         if (now - prev < WAKE_DEBOUNCE_MS) return;
         if (!lastWakeAt.compareAndSet(prev, now)) return;
 
-        // Keep pending until unlock clears it; start Hard quiz now.
         String note = "wake_lock action=" + (action == null ? "" : action);
         Diag.schedule(app, new DiagnosticsStore.ScheduleEvent(
                 now, TimeZone.getDefault(), DiagnosticsStore.KIND_LAUNCH_ATTEMPT, "wake",

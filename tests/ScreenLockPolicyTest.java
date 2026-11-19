@@ -8,6 +8,10 @@ public class ScreenLockPolicyTest {
     public static void main(String[] args) {
         Assert.isTrue(ScreenLockPolicy.shouldPendOnScreenOff(true), "armed → pend on off");
         Assert.isTrue(!ScreenLockPolicy.shouldPendOnScreenOff(false), "disarmed → no pend");
+        Assert.isTrue(ScreenLockPolicy.shouldClearGraceOnScreenOff(true),
+                "armed screen-off clears grace so wake locks");
+        Assert.isTrue(!ScreenLockPolicy.shouldClearGraceOnScreenOff(false),
+                "disarmed screen-off leaves grace alone");
 
         Assert.isTrue(ScreenLockPolicy.shouldLaunchOnWake(true, true, false, false),
                 "armed+pending+no session → launch");
@@ -40,6 +44,23 @@ public class ScreenLockPolicyTest {
 
         Assert.isTrue(ScreenLockPolicy.shouldSkipFireWhileOff(false), "off → skip fire");
         Assert.isTrue(!ScreenLockPolicy.shouldSkipFireWhileOff(true), "on → allow fire");
+
+        // Reintercept must never run while the display is off (would wake the tablet).
+        Assert.isTrue(ScreenLockPolicy.shouldReintercept(true, true, false),
+                "hard+interactive → reintercept");
+        Assert.isTrue(!ScreenLockPolicy.shouldReintercept(true, false, false),
+                "screen off → no reintercept");
+        Assert.isTrue(!ScreenLockPolicy.shouldReintercept(true, true, true),
+                "grace → no reintercept");
+        Assert.isTrue(!ScreenLockPolicy.shouldReintercept(false, true, false),
+                "no hard session → no reintercept");
+
+        Assert.isTrue(ScreenLockPolicy.shouldBringHardOnWake(true, true, true, false),
+                "wake resume existing hard");
+        Assert.isTrue(!ScreenLockPolicy.shouldBringHardOnWake(true, true, false, false),
+                "no hard → fresh launch path, not bring");
+        Assert.isTrue(!ScreenLockPolicy.shouldBringHardOnWake(true, true, true, true),
+                "grace → no bring");
 
         Assert.eq(1, ScreenLockPolicy.lockRoundSize(), "lock roundSize is 1");
         Assert.eq(120_000L, ScreenLockPolicy.UNLOCK_GRACE_MS, "grace 120s");

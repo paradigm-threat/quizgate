@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quiet Skip / secondary text control — outline only, theme-aware. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#332E9B5A">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+            <corners android:radius="14dp"/>
+            <stroke android:width="2dp" android:color="@color/symbolic"/>
+        </shape>
+    </item>
+</ripple>

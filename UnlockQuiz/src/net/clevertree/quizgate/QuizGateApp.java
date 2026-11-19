@@ -30,6 +30,12 @@ public class QuizGateApp extends Application {
         } catch (Exception e) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "perf reevaluate on start", e);
         }
+        // Power-cycle lock must work even when Accessibility is off / unbound.
+        try {
+            ScreenLockGate.register(this);
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "screen_lock register on start", e);
+        }
         // Slim: skip process-start snapshot I/O; uncaught handler still snapshots.
         if (!PerformanceMode.isSlim(this)) {
             Diag.logcatSnapshot(this);

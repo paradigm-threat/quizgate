@@ -43,7 +43,8 @@ public final class QuizLaunch {
         long now = System.currentTimeMillis();
         AppPrefs prefs = new AppPrefs(app);
         // Never stack a new Hard quiz in the post-unlock grace window.
-        if (prefs.inUnlockGrace(now)) {
+        // adb_force (ACTION_DEBUG_FIRE) is an explicit test launch — allow it through.
+        if (prefs.inUnlockGrace(now) && !"adb_force".equals(trigger)) {
             Log.i(AlarmScheduler.TAG, "QuizLaunch blocked by unlock grace trigger=" + trigger);
             log(app, now, DiagnosticsStore.KIND_SKIP_FIRE, trigger, prefs, "unlock_grace");
             return;

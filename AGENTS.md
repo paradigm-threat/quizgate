@@ -20,16 +20,16 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 
 | Area | Default / fact |
 |------|----------------|
-| Schedule | 40±10 min → fire window 30–50 min while interactive; quiet 20:00–07:00; morning 07:00. Minutes jar adds free time on top of that window (never shrinks it). Screen off cancels alarms + sets `pending_screen_lock`; wake opens Hard quiz (no idle RTC wake) |
+| Schedule | 40±10 min → fire window 30–50 min while interactive; quiet 20:00–07:00; morning 07:00. Minutes jar adds free time on top of that window (never shrinks it). Screen off cancels alarms + sets `pending_screen_lock`; wake opens Hard quiz (no idle RTC wake). Never `KEEP_SCREEN_ON` / `TURN_SCREEN_ON` — power-off stays off; a11y/onStop reintercept only while interactive |
 | Re-arm | Boot / `MY_PACKAGE_REPLACED` / `TIME_SET` / wake-skip (grace or !pending) via `armWhileInteractive` only while interactive and not pending; else pend lock |
 | Gate mode | Hard-only: Accessibility confine during active scheduled lock; Home/Back never bypass. Widget/Setup `TRIGGER_PLAY` is unlocked practice |
-| Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks wake/reintercept relaunch; pending cleared; FSI notif cancelled. Screen-off during grace cancels alarms but does not pend; wake restores schedule (no second jail). Next quiz only after normal interval or a later screen-off→wake past grace |
+| Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks reintercept while the screen stays on; pending cleared; FSI notif cancelled. Intentional screen-off clears grace + always pends; wake opens Hard quiz. ScreenLockGate registers from app start (not only a11y) |
 | Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
 | Stats | `files/stats/` capped JSONL; day rollups 90d; Intake day-batch on open (async): closed days once, today ≤1×/day; no schedule |
-| Time earn | Standalone rapid-fire jar minutes: `TimeEarnPolicy` bands + session cap (default 120m, admin `time_earn_cap_minutes`); play success **Earn more time** when remaining &lt; cap |
+| Time earn | Standalone rapid-fire jar minutes: `TimeEarnPolicy` bands + session cap (default 120m, admin `time_earn_cap_minutes`); play success **Earn more time** when remaining &lt; cap. Hard unlock: ~40% once/local-day offer of the same continue/Quit chrome (`PostUnlockPlayOfferPolicy`); Quit stays on lock restore path; further earns push jar onto the already-armed next alarm |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |
-| Quiz UI | Centered in usable band; `QuizUiScale` enlarges text/buttons (~60–72% column on tablets); big Skip; 2D pan; overlays via MediaGate + OverlayGate (`QuizLayoutPolicy`) |
+| Quiz UI | Centered in usable band; `QuizUiScale.scaleToFit` keeps chrome inside viewport (shrink if needed, never clip); DayNight colors + `UiContrastTest` (WCAG AA); 2D pan; overlays via MediaGate + OverlayGate |
 | Curriculum | bundled `basic-math` v4 (add / subtract / light multiply; division later) |
 
 ## Key docs

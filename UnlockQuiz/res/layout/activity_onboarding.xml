@@ -2,300 +2,383 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@drawable/onboard_bg">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="28dp">
-
-        <TextView
-            android:id="@+id/onboard_skip"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:padding="8dp"
-            android:text="@string/onboard_skip"
-            android:textColor="@color/symbolic"
-            android:textSize="16sp"
-            android:textStyle="bold"/>
-
-        <ImageView
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="12dp"
-            android:contentDescription="@string/app_name"
-            android:scaleType="fitCenter"
-            android:src="@drawable/quizgate_splash_icon"/>
-
-        <TextView
-            android:id="@+id/onboard_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:gravity="center"
-            android:text="@string/onboard_welcome_title"
-            android:textColor="@color/header"
-            android:textSize="30sp"
-            android:textStyle="bold"/>
-
-        <TextView
-            android:id="@+id/onboard_body"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="16dp"
-            android:layout_weight="1"
-            android:gravity="center_horizontal"
-            android:text="@string/onboard_welcome_body"
-            android:textColor="@color/header"
-            android:textSize="17sp"/>
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls">
 
         <LinearLayout
-            android:id="@+id/onboard_photo_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/btn_use_gallery"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:backgroundTint="@color/accent"
-                android:text="@string/onboard_use_gallery"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-
-            <Button
-                android:id="@+id/btn_use_defaults"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/symbolic"
-                android:text="@string/onboard_use_defaults"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/onboard_schedule_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="28dp">
 
             <TextView
-                android:layout_width="match_parent"
+                android:id="@+id/onboard_skip"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="@string/onboard_interval_label"
-                android:textColor="@color/header"
-                android:textSize="14sp"
+                android:layout_gravity="end"
+                android:background="@drawable/btn_ghost"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:text="@string/onboard_skip"
+                android:textColor="@color/symbolic"
+                android:textSize="15sp"
                 android:textStyle="bold"/>
 
+            <ImageView
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:contentDescription="@string/app_name"
+                android:scaleType="fitCenter"
+                android:src="@drawable/quizgate_splash_icon"/>
+
+            <!-- Main content card -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btn_interval_minus"
-                    android:layout_width="64dp"
-                    android:layout_height="52dp"
-                    android:backgroundTint="@color/symbolic"
-                    android:text="−"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"/>
-
-                <TextView
-                    android:id="@+id/onboard_interval_value"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:textColor="@color/header"
-                    android:textSize="22sp"
-                    android:textStyle="bold"/>
-
-                <Button
-                    android:id="@+id/btn_interval_plus"
-                    android:layout_width="64dp"
-                    android:layout_height="52dp"
-                    android:backgroundTint="@color/symbolic"
-                    android:text="+"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"/>
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:gravity="center"
-                android:text="@string/onboard_jitter_label"
-                android:textColor="@color/header"
-                android:textSize="14sp"
-                android:textStyle="bold"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btn_jitter_minus"
-                    android:layout_width="64dp"
-                    android:layout_height="52dp"
-                    android:backgroundTint="@color/symbolic"
-                    android:text="−"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"/>
-
-                <TextView
-                    android:id="@+id/onboard_jitter_value"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:textColor="@color/header"
-                    android:textSize="22sp"
-                    android:textStyle="bold"/>
-
-                <Button
-                    android:id="@+id/btn_jitter_plus"
-                    android:layout_width="64dp"
-                    android:layout_height="52dp"
-                    android:backgroundTint="@color/symbolic"
-                    android:text="+"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"/>
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/onboard_window_value"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:gravity="center"
-                android:textColor="@color/symbolic"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
-        </LinearLayout>
+                android:background="@drawable/onboard_panel"
+                android:elevation="2dp"
+                android:minHeight="280dp"
+                android:orientation="vertical"
+                android:paddingLeft="22dp"
+                android:paddingRight="22dp"
+                android:paddingTop="24dp"
+                android:paddingBottom="20dp">
 
-        <LinearLayout
-            android:id="@+id/onboard_perf_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+                <TextView
+                    android:id="@+id/onboard_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/onboard_welcome_title"
+                    android:textColor="@color/header"
+                    android:textSize="28sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/onboard_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_horizontal"
+                    android:lineSpacingMultiplier="1.15"
+                    android:minHeight="96dp"
+                    android:text="@string/onboard_welcome_body"
+                    android:textColor="@color/body_muted"
+                    android:textSize="16sp"/>
+
+                <LinearLayout
+                    android:id="@+id/onboard_photo_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/btn_use_gallery"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/btn_primary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_use_gallery"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+
+                    <Button
+                        android:id="@+id/btn_use_defaults"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/btn_secondary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_use_defaults"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboard_schedule_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/onboard_interval_label"
+                        android:textColor="@color/header"
+                        android:textSize="14sp"
+                        android:textStyle="bold"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btn_interval_minus"
+                            android:layout_width="64dp"
+                            android:layout_height="52dp"
+                            android:background="@drawable/btn_stepper"
+                            android:stateListAnimator="@null"
+                            android:text="−"
+                            android:textAllCaps="false"
+                            android:textColor="@color/on_accent"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/onboard_interval_value"
+                            android:layout_width="0dp"
+                            android:layout_height="52dp"
+                            android:layout_marginLeft="10dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/onboard_value_chip"
+                            android:gravity="center"
+                            android:textColor="@color/header"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+
+                        <Button
+                            android:id="@+id/btn_interval_plus"
+                            android:layout_width="64dp"
+                            android:layout_height="52dp"
+                            android:background="@drawable/btn_stepper"
+                            android:stateListAnimator="@null"
+                            android:text="+"
+                            android:textAllCaps="false"
+                            android:textColor="@color/on_accent"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:text="@string/onboard_jitter_label"
+                        android:textColor="@color/header"
+                        android:textSize="14sp"
+                        android:textStyle="bold"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btn_jitter_minus"
+                            android:layout_width="64dp"
+                            android:layout_height="52dp"
+                            android:background="@drawable/btn_stepper"
+                            android:stateListAnimator="@null"
+                            android:text="−"
+                            android:textAllCaps="false"
+                            android:textColor="@color/on_accent"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/onboard_jitter_value"
+                            android:layout_width="0dp"
+                            android:layout_height="52dp"
+                            android:layout_marginLeft="10dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/onboard_value_chip"
+                            android:gravity="center"
+                            android:textColor="@color/header"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+
+                        <Button
+                            android:id="@+id/btn_jitter_plus"
+                            android:layout_width="64dp"
+                            android:layout_height="52dp"
+                            android:background="@drawable/btn_stepper"
+                            android:stateListAnimator="@null"
+                            android:text="+"
+                            android:textAllCaps="false"
+                            android:textColor="@color/on_accent"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/onboard_window_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:textColor="@color/symbolic"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboard_perf_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/btn_onboard_perf_auto"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/btn_primary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_perf_auto"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+
+                    <Button
+                        android:id="@+id/btn_onboard_perf_performance"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/btn_secondary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_perf_performance"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+
+                    <Button
+                        android:id="@+id/btn_onboard_perf_slim"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/btn_secondary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_perf_slim"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Lock step uses Continue (next button); Soft|Hard choice removed. -->
+                <LinearLayout
+                    android:id="@+id/onboard_gate_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"/>
+
+                <LinearLayout
+                    android:id="@+id/onboard_remote_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/btn_onboard_remote_share"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/btn_primary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_remote_share"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+
+                    <Button
+                        android:id="@+id/btn_onboard_remote_local"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/btn_secondary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_remote_local"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboard_perm_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/btn_onboard_perm_allow"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:background="@drawable/btn_primary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_perm_allow"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="18sp"
+                        android:textStyle="bold"/>
+
+                    <Button
+                        android:id="@+id/btn_onboard_perm_later"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/btn_secondary"
+                        android:stateListAnimator="@null"
+                        android:text="@string/onboard_perm_later"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_accent"
+                        android:textSize="17sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </LinearLayout>
 
             <Button
-                android:id="@+id/btn_onboard_perf_auto"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:backgroundTint="@color/accent"
-                android:text="@string/onboard_perf_auto"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-
-            <Button
-                android:id="@+id/btn_onboard_perf_performance"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/symbolic"
-                android:text="@string/onboard_perf_performance"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-
-            <Button
-                android:id="@+id/btn_onboard_perf_slim"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/symbolic"
-                android:text="@string/onboard_perf_slim"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-        </LinearLayout>
-
-        <!-- Lock step uses Continue (next button); Soft|Hard choice removed. -->
-        <LinearLayout
-            android:id="@+id/onboard_gate_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"/>
-
-        <LinearLayout
-            android:id="@+id/onboard_remote_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/btn_onboard_remote_share"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:backgroundTint="@color/accent"
-                android:text="@string/onboard_remote_share"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-
-            <Button
-                android:id="@+id/btn_onboard_remote_local"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/symbolic"
-                android:text="@string/onboard_remote_local"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/onboard_perm_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/btn_onboard_perm_allow"
+                android:id="@+id/btn_onboard_next"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:backgroundTint="@color/accent"
-                android:text="@string/onboard_perm_allow"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"/>
-
-            <Button
-                android:id="@+id/btn_onboard_perm_later"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/symbolic"
-                android:text="@string/onboard_perm_later"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"/>
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/btn_primary"
+                android:elevation="3dp"
+                android:stateListAnimator="@null"
+                android:text="@string/onboard_continue"
+                android:textAllCaps="false"
+                android:textColor="@color/on_accent"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
         </LinearLayout>
-
-        <Button
-            android:id="@+id/btn_onboard_next"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/accent"
-            android:text="@string/onboard_continue"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"/>
-    </LinearLayout>
+    </ScrollView>
 </FrameLayout>

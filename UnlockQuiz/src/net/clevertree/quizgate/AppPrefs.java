@@ -297,6 +297,11 @@ public final class AppPrefs {
         setUnlockGraceUntilMs(nowMs + net.clevertree.quizgate.core.ScreenLockPolicy.UNLOCK_GRACE_MS);
     }
 
+    /** Screen-off ends the free period — next wake may lock. */
+    public void clearUnlockGrace() {
+        setUnlockGraceUntilMs(0L);
+    }
+
     public boolean inUnlockGrace(long nowMs) {
         return net.clevertree.quizgate.core.ScreenLockPolicy.inUnlockGrace(nowMs, getUnlockGraceUntilMs());
     }
@@ -464,6 +469,23 @@ public final class AppPrefs {
             sp.edit().remove("today_batch_snapshot_day").apply();
         } else {
             sp.edit().putString("today_batch_snapshot_day", d).apply();
+        }
+    }
+
+    /**
+     * Local day key when the post-unlock play-choice offer was last shown.
+     * Empty until shown; once set to today, further Hard unlocks skip the lottery.
+     */
+    public String getPostUnlockPlayOfferDay() {
+        return sp.getString("post_unlock_play_offer_day", "");
+    }
+
+    public void setPostUnlockPlayOfferDay(String dayKey) {
+        String d = net.clevertree.quizgate.core.StatsStore.canonicalDayKey(dayKey);
+        if (d.isEmpty()) {
+            sp.edit().remove("post_unlock_play_offer_day").apply();
+        } else {
+            sp.edit().putString("post_unlock_play_offer_day", d).apply();
         }
     }
 }
