@@ -2,6 +2,8 @@
 
 Public hosts are **`*.quizgate.app` only**.
 
+**Batch phases:** [`batch-phases.md`](batch-phases.md) · Relay SoT [`../../../myproblem/docs/batch-phases.md`](../../../myproblem/docs/batch-phases.md). Day-batch / profile jobs are kinds on the **shared multi-site queue**. Phase 1: **Cursor** is the tip writer; Intake stays cache+enqueue. Uploads: **Bunny** via per-repo upload-source config.
+
 | Host | Role |
 |------|------|
 | https://quizgate.app | Marketing / curricula (Vercel) |
@@ -20,7 +22,7 @@ Public hosts are **`*.quizgate.app` only**.
    - **Unique per uuid + day:** exactly one file per `(uuid, day)`. Re-syncs atomically overwrite the counts (last write wins) and bump `sync_count`; no duplicate files.
    - **Day key:** optional body `day` (`YYYY-MM-DD`, e.g. the device's local day for backfill). When omitted, Intake uses the **UTC receive day**. Malformed `day` → `400 invalid_day`.
    - Identical bodies within 30s are deduped by the request cache (`deduped: true`, no `sync_count` bump).
-5. Batch SI drains the queue and writes **`users/<uuid>/profile.json` only** as **`quizgate-batch`** (readiness / curriculum / settings). It does **not** append tip `days.jsonl` / `events.jsonl` (those stay off git). SI will later scan day-batch folders for direction / proficient marks.
+5. Batch SI drains the queue and writes **`users/<uuid>/profile.json` only** as **`quizgate-batch`** (readiness / curriculum / settings). Phase 1: that drain is **Cursor** on the shared queue (local `node batch/drain.mjs` / systemd paths become the Phase 2 / parity target). It does **not** append tip `days.jsonl` / `events.jsonl` (those stay off git). SI will later scan day-batch folders for direction / proficient marks.
 6. App GETs `/v1/users/{uuid}/profile` for curriculum / frequency / performance preference.
 
 Realtime photo / ASR / TTS hit `/v1/users/{uuid}/realtime/{kind}` — results return immediately; tip write only if a follow-up job is enqueued and batch accepts.
