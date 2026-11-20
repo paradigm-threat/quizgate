@@ -135,6 +135,21 @@ public final class AppPrefs {
     }
 
     /**
+     * Local hour when the stats day rolls (default 5). Admin
+     * {@code settings.stats_day_barrier_hour}; omit → repo default.
+     */
+    public int getStatsDayBarrierHour() {
+        int raw = sp.getInt("stats_day_barrier_hour",
+                net.clevertree.quizgate.core.StatsDayPolicy.DEFAULT_BARRIER_HOUR);
+        return net.clevertree.quizgate.core.StatsDayPolicy.parseBarrierHour(raw);
+    }
+
+    public void setStatsDayBarrierHour(int hour) {
+        sp.edit().putInt("stats_day_barrier_hour",
+                net.clevertree.quizgate.core.StatsDayPolicy.parseBarrierHour(hour)).apply();
+    }
+
+    /**
      * Legacy helper: previously <em>replaced</em> the schedule with jar minutes (too short).
      * Prefer {@link #takeMinutesBonusMs()} — jar time adds on top of 40±10, never shrinks it.
      */

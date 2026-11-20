@@ -714,7 +714,7 @@ public class SetupActivity extends Activity {
     private void refreshDayStats() {
         StatsStore.DayStats day;
         try {
-            StatsStore store = new StatsStore(new File(getFilesDir(), "stats"));
+            StatsStore store = Diag.stats(this);
             day = store.dayStats(new SystemClock().nowMillis(), TimeZone.getDefault());
         } catch (Exception e) {
             day = new StatsStore.DayStats();

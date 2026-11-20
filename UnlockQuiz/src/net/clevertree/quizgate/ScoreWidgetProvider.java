@@ -15,7 +15,6 @@ import android.widget.Toast;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
 
-import java.io.File;
 import java.util.TimeZone;
 
 /** Home-screen score tile — tap opens a direct play quiz. */
@@ -86,7 +85,7 @@ public class ScoreWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_score);
         StatsStore.DayStats day;
         try {
-            StatsStore store = new StatsStore(new File(context.getFilesDir(), "stats"));
+            StatsStore store = Diag.stats(context);
             day = store.dayStats(new SystemClock().nowMillis(), TimeZone.getDefault());
         } catch (Exception e) {
             day = new StatsStore.DayStats();

@@ -80,6 +80,10 @@ public final class RemoteSettingsPull {
                 prefs.setTimeEarnCapMinutes(settings.optInt("time_earn_cap_minutes",
                         prefs.getTimeEarnCapMinutes()));
             }
+            if (settings.has("stats_day_barrier_hour")) {
+                prefs.setStatsDayBarrierHour(settings.optInt("stats_day_barrier_hour",
+                        prefs.getStatsDayBarrierHour()));
+            }
         }
         prefs.setLastRemoteProfileAt(System.currentTimeMillis());
         Log.i(BuildFingerprint.DIAG_LOG_TAG, "profile_pull_applied curriculum="

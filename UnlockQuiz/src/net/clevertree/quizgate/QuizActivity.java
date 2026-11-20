@@ -1058,7 +1058,8 @@ public class QuizActivity extends Activity {
      */
     private boolean maybeBeginPostUnlockPlayOffer() {
         if (playMode || prefs == null || !lockSessionUnlocked) return false;
-        String today = StatsStore.dayKey(clock.nowMillis(), TimeZone.getDefault());
+        String today = StatsStore.dayKey(clock.nowMillis(), TimeZone.getDefault(),
+                prefs.getStatsDayBarrierHour());
         double roll = forcePostUnlockPlayOffer ? 0.0d : random.nextDouble();
         if (!forcePostUnlockPlayOffer
                 && !PostUnlockPlayOfferPolicy.shouldOffer(today,
@@ -1282,7 +1283,8 @@ public class QuizActivity extends Activity {
             empty.setVisibility(View.VISIBLE);
         } else {
             empty.setVisibility(View.GONE);
-            String todayKey = StatsStore.dayKey(clock.nowMillis(), TimeZone.getDefault());
+            String todayKey = StatsStore.dayKey(clock.nowMillis(), TimeZone.getDefault(),
+                    prefs.getStatsDayBarrierHour());
             StatsHistoryViews.populateDayList(this, list, days, todayKey);
         }
         statsOverlay.setVisibility(View.VISIBLE);

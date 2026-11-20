@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +38,8 @@ public final class StatsStore {
     private final BoundedJsonl eventsLog;
     private final BoundedJsonl sessionsLog;
     private boolean migrated;
+    /** Local hour (0–23) when the stats day rolls; default 5 AM. */
+    private int dayBarrierHour = StatsDayPolicy.DEFAULT_BARRIER_HOUR;
 
     public StatsStore(File dir) {
         this(dir, 32);
@@ -58,6 +59,15 @@ public final class StatsStore {
         int every = Math.max(1, compactEvery);
         this.eventsLog = new BoundedJsonl(eventsFile, MAX_EVENT_LINES, MAX_EVENT_BYTES, every);
         this.sessionsLog = new BoundedJsonl(sessionsFile, MAX_SESSION_LINES, MAX_SESSION_BYTES, every);
+    }
+
+    /** Apply admin/repo stats day barrier (hours before this count as prior day). */
+    public void setDayBarrierHour(int hour) {
+        this.dayBarrierHour = StatsDayPolicy.parseBarrierHour(hour);
+    }
+
+    public int getDayBarrierHour() {
+        return dayBarrierHour;
     }
 
     public File getDir() { return dir; }
@@ -169,7 +179,7 @@ public final class StatsStore {
 
     public DayStats dayStats(long nowMs, TimeZone zone) throws IOException {
         ensureMigrated(zone);
-        String today = dayKey(nowMs, zone);
+        String today = dayKeyFor(nowMs, zone);
         Map<String, DayStats> rollups = loadDayRollups();
         DayStats d = rollups.get(today);
         if (d == null) d = new DayStats();
@@ -195,7 +205,7 @@ public final class StatsStore {
     private void upsertDayFromEvent(long ts, TimeZone zone, String type, String sessionType)
             throws IOException {
         ensureMigrated(zone);
-        String key = dayKey(ts, zone);
+        String key = dayKeyFor(ts, zone);
         Map<String, DayStats> map = loadDayRollups();
         DayStats d = map.get(key);
         if (d == null) {
@@ -230,7 +240,7 @@ public final class StatsStore {
                     if (ts <= 0) continue;
                     String type = JsonUtil.extract(line, "type");
                     if (!isDayCountedType(type)) continue;
-                    String key = dayKey(ts, zone);
+                    String key = dayKeyFor(ts, zone);
                     DayStats d = map.computeIfAbsent(key, k -> new DayStats());
                     applyEvent(d, type, JsonUtil.extract(line, "session_type"));
                 }
@@ -404,13 +414,18 @@ public final class StatsStore {
         }
     }
 
+    private String dayKeyFor(long whenMs, TimeZone zone) {
+        return dayKey(whenMs, zone, dayBarrierHour);
+    }
+
+    /** Stats day key using {@link StatsDayPolicy#DEFAULT_BARRIER_HOUR}. */
     public static String dayKey(long whenMs, TimeZone zone) {
-        Calendar c = Calendar.getInstance(zone == null ? TimeZone.getDefault() : zone);
-        c.setTimeInMillis(whenMs);
-        return String.format(Locale.US, "%04d-%02d-%02d",
-                c.get(Calendar.YEAR),
-                c.get(Calendar.MONTH) + 1,
-                c.get(Calendar.DAY_OF_MONTH));
+        return dayKey(whenMs, zone, StatsDayPolicy.DEFAULT_BARRIER_HOUR);
+    }
+
+    /** Stats day key with an explicit barrier hour (0 = midnight calendar day). */
+    public static String dayKey(long whenMs, TimeZone zone, int barrierHour) {
+        return StatsDayPolicy.dayKey(whenMs, zone, barrierHour);
     }
 
     /** Normalize {@code YYYY-M-D} / {@code YYYY-MM-DD} to zero-padded Intake day keys. */

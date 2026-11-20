@@ -15,8 +15,8 @@ Public hosts: **`*.quizgate.app` only**.
 3. Optional **parent email** → server stores `sha256(pepper:email:uuid)` only — never plaintext email on the tip.
 4. Human login: must know UUID **and** email matching the hash → 6-digit code via `clevertreellc@gmail.com` SMTP → session token.
 5. **No user directory / search.** Wrong UUID → generic failure.
-6. Stats are read-only in admin; curriculum / interval / jitter / performance preference / **time earn cap** (`time_earn_cap_minutes`, default 120) are writable (queued `admin_settings` → `quizgate-batch`). See [`TIME_EARN.md`](TIME_EARN.md).
-7. App periodically pulls `profile.json` when remote upload is enabled.
+6. Stats are read-only in admin. Writable settings (queued `admin_settings` → `quizgate-batch`) are **overrides only**: leave blank in the admin UI to keep the tip/device on **repo defaults**. Keys: curriculum, interval/jitter, performance preference, `time_earn_cap_minutes` (default 120), `stats_day_barrier_hour` (default **5** — local hour when the stats day rolls; hours before that count as the prior day). See [`TIME_EARN.md`](TIME_EARN.md) · [`TELEMETRY.md`](TELEMETRY.md).
+7. App periodically pulls `profile.json` when remote upload is enabled; only present settings keys are applied.
 
 ## SMTP (2FA)
 

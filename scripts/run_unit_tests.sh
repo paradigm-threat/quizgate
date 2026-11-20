@@ -20,6 +20,8 @@ echo "== QuizSessionTest =="
 java -cp "$OUT" QuizSessionTest "$JSON"
 echo "== SchedulerTest =="
 java -cp "$OUT" SchedulerTest
+echo "== StatsDayPolicyTest =="
+java -cp "$OUT" StatsDayPolicyTest
 echo "== StatsStoreTest =="
 java -cp "$OUT" StatsStoreTest "$JSON"
 echo "== BoundedJsonlTest =="

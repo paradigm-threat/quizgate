@@ -39,7 +39,9 @@ public final class Diag {
     }
 
     public static StatsStore stats(Context ctx) {
-        return new StatsStore(statsDir(ctx), PerformanceMode.compactEvery(ctx));
+        StatsStore store = new StatsStore(statsDir(ctx), PerformanceMode.compactEvery(ctx));
+        store.setDayBarrierHour(new AppPrefs(ctx).getStatsDayBarrierHour());
+        return store;
     }
 
     public static DiagnosticsStore diagnostics(Context ctx) {
@@ -183,7 +185,7 @@ public final class Diag {
             StatsStore store = stats(app);
             TimeZone zone = TimeZone.getDefault();
             long now = System.currentTimeMillis();
-            String today = StatsStore.dayKey(now, zone);
+            String today = StatsStore.dayKey(now, zone, prefs.getStatsDayBarrierHour());
             java.util.List<StatsStore.DayEntry> entries = store.allDayStats(zone);
             java.util.List<String> localKeys = new java.util.ArrayList<>();
             java.util.Map<String, StatsStore.DayStats> byDay = new java.util.HashMap<>();

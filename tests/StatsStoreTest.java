@@ -16,6 +16,8 @@ public class StatsStoreTest {
         Catalog c = Catalog.fromJson(new String(Files.readAllBytes(Paths.get(args[0]))));
         File dir = Files.createTempDirectory("unlock-stats").toFile();
         StatsStore store = new StatsStore(dir);
+        // Midnight calendar days for rollup assertions (prod default is 5 AM).
+        store.setDayBarrierHour(0);
         TimeZone utc = TimeZone.getTimeZone("UTC");
 
         QuestionPicker picker = new QuestionPicker(c, new Random(7)).preferFormat(RenderFormat.EQUATION);
@@ -73,10 +75,10 @@ public class StatsStoreTest {
         store.appendEvent(new StatsEvent(older + 1, "old", "correct", "m01", "2", 0), utc);
         java.util.List<StatsStore.DayEntry> hist = store.allDayStats(utc);
         Assert.isTrue(hist.size() >= 2, "historic days >= 2");
-        Assert.eq(StatsStore.dayKey(now, utc), hist.get(0).dayKey, "newest day first");
+        Assert.eq(StatsStore.dayKey(now, utc, 0), hist.get(0).dayKey, "newest day first");
         boolean foundOld = false;
         for (StatsStore.DayEntry e : hist) {
-            if (e.dayKey.equals(StatsStore.dayKey(older, utc))) {
+            if (e.dayKey.equals(StatsStore.dayKey(older, utc, 0))) {
                 foundOld = true;
                 Assert.eq(1, e.stats.answeredRight, "old day right");
                 Assert.eq(1, e.stats.questionsAsked, "old day asked");

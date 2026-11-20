@@ -26,7 +26,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks reintercept while the screen stays on; pending cleared; FSI notif cancelled. Intentional screen-off clears grace + always pends; wake opens Hard quiz. ScreenLockGate registers from app start (not only a11y) |
 | Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch |
 | Performance | Pref `auto` (default) / `performance` / `slim`; Auto → Slim on weak device, low battery, saver |
-| Stats | `files/stats/` capped JSONL; day rollups 90d; Intake day-batch on open (async): closed days once, today ≤1×/day; no schedule |
+| Stats | `files/stats/` capped JSONL; day rollups 90d; stats day barrier default **5 AM** local (`StatsDayPolicy` / admin `stats_day_barrier_hour`); Intake day-batch on open (async): closed days once, today ≤1×/day; no schedule |
 | Time earn | Standalone rapid-fire jar minutes: `TimeEarnPolicy` bands + session cap (default 120m, admin `time_earn_cap_minutes`); play success **Earn more time** when remaining &lt; cap. Hard unlock: ~40% once/local-day offer of the same continue/Quit chrome (`PostUnlockPlayOfferPolicy`); Quit stays on lock restore path; further earns push jar onto the already-armed next alarm |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |
 | Quiz UI | Centered in usable band; `QuizUiScale.scaleToFit` keeps chrome inside viewport (shrink if needed, never clip); DayNight colors + `UiContrastTest` (WCAG AA); 2D pan; overlays via MediaGate + OverlayGate |
@@ -35,6 +35,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 ## Key docs
 
 - [`README.md`](README.md) — build, install, behavior overview
+- [`docs/batch-phases.md`](docs/batch-phases.md) — Phase 1 Cursor / Phase 2 Spot (shared Relay queue)
 - [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — Auto / Performance / Slim
 - [`docs/TELEMETRY.md`](docs/TELEMETRY.md) — diagnostics paths + payload (live-debug)
 - [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — `api.quizgate.app` Intake + `quizgate-users` Relay tip (compile upload flag OFF; runtime opt-in)

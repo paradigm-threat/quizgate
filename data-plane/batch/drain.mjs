@@ -150,10 +150,17 @@ function applyAdminSettings(job) {
   if (patch.performance_preference) {
     profile.settings.performance_preference = String(patch.performance_preference);
   }
-  if (patch.time_earn_cap_minutes != null) {
+  if (patch.time_earn_cap_minutes != null && patch.time_earn_cap_minutes !== "") {
     const n = Number(patch.time_earn_cap_minutes);
     if (Number.isFinite(n) && n >= 1) {
       profile.settings.time_earn_cap_minutes = Math.min(Math.floor(n), 180);
+    }
+  }
+  // Only persist overrides; omit/blank → device uses StatsDayPolicy default (5).
+  if (patch.stats_day_barrier_hour != null && patch.stats_day_barrier_hour !== "") {
+    const n = Number(patch.stats_day_barrier_hour);
+    if (Number.isFinite(n) && n >= 0 && n <= 23) {
+      profile.settings.stats_day_barrier_hour = Math.floor(n);
     }
   }
   if (Array.isArray(patch.content_hints)) {

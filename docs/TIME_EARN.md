@@ -23,6 +23,7 @@ Policy core is pure JVM: [`TimeEarnPolicy`](../UnlockQuiz/src/net/clevertree/qui
 | Setting | Default | Range |
 |---------|---------|-------|
 | `settings.time_earn_cap_minutes` | 120 | 1–180 |
+| `settings.stats_day_barrier_hour` | 5 | 0–23 (omit → device default 5 AM stats day) |
 
 Written by human admin PATCH → queue → `quizgate-batch`; applied on device by `RemoteSettingsPull`.
 

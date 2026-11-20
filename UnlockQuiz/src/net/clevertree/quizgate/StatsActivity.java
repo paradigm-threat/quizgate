@@ -10,7 +10,6 @@ import android.widget.TextView;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.SystemClock;
 
-import java.io.File;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -23,7 +22,7 @@ public class StatsActivity extends Activity {
         LinearLayout list = findViewById(R.id.stats_day_list);
         findViewById(R.id.stats_back).setOnClickListener(v -> returnToQuiz());
 
-        StatsStore store = new StatsStore(new File(getFilesDir(), "stats"));
+        StatsStore store = Diag.stats(this);
         List<StatsStore.DayEntry> days;
         try {
             days = store.allDayStats(TimeZone.getDefault());
@@ -36,7 +35,9 @@ public class StatsActivity extends Activity {
             return;
         }
         empty.setVisibility(View.GONE);
-        String todayKey = StatsStore.dayKey(new SystemClock().nowMillis(), TimeZone.getDefault());
+        int barrier = new AppPrefs(this).getStatsDayBarrierHour();
+        String todayKey = StatsStore.dayKey(new SystemClock().nowMillis(), TimeZone.getDefault(),
+                barrier);
         StatsHistoryViews.populateDayList(this, list, days, todayKey);
     }
 

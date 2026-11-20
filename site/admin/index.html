@@ -24,12 +24,13 @@
     .hidden { display:none; }
     .row { display:flex; gap:.75rem; flex-wrap:wrap; }
     .row > * { flex:1; min-width:140px; }
+    .hint { font-size:.8rem; color:var(--muted); margin:.25rem 0 0; }
   </style>
 </head>
 <body>
 <main>
   <h1>QuizGate remote admin</h1>
-  <p class="lead">No user directory. You must already know the device UUID. Stats are anonymized; curriculum and schedule can be updated like the AI batch.</p>
+  <p class="lead">No user directory. You must already know the device UUID. Leave fields blank to keep the device on repo defaults — only send overrides that differ.</p>
 
   <section id="login" class="card">
     <h2>Sign in</h2>
@@ -54,6 +55,7 @@
     <h3>Anonymized stats</h3>
     <pre id="statsOut">Loading…</pre>
     <h3>Update settings</h3>
+    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM.</p>
     <div class="row">
       <div>
         <label for="curriculum">Curriculum id</label>
@@ -61,19 +63,32 @@
       </div>
       <div>
         <label for="interval">Interval (minutes)</label>
-        <input id="interval" type="number" min="15" max="180" value="30">
+        <input id="interval" type="number" min="15" max="180" placeholder="40">
       </div>
       <div>
         <label for="jitter">Jitter ± (minutes)</label>
-        <input id="jitter" type="number" min="0" max="60" value="15">
+        <input id="jitter" type="number" min="0" max="60" placeholder="10">
       </div>
     </div>
-    <label for="perf">Performance preference</label>
-    <select id="perf">
-      <option value="auto">Auto</option>
-      <option value="performance">Performance</option>
-      <option value="slim">Slim</option>
-    </select>
+    <div class="row">
+      <div>
+        <label for="perf">Performance preference</label>
+        <select id="perf">
+          <option value="">(leave unchanged)</option>
+          <option value="auto">Auto</option>
+          <option value="performance">Performance</option>
+          <option value="slim">Slim</option>
+        </select>
+      </div>
+      <div>
+        <label for="earnCap">Time-earn cap (minutes)</label>
+        <input id="earnCap" type="number" min="1" max="180" placeholder="120">
+      </div>
+      <div>
+        <label for="dayBarrier">Stats day barrier (hour 0–23)</label>
+        <input id="dayBarrier" type="number" min="0" max="23" placeholder="5">
+      </div>
+    </div>
     <button id="btnSave" type="button">Queue settings update</button>
     <p id="saveMsg"></p>
     <button id="btnLogout" class="secondary" type="button">Sign out</button>
@@ -106,19 +121,27 @@ function showPanel(uuid) {
   refreshStats();
 }
 
+function fillFromProfile(p) {
+  document.getElementById("curriculum").value = p.curriculum_id || "";
+  const s = p.settings || {};
+  document.getElementById("interval").value =
+    s.interval_ms != null ? Math.round(s.interval_ms / 60000) : "";
+  document.getElementById("jitter").value =
+    s.jitter_ms != null ? Math.round(s.jitter_ms / 60000) : "";
+  document.getElementById("perf").value = s.performance_preference || "";
+  document.getElementById("earnCap").value =
+    s.time_earn_cap_minutes != null ? s.time_earn_cap_minutes : "";
+  document.getElementById("dayBarrier").value =
+    s.stats_day_barrier_hour != null ? s.stats_day_barrier_hour : "";
+}
+
 async function refreshStats() {
   const uuid = localStorage.getItem(UUID_KEY);
   const out = document.getElementById("statsOut");
   try {
     const data = await api("/v1/admin/users/" + uuid + "/stats");
     out.textContent = JSON.stringify(data, null, 2);
-    const p = data.profile || {};
-    if (p.curriculum_id) document.getElementById("curriculum").value = p.curriculum_id;
-    if (p.settings) {
-      if (p.settings.interval_ms) document.getElementById("interval").value = Math.round(p.settings.interval_ms / 60000);
-      if (p.settings.jitter_ms != null) document.getElementById("jitter").value = Math.round(p.settings.jitter_ms / 60000);
-      if (p.settings.performance_preference) document.getElementById("perf").value = p.settings.performance_preference;
-    }
+    fillFromProfile(data.profile || {});
   } catch (e) {
     out.textContent = String(e.message || e);
   }
@@ -163,12 +186,23 @@ document.getElementById("btnSave").onclick = async () => {
   const el = document.getElementById("saveMsg");
   const uuid = localStorage.getItem(UUID_KEY);
   try {
-    const body = {
-      curriculum_id: document.getElementById("curriculum").value.trim(),
-      interval_ms: Number(document.getElementById("interval").value) * 60000,
-      jitter_ms: Number(document.getElementById("jitter").value) * 60000,
-      performance_preference: document.getElementById("perf").value,
-    };
+    const body = {};
+    const curriculum = document.getElementById("curriculum").value.trim();
+    if (curriculum) body.curriculum_id = curriculum;
+    const interval = document.getElementById("interval").value.trim();
+    if (interval !== "") body.interval_ms = Number(interval) * 60000;
+    const jitter = document.getElementById("jitter").value.trim();
+    if (jitter !== "") body.jitter_ms = Number(jitter) * 60000;
+    const perf = document.getElementById("perf").value;
+    if (perf) body.performance_preference = perf;
+    const earnCap = document.getElementById("earnCap").value.trim();
+    if (earnCap !== "") body.time_earn_cap_minutes = Number(earnCap);
+    const dayBarrier = document.getElementById("dayBarrier").value.trim();
+    if (dayBarrier !== "") body.stats_day_barrier_hour = Number(dayBarrier);
+    if (Object.keys(body).length === 0) {
+      msg(el, "Nothing to queue — fill at least one override.");
+      return;
+    }
     const data = await api("/v1/admin/users/" + uuid + "/profile", {
       method: "PATCH",
       body: JSON.stringify(body),
