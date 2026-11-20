@@ -316,9 +316,26 @@ public class QuizActivity extends Activity {
             restorePreviousApp = false;
         }
         if (finishing || inTransition) return;
+        boolean adbForce = trigger.startsWith("adb_");
         if (session != null && !session.isEnded()) {
-            // Soft-replace open play request while mid-question — ignore
-            if (!playMode) return;
+            // Soft-replace open play/lock while mid-question — ignore, except ADB smoke
+            // which must replace the round (singleInstance often delivers onNewIntent).
+            if (!playMode && !adbForce) return;
+        }
+        if (intent.hasExtra("math_entry")) {
+            prefs.setMathEntryMode(intent.getStringExtra("math_entry"));
+        }
+        if (adbForce) {
+            forcePostUnlockPlayOffer = intent.getBooleanExtra(EXTRA_FORCE_POST_UNLOCK_OFFER, false);
+            catalog = CatalogLoader.get(this);
+            picker = new QuestionPicker(catalog, random);
+            if (intent.hasExtra("force_qid")) {
+                picker.preferFirst(intent.getStringExtra("force_qid"));
+            }
+            picker.preferFormat(RenderFormat.EQUATION);
+            if (!playMode) HardGate.startSession(this);
+            startRound(trigger);
+            return;
         }
         if (TRIGGER_PLAY.equals(trigger) && (session == null || session.isEnded())) {
             resetTimeEarnSession();

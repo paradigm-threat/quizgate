@@ -173,13 +173,27 @@ dump_has 'Please answer this question'
 echo "digit wrong→continue OK"
 
 echo "== Digit pad correct unlock =="
+# -S force-stops first so singleInstance onNewIntent cannot ignore a mid-lock round.
 "${ADB[@]}" shell am force-stop "$PKG"
+sleep 1
 enable_a11y
 wake
-"${ADB[@]}" shell am start -W -n "$PKG/.QuizActivity" \
+"${ADB[@]}" shell am start -S -W -n "$PKG/.QuizActivity" \
   --es trigger adb_digit_ok --es math_entry digit_pad --es force_qid m01 >/dev/null
-sleep 2.5
-dump_has 'text="OK"'
+# settings put a11y after -S (Samsung may drop the binding on stop).
+enable_a11y
+# Cold start + a11y can take a few seconds before the pad paints.
+pad_ok=0
+for i in 1 2 3 4 5 6 7 8 9 10 12 14 16; do
+  dump_ui
+  if grep -qF 'text="OK"' "$UI_HOST" && grep -qF '1 + 1' "$UI_HOST"; then pad_ok=1; break; fi
+  sleep 0.5
+done
+if [[ "$pad_ok" != "1" ]]; then
+  echo "digit correct: OK pad never appeared" >&2
+  sed 's/></>\n</g' "$UI_HOST" | grep -E 'text=' | head -40 >&2 || true
+  exit 1
+fi
 tap_text "2"
 sleep 0.5
 # Single-digit correct auto-submits — only tap OK if the pad is still up.
