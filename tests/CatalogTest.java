@@ -12,7 +12,8 @@ public class CatalogTest {
         for (Question q : c.all()) {
             q.validate();
             Assert.isTrue(q.choices.contains(q.correct), q.id + " correct in choices");
-            Assert.eq(3, q.choices.size(), q.id + " choices");
+            Assert.isTrue(q.choices.size() == 3 || q.choices.size() == 4,
+                    q.id + " choices 3|4 got=" + q.choices.size());
             Assert.eq("math", q.type, q.id + " math only");
             Assert.isTrue(!"color".equals(q.type), q.id + " no color");
             Assert.isTrue(!"animal".equals(q.type), q.id + " no animals");

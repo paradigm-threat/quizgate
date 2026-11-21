@@ -11,6 +11,7 @@ public class QuizUiScaleTest {
         assertMildDesire();
         assertFitNeverClips();
         assertControlsVisibleAndClickable();
+        assertChoiceGridFitsAndClickable();
         assertShortLandscapeShrinks();
         assertTabletPortraitComfortable();
         assertColumnNearFullBleed();
@@ -96,6 +97,55 @@ public class QuizUiScaleTest {
                                         : QuizUiScale.BASE_KEY_DP, s)
                                 + " skip=" + QuizUiScale.controlHeightDp(
                                 QuizUiScale.BASE_SKIP_DP, s));
+            }
+        }
+    }
+
+    /**
+     * 2×2 MC grid chrome must fit (no clip) and each tile ≥ MIN_TOUCH_DP on
+     * supported viewports; tile px must stay inside the choice column.
+     */
+    private static void assertChoiceGridFitsAndClickable() {
+        int[][] sizes = {
+                {720, 1280},
+                {1280, 720},
+                {1200, 1920}, // SM_X210 port
+                {1920, 1200},
+                {1600, 2560},
+                {2560, 1600},
+                {1080, 1920},
+                {800, 1280},
+        };
+        float[] densities = {1.5f, 2f, 2.75f, 3f};
+        for (int[] wh : sizes) {
+            for (float dens : densities) {
+                int statsPx = Math.round(56f * dens);
+                boolean compact = QuizUiScale.useCompactChrome(wh[0], wh[1], dens);
+                float s = QuizUiScale.scaleToFit(wh[0], wh[1], dens, statsPx);
+                float usableDp = (wh[1] - statsPx) / dens;
+                float gridChrome = QuizUiScale.estimateChoiceGridChromeDp(s, compact);
+                Assert.isTrue(gridChrome <= usableDp * QuizUiScale.FIT_SLACK + 0.5f,
+                        "grid no clip w=" + wh[0] + " h=" + wh[1] + " dens=" + dens
+                                + " scale=" + s + " gridChrome=" + gridChrome
+                                + " usable=" + usableDp);
+                float worst = QuizUiScale.estimateWorstChromeDp(s, compact);
+                Assert.isTrue(worst >= gridChrome - 0.01f,
+                        "worst covers grid chrome");
+                if (!QuizUiScale.isSupportedViewport(usableDp)) continue;
+                Assert.isTrue(QuizUiScale.controlsFullyClickable(s, compact),
+                        "grid controls clickable w=" + wh[0] + " h=" + wh[1]);
+                float tileDp = QuizUiScale.controlHeightDp(
+                        compact ? QuizUiScale.BASE_GRID_TILE_COMPACT_DP
+                                : QuizUiScale.BASE_GRID_TILE_DP, s);
+                Assert.isTrue(tileDp >= QuizUiScale.MIN_TOUCH_DP - 0.01f,
+                        "grid tile ≥ touch floor got=" + tileDp);
+                int col = QuizUiScale.columnWidthPx(wh[0], s);
+                int tilePx = QuizUiScale.gridTilePx(col, s, dens, compact);
+                Assert.isTrue(tilePx * 2 <= col + dens * 16f,
+                        "two tiles fit column col=" + col + " tile=" + tilePx);
+                Assert.isTrue(tilePx >= Math.round(QuizUiScale.MIN_TOUCH_DP * dens) - 1
+                                || col / 2 < Math.round(QuizUiScale.MIN_TOUCH_DP * dens),
+                        "tile px clickable or column too narrow tile=" + tilePx);
             }
         }
     }

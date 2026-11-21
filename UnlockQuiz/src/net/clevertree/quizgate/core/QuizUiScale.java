@@ -34,6 +34,10 @@ public final class QuizUiScale {
     public static final int BASE_SKIP_DP = 48;
     public static final int BASE_CHOICE_DP = 68;
     public static final int BASE_CHOICE_COMPACT_DP = 56;
+    /** Cap for 2×2 MC grid tiles (dp before scale) — avoids half-width blow-up on tablets. */
+    public static final int BASE_GRID_TILE_DP = 112;
+    /** Compact must stay ≤ digit-pad chrome so scaleToFit does not shrink under touch floor. */
+    public static final int BASE_GRID_TILE_COMPACT_DP = 80;
     public static final int BASE_TF_DP = 96;
     public static final int BASE_TF_COMPACT_DP = 72;
 
@@ -115,14 +119,21 @@ public final class QuizUiScale {
     }
 
     /**
-     * Approximate vertical budget (dp) for the tallest ask path: header +
-     * spoken + symbolic + digit answer + 4-row pad + skip + gaps.
+     * Approximate vertical budget (dp) for the tallest ask path. Takes the max of
+     * digit-pad, 2×2 choice grid, and true/false chrome so fit covers every format.
      * Compact matches landscape / short-portrait builders in QuizActivity.
      */
     public static float estimateWorstChromeDp(float scale, boolean compact) {
+        float digit = estimateDigitPadChromeDp(scale, compact);
+        float grid = estimateChoiceGridChromeDp(scale, compact);
+        float tf = estimateTrueFalseChromeDp(scale, compact);
+        return Math.max(digit, Math.max(grid, tf));
+    }
+
+    /** Digit-pad path: header + spoken + symbolic + digit answer + 4-row pad + skip. */
+    public static float estimateDigitPadChromeDp(float scale, boolean compact) {
         float s = Math.max(0.01f, scale);
         if (compact) {
-            // Lean text/gaps so phone-land keeps keys ≥ MIN_TOUCH_DP while fitting.
             float header = 20f * s;
             float spoken = 22f * s;
             float symbolic = 24f * s;
@@ -146,6 +157,32 @@ public final class QuizUiScale {
         return header + spoken + symbolic + digitAns + pad + skip + gaps;
     }
 
+    /** L0 2×2 MC grid: header + spoken + symbolic + two tile rows + skip (+ hint blocks). */
+    public static float estimateChoiceGridChromeDp(float scale, boolean compact) {
+        float s = Math.max(0.01f, scale);
+        float header = (compact ? 20f : 32f) * s;
+        float spoken = (compact ? 22f : 36f) * s;
+        float symbolic = (compact ? 24f : 44f) * s;
+        float tile = (compact ? BASE_GRID_TILE_COMPACT_DP : BASE_GRID_TILE_DP) * s;
+        float tileGap = (compact ? 6f : 8f) * s;
+        float grid = 2f * (tile + 2f * tileGap);
+        float blocks = 28f * s; // optional count-blocks row
+        float skip = BASE_SKIP_DP * s;
+        float gaps = (compact ? 10f : 24f) * s;
+        return header + spoken + symbolic + grid + blocks + skip + gaps;
+    }
+
+    public static float estimateTrueFalseChromeDp(float scale, boolean compact) {
+        float s = Math.max(0.01f, scale);
+        float header = (compact ? 20f : 32f) * s;
+        float spoken = (compact ? 22f : 36f) * s;
+        float symbolic = (compact ? 24f : 44f) * s;
+        float tf = (compact ? BASE_TF_COMPACT_DP : BASE_TF_DP) * s;
+        float skip = BASE_SKIP_DP * s;
+        float gaps = (compact ? 10f : 28f) * s;
+        return header + spoken + symbolic + tf + skip + gaps;
+    }
+
     public static boolean fitsUsableHeight(float scale, float usableHeightDp) {
         return fitsUsableHeight(scale, usableHeightDp, false);
     }
@@ -162,19 +199,39 @@ public final class QuizUiScale {
     }
 
     /**
-     * True when digit keys, skip, choice, and T/F controls meet
-     * {@link #MIN_TOUCH_DP} at this scale.
+     * True when digit keys, skip, row-choice, 2×2 grid tiles, and T/F controls
+     * all meet {@link #MIN_TOUCH_DP} at this scale.
      */
     public static boolean controlsFullyClickable(float scale, boolean compact) {
         float key = controlHeightDp(compact ? BASE_KEY_COMPACT_DP : BASE_KEY_DP, scale);
         float skip = controlHeightDp(BASE_SKIP_DP, scale);
         float choice = controlHeightDp(
                 compact ? BASE_CHOICE_COMPACT_DP : BASE_CHOICE_DP, scale);
+        float grid = controlHeightDp(
+                compact ? BASE_GRID_TILE_COMPACT_DP : BASE_GRID_TILE_DP, scale);
         float tf = controlHeightDp(compact ? BASE_TF_COMPACT_DP : BASE_TF_DP, scale);
         return key >= MIN_TOUCH_DP - 0.01f
                 && skip >= MIN_TOUCH_DP - 0.01f
                 && choice >= MIN_TOUCH_DP - 0.01f
+                && grid >= MIN_TOUCH_DP - 0.01f
                 && tf >= MIN_TOUCH_DP - 0.01f;
+    }
+
+    /**
+     * Pixel size for one 2×2 grid tile: capped base, never wider than half the
+     * choice column (minus gap), never below {@link #MIN_TOUCH_DP} when possible.
+     */
+    public static int gridTilePx(int columnWidthPx, float scale, float density,
+                                 boolean compact) {
+        float d = densityOrOne(density);
+        int base = scaledDp(compact ? BASE_GRID_TILE_COMPACT_DP : BASE_GRID_TILE_DP,
+                scale, d);
+        int gap = scaledDp(compact ? 6 : 8, scale, d);
+        int half = Math.max(1, columnWidthPx / 2 - gap);
+        int tile = Math.min(base, half);
+        int minPx = Math.round(MIN_TOUCH_DP * d);
+        if (tile < minPx && half >= minPx) tile = minPx;
+        return Math.max(1, tile);
     }
 
     /**

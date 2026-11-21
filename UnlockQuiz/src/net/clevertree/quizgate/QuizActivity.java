@@ -698,7 +698,7 @@ public class QuizActivity extends Activity {
         int n = order.size();
         boolean grid = n >= 4;
         int tile = grid
-                ? Math.max(QuizUiScale.scaledDp(compact ? 72 : 88, uiScale, dens), colW / 2 - dp(12))
+                ? QuizUiScale.gridTilePx(colW, uiScale, dens, compact)
                 : QuizUiScale.scaledDp(
                         compact ? QuizUiScale.BASE_CHOICE_COMPACT_DP : QuizUiScale.BASE_CHOICE_DP,
                         uiScale, dens);
