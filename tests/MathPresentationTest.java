@@ -6,6 +6,7 @@ import net.clevertree.quizgate.core.QuestionPicker;
 import net.clevertree.quizgate.core.RenderFormat;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -96,6 +97,13 @@ public class MathPresentationTest {
         Assert.isTrue(allowed.contains(RenderFormat.EQUATION), "equation");
         Assert.isTrue(allowed.contains(RenderFormat.TRUE_FALSE), "true_false");
         Assert.isTrue(allowed.contains(RenderFormat.CHOICE), "choice");
+
+        Question mcOnly = new Question("a01", "math", "spoken", "1 + 1 = _",
+                Arrays.asList("1", "2", "3"), "2", null, 1,
+                Collections.singletonList(RenderFormat.CHOICE));
+        List<RenderFormat> only = RenderFormat.allowedFor(mcOnly);
+        Assert.eq(1, only.size(), "per-item override");
+        Assert.eq(RenderFormat.CHOICE, only.get(0), "choice only");
 
         Question color = new Question("c1", "color", "which", "",
                 Arrays.asList("red", "blue", "green"), "red", null);

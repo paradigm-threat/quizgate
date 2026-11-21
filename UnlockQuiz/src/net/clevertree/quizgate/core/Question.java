@@ -1,5 +1,6 @@
 package net.clevertree.quizgate.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -16,14 +17,25 @@ public final class Question {
     public final List<String> labels;
     /** Relative pick weight (≥1). Lower = rarer as the pool grows. */
     public final int weight;
+    /**
+     * Optional ask-time format override ({@code equation}/{@code true_false}/{@code choice}).
+     * {@code null} → type defaults in {@link RenderFormat#allowedFor(Question)}.
+     */
+    public final List<RenderFormat> formats;
 
     public Question(String id, String type, String spoken, String symbolic,
                     List<String> choices, String correct, List<String> labels) {
-        this(id, type, spoken, symbolic, choices, correct, labels, DEFAULT_WEIGHT);
+        this(id, type, spoken, symbolic, choices, correct, labels, DEFAULT_WEIGHT, null);
     }
 
     public Question(String id, String type, String spoken, String symbolic,
                     List<String> choices, String correct, List<String> labels, int weight) {
+        this(id, type, spoken, symbolic, choices, correct, labels, weight, null);
+    }
+
+    public Question(String id, String type, String spoken, String symbolic,
+                    List<String> choices, String correct, List<String> labels, int weight,
+                    List<RenderFormat> formats) {
         this.id = id;
         this.type = type;
         this.spoken = spoken;
@@ -32,6 +44,11 @@ public final class Question {
         this.correct = correct;
         this.labels = labels == null ? null : Collections.unmodifiableList(labels);
         this.weight = Math.max(1, weight);
+        if (formats == null || formats.isEmpty()) {
+            this.formats = null;
+        } else {
+            this.formats = Collections.unmodifiableList(new ArrayList<>(formats));
+        }
     }
 
     public boolean isCorrect(String choice) {

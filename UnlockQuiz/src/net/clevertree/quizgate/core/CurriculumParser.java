@@ -2,6 +2,7 @@ package net.clevertree.quizgate.core;
 
 import java.util.ArrayList;
 import java.util.List;
+// RenderFormat used by optional per-item formats[]
 
 /** Minimal parsers for manifest.json + curriculum.json (no external deps). */
 public final class CurriculumParser {
@@ -61,9 +62,29 @@ public final class CurriculumParser {
             // Catalog byId uses Question.id — prefer legacyId for ADB force_qid compatibility
             String catalogId = legacy != null ? legacy : id;
             int level = intOpt(obj, "level", 0);
-            questions.add(new Question(catalogId, type, spoken, symbolic, choices, correct, labels, weight));
+            List<RenderFormat> formats = parseFormats(obj);
+            questions.add(new Question(catalogId, type, spoken, symbolic, choices, correct, labels,
+                    weight, formats));
             meta.add(new CurriculumPack.ItemMeta(strOpt(obj, "tier", ""), legacy, level));
         }
+    }
+
+    /** Optional per-item {@code formats: ["choice", ...]}; null → engine type defaults. */
+    private static List<RenderFormat> parseFormats(String obj) {
+        if (!obj.contains("\"formats\"")) return null;
+        List<String> raw;
+        try {
+            raw = strArray(obj, "formats");
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        if (raw == null || raw.isEmpty()) return null;
+        List<RenderFormat> out = new ArrayList<>();
+        for (String id : raw) {
+            RenderFormat f = RenderFormat.fromId(id);
+            if (f != null && !out.contains(f)) out.add(f);
+        }
+        return out.isEmpty() ? null : out;
     }
 
     private static String extractArray(String json, String key) {

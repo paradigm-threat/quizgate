@@ -5,9 +5,9 @@
   "ageMax": 7,
   "difficultyRank": 10,
   "locale": "en",
-  "version": 5,
+  "version": 6,
   "minAppVersion": 1,
-  "description": "Level 0: addition within 10 (no zeros) + a few easy subtractions. Higher levels add zero-identity, more subtract, light multiply.",
-  "contentSha256": "cec3dac76e857a939c85fcf27f058119f039b644d260c25f32a74ad509d79498",
-  "sizeBytes": 22964
+  "description": "Level 0: addition under 8 (no zeros), multiple-choice only. L1: addition within 10 + easy subtract. L2: zero-identity + more subtract. L3: light multiply.",
+  "contentSha256": "85e9bc4111018a89c8618e17414a2fc0b6e266919dec654bc678bed9623158b3",
+  "sizeBytes": 32774
 }

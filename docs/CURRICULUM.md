@@ -30,13 +30,14 @@ Index: `https://quizgate.app/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
-**basic-math v5:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
+**basic-math v6:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
 
 | Level | Contents |
 |------:|----------|
-| **0** | Getting started — all `add_within_10` (**no zeros**) + a few easy `subtract_within_10` |
-| **1** | Zero identity (`add_with_zero`: `n+0` / `0+n`) + remaining subtraction |
-| **2** | Light `multiply_within_10` |
+| **0** | First contact — `add_within_8` (**addends 1–7, sums ≤7, no zeros**); **`formats: ["choice"]` only** (no keypad / T/F) |
+| **1** | `add_within_10` (no zeros) + a few easy `subtract_within_10` |
+| **2** | Zero identity (`add_with_zero`: `n+0` / `0+n`) + remaining subtraction |
+| **3** | Light `multiply_within_10` |
 
 No color / “which one is red” items (later pack). Division deferred.
 
@@ -75,7 +76,7 @@ Catalog items stay **one logical question** (operands + op + correct result). Th
 
 **Skip:** every ask shows a Skip control. It logs `skipped`, then immediately presents another catalog item. After a skip the picker soft-biases toward easier formats (`true_false` / `choice`) and a different op-kind when the pool allows — still randomized so consecutive skips can land on yes/no again (no fixed ladder).
 
-Optional per-item `formats` overrides are reserved for later; basic-math relies on the math defaults above. Stats may log `render_format` on quiz events (token only).
+Optional per-item `formats` overrides the type defaults (basic-math L0 uses `["choice"]` only). Stats may log `render_format` on quiz events (token only).
 
 ### Roadmap (not implemented)
 

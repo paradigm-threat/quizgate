@@ -11,8 +11,8 @@
       "version": 4,
       "minAppVersion": 1,
       "description": "Addition, subtraction, and light multiplication under 10 \u2014 math only (no color questions).",
-      "contentSha256": "cec3dac76e857a939c85fcf27f058119f039b644d260c25f32a74ad509d79498",
-      "sizeBytes": 22964,
+      "contentSha256": "85e9bc4111018a89c8618e17414a2fc0b6e266919dec654bc678bed9623158b3",
+      "sizeBytes": 32774,
       "packUrl": "https://quizgate.app/curricula/packs/basic-math-v4.qgpack",
       "bundled": true
     }

@@ -34,10 +34,13 @@ public enum RenderFormat {
     }
 
     /**
-     * Default allowed formats by question type. Math always supports
-     * equation + true_false + choice in code so the catalog need not list formats per item.
+     * Allowed ask-time formats. Per-item {@link Question#formats} overrides type defaults.
+     * Math default: equation + true_false + choice.
      */
     public static List<RenderFormat> allowedFor(Question q) {
+        if (q != null && q.formats != null && !q.formats.isEmpty()) {
+            return q.formats;
+        }
         if (q != null && "math".equals(q.type)) {
             return Arrays.asList(EQUATION, TRUE_FALSE, CHOICE);
         }

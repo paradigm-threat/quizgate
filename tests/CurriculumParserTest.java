@@ -25,8 +25,13 @@ public class CurriculumParserTest {
         Question m01 = pack.catalog.byId("m01");
         Assert.isTrue(m01 != null, "legacy m01");
         Assert.eq("2", m01.correct, "m01 correct");
-        // Formats come from engine defaults — catalog is not duplicated for true/false.
+        // L1+ math keeps engine defaults (equation / T/F / choice).
         Assert.eq(3, RenderFormat.allowedFor(m01).size(), "math formats");
+
+        Question a01 = pack.catalog.byId("a01");
+        Assert.isTrue(a01 != null, "L0 a01");
+        Assert.eq(1, RenderFormat.allowedFor(a01).size(), "L0 choice-only");
+        Assert.eq(RenderFormat.CHOICE, RenderFormat.allowedFor(a01).get(0), "L0 format");
 
         Question m40 = pack.catalog.byId("m40");
         Assert.isTrue(m40 != null, "multiply m40");
@@ -49,19 +54,24 @@ public class CurriculumParserTest {
 
         Assert.isTrue(pack.catalogForTier("K").size() > 0, "tier K");
 
-        // Level 0 = getting started: addition (no zeros) + few easy subtracts.
+        // Level 0 = add under 8, MC only; prior L0 content is now L1.
         Catalog l0 = pack.catalogFiltered("all", 0);
-        Assert.isTrue(l0.size() >= 20, "level 0 pool");
-        Assert.isTrue(l0.byId("m01") != null, "L0 has m01");
+        Assert.isTrue(l0.size() >= 15, "level 0 pool");
+        Assert.isTrue(l0.byId("a01") != null, "L0 has a01");
+        Assert.isTrue(l0.byId("m01") == null, "L0 excludes former add-within-10");
+        Assert.isTrue(l0.byId("m21") == null, "L0 excludes subtract");
         Assert.isTrue(l0.byId("m16") == null, "L0 excludes 1+0");
-        Assert.isTrue(l0.byId("m50") == null, "L0 excludes 0+0");
         Assert.isTrue(l0.byId("m36") == null, "L0 excludes multiply");
-        Assert.isTrue(l0.byId("m21") != null, "L0 has easy subtract");
         Catalog l1 = pack.catalogFiltered("all", 1);
-        Assert.isTrue(l1.byId("m16") != null, "L1 includes zero identity");
-        Assert.isTrue(l1.byId("m36") == null, "L1 still excludes multiply");
+        Assert.isTrue(l1.byId("m01") != null, "L1 has add-within-10");
+        Assert.isTrue(l1.byId("m21") != null, "L1 has easy subtract");
+        Assert.isTrue(l1.byId("m16") == null, "L1 excludes zero identity");
+        Assert.isTrue(l1.byId("m36") == null, "L1 excludes multiply");
         Catalog l2 = pack.catalogFiltered("all", 2);
-        Assert.isTrue(l2.byId("m36") != null, "L2 includes multiply");
+        Assert.isTrue(l2.byId("m16") != null, "L2 includes zero identity");
+        Assert.isTrue(l2.byId("m36") == null, "L2 still excludes multiply");
+        Catalog l3 = pack.catalogFiltered("all", 3);
+        Assert.isTrue(l3.byId("m36") != null, "L3 includes multiply");
 
         // Round of 3 corrects unlocks
         QuestionPicker picker = new QuestionPicker(pack.catalog, new Random(7L))
