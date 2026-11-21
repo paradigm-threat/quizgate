@@ -35,10 +35,11 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 ## Key docs
 
 - [`README.md`](README.md) — build, install, behavior overview
-- [`docs/batch-phases.md`](docs/batch-phases.md) — Phase 1 Cursor / Phase 2 Spot (shared Relay queue)
+- [`docs/batch-phases.md`](docs/batch-phases.md) — same SI procedure as MyProblem/Clevertree; tip = anonymous user; Phase 1 Cursor two-pass / Phase 2 Spot
+- [`docs/BATCH_QUEUE.md`](docs/BATCH_QUEUE.md) — durable per-app job ledger (not the tip)
 - [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — Auto / Performance / Slim
 - [`docs/TELEMETRY.md`](docs/TELEMETRY.md) — diagnostics paths + payload (live-debug)
-- [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — `api.quizgate.app` Intake + `quizgate-users` Relay tip (compile upload flag OFF; runtime opt-in)
+- [`docs/DATA_PLANE.md`](docs/DATA_PLANE.md) — Intake + tip + ledger (compile upload flag OFF; runtime opt-in)
 - [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md) · [`docs/STORE_PUBLISH.md`](docs/STORE_PUBLISH.md)
 - [`docs/CURRICULUM.md`](docs/CURRICULUM.md) · [`docs/WIDGET.md`](docs/WIDGET.md)
 - [`docs/PEDAGOGY.md`](docs/PEDAGOGY.md) · [`docs/501C3_PLAN.md`](docs/501C3_PLAN.md) · [`docs/TODO.md`](docs/TODO.md) · [`docs/nonprofit/`](docs/nonprofit/) — QuizGate technique → Educational Foundation (Form 1023 later; humans: `HUMAN_NEXT_STEPS.md`)

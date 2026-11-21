@@ -46,3 +46,4 @@ node_modules/
 *.jks
 !debug.keystore
 .vercel
+data-plane/.data/

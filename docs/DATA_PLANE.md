@@ -2,14 +2,15 @@
 
 Public hosts are **`*.quizgate.app` only**.
 
-**Batch phases:** [`batch-phases.md`](batch-phases.md) · Relay SoT [`../../../myproblem/docs/batch-phases.md`](../../../myproblem/docs/batch-phases.md). Day-batch / profile jobs are kinds on the **shared multi-site queue**. Phase 1: **Cursor** is the tip writer; Intake stays cache+enqueue. Uploads: **Bunny** via per-repo upload-source config.
+**Batch phases:** [`batch-phases.md`](batch-phases.md) · durable ledger [`BATCH_QUEUE.md`](BATCH_QUEUE.md) · Relay SoT [`../../../myproblem/docs/batch-phases.md`](../../../myproblem/docs/batch-phases.md) — same SI drain → commit queue → merge as MyProblem/Clevertree. Day-batch / profile jobs are kinds on the multi-site procedure; QuizGate’s **durable job index** is the per-app ledger (not the tip). Phase 1: **Cursor** (two passes: drain propose → validate push); Intake stays cache+enqueue. Tip = anonymous `users/<uuid>/`. Uploads: **Bunny** via per-repo upload-source config.
 
-| Host | Role |
+| Host / SoT | Role |
 |------|------|
 | https://quizgate.app | Marketing / curricula (Vercel) |
 | https://admin.quizgate.app | Remote admin UI (UUID + email + 2FA) — see [REMOTE_ADMIN.md](REMOTE_ADMIN.md) |
 | https://api.quizgate.app | Always-on Intake (cache, enqueue, realtime, admin OTP) |
-| `git://iad1.relaygateway.net:9418/quizgate-users.git` | Relay tip (branch `users`) — infra, not a brand host |
+| `git://iad1.relaygateway.net:9418/quizgate-users.git` | Relay **tip** (branch `users`) — profile only; no job listing |
+| `quizgate-batch-queue` | Durable **job ledger** (queued / leased / done_empty / done) — see [`BATCH_QUEUE.md`](BATCH_QUEUE.md) |
 
 ## Flow
 
@@ -22,7 +23,7 @@ Public hosts are **`*.quizgate.app` only**.
    - **Unique per uuid + day:** exactly one file per `(uuid, day)`. Re-syncs atomically overwrite the counts (last write wins) and bump `sync_count`; no duplicate files.
    - **Day key:** optional body `day` (`YYYY-MM-DD`, e.g. the device's local day for backfill). When omitted, Intake uses the **UTC receive day**. Malformed `day` → `400 invalid_day`.
    - Identical bodies within 30s are deduped by the request cache (`deduped: true`, no `sync_count` bump).
-5. Batch SI drains the queue and writes **`users/<uuid>/profile.json` only** as **`quizgate-batch`** (readiness / curriculum / settings). Readiness includes **level-up** soft gates (`levelUpPolicy.mjs`: default ≥75% answered accuracy, ≥5 correct, ≤25% skips) — SI should adhere but may document exceptions. Phase 1: that drain is **Cursor** on the shared queue (local `node batch/drain.mjs` / systemd paths become the Phase 2 / parity target). It does **not** append tip `days.jsonl` / `events.jsonl` (those stay off git). SI will later scan day-batch folders for direction / proficient marks.
+5. Batch SI drains jobs (PVC pending + durable ledger). It writes tip **`users/<uuid>/profile.json` only** when standing fields change (`quizgate-batch` author). Readiness includes **level-up** soft gates (`levelUpPolicy.mjs`: default ≥75% answered accuracy, ≥5 correct, ≤25% skips) — SI should adhere but may document exceptions in the **git commit message**. If thresholds fail and nothing else changes, mark ledger **`done_empty`** — do **not** push an empty tip commit as proof. Phase 1: **Cursor** two-phase (propose locally → validate → push); `node batch/drain.mjs` / systemd remain parity targets for Spot. Tip never gets `days.jsonl` / `events.jsonl`.
 6. App GETs `/v1/users/{uuid}/profile` for curriculum / frequency / performance preference.
 
 Realtime photo / ASR / TTS hit `/v1/users/{uuid}/realtime/{kind}` — results return immediately; tip write only if a follow-up job is enqueued and batch accepts.
@@ -31,10 +32,13 @@ Realtime photo / ASR / TTS hit `/v1/users/{uuid}/realtime/{kind}` — results re
 
 | Path | Role |
 |------|------|
-| [`data-plane/quizgate-users/`](../data-plane/quizgate-users/) | Relay SoT hooks + schema |
+| [`data-plane/quizgate-users/`](../data-plane/quizgate-users/) | Tip hooks + schema (not the job ledger) |
+| [`docs/BATCH_QUEUE.md`](BATCH_QUEUE.md) | Durable per-app job ledger design |
+| [`data-plane/.data/quizgate-batch-queue/`](../data-plane/.data/quizgate-batch-queue/) | Local dry-run ledger git root (`QUIZGATE_BATCH_QUEUE_ROOT`) |
 | [`data-plane/intake/server.mjs`](../data-plane/intake/server.mjs) | Always-on API |
-| [`data-plane/batch/drain.mjs`](../data-plane/batch/drain.mjs) | Sole tip writer (`profile.json`) |
+| [`data-plane/batch/drain.mjs`](../data-plane/batch/drain.mjs) | Tip writer (`profile.json`) when standing change |
 | [`data-plane/lib/dayBatch.mjs`](../data-plane/lib/dayBatch.mjs) | Intake day-batch upsert on cache PVC |
+| [`data-plane/lib/levelUpPolicy.mjs`](../data-plane/lib/levelUpPolicy.mjs) | Level-up soft gates |
 | [`data-plane/batch/checkInbox.mjs`](../data-plane/batch/checkInbox.mjs) | Poll Relay Maildir (same as fleet Inbox) |
 | [`data-plane/lib/inboundMail.mjs`](../data-plane/lib/inboundMail.mjs) | Shared Maildir reader wrapper |
 | [`data-plane/infra/DNS.md`](../data-plane/infra/DNS.md) | DNS / TLS / MX |
