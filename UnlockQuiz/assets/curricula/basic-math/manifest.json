@@ -5,9 +5,9 @@
   "ageMax": 7,
   "difficultyRank": 10,
   "locale": "en",
-  "version": 4,
+  "version": 5,
   "minAppVersion": 1,
-  "description": "Addition, subtraction, and light multiplication under 10 \u2014 math only (no color questions).",
-  "contentSha256": "3264e92ad0d9fcfc25dc96566ac255296e2a1105773e37e4706d42ceeec26bc9",
-  "sizeBytes": 21604
+  "description": "Level 0: addition within 10 (no zeros) + a few easy subtractions. Higher levels add zero-identity, more subtract, light multiply.",
+  "contentSha256": "cec3dac76e857a939c85fcf27f058119f039b644d260c25f32a74ad509d79498",
+  "sizeBytes": 22964
 }

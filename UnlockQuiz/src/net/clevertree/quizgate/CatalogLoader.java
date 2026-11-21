@@ -18,7 +18,7 @@ public final class CatalogLoader {
         if (cached != null) return cached;
         CurriculumPack pack = CurriculumStore.getActive(ctx);
         AppPrefs prefs = new AppPrefs(ctx);
-        cached = pack.catalogForTier(prefs.getActiveTier());
+        cached = pack.catalogFiltered(prefs.getActiveTier(), prefs.getCurriculumLevel());
         return cached;
     }
 }

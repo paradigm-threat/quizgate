@@ -34,7 +34,7 @@ public final class CurriculumStore {
     public static CurriculumPack getActive(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
         String id = prefs.getActiveCurriculumId();
-        String key = id + "|" + prefs.getActiveTier();
+        String key = id + "|" + prefs.getActiveTier() + "|L" + prefs.getCurriculumLevel();
         if (activeCached != null && key.equals(activeCacheKey)) return activeCached;
         CurriculumPack pack = loadById(ctx, id);
         if (pack == null) pack = loadBundled(ctx, "basic-math");

@@ -1,3 +1,4 @@
+import net.clevertree.quizgate.core.Catalog;
 import net.clevertree.quizgate.core.CurriculumPack;
 import net.clevertree.quizgate.core.CurriculumParser;
 import net.clevertree.quizgate.core.PresentedQuestion;
@@ -47,6 +48,20 @@ public class CurriculumParserTest {
         Assert.eq("2 × 2 = _", escaped.catalog.byId("esc").symbolic, "unicode escape decode");
 
         Assert.isTrue(pack.catalogForTier("K").size() > 0, "tier K");
+
+        // Level 0 = getting started: addition (no zeros) + few easy subtracts.
+        Catalog l0 = pack.catalogFiltered("all", 0);
+        Assert.isTrue(l0.size() >= 20, "level 0 pool");
+        Assert.isTrue(l0.byId("m01") != null, "L0 has m01");
+        Assert.isTrue(l0.byId("m16") == null, "L0 excludes 1+0");
+        Assert.isTrue(l0.byId("m50") == null, "L0 excludes 0+0");
+        Assert.isTrue(l0.byId("m36") == null, "L0 excludes multiply");
+        Assert.isTrue(l0.byId("m21") != null, "L0 has easy subtract");
+        Catalog l1 = pack.catalogFiltered("all", 1);
+        Assert.isTrue(l1.byId("m16") != null, "L1 includes zero identity");
+        Assert.isTrue(l1.byId("m36") == null, "L1 still excludes multiply");
+        Catalog l2 = pack.catalogFiltered("all", 2);
+        Assert.isTrue(l2.byId("m36") != null, "L2 includes multiply");
 
         // Round of 3 corrects unlocks
         QuestionPicker picker = new QuestionPicker(pack.catalog, new Random(7L))

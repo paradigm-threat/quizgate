@@ -84,6 +84,19 @@ public final class AppPrefs {
         sp.edit().putBoolean("sync_enabled", v).apply();
     }
 
+    /**
+     * Active curriculum progression level (default 0 = getting started).
+     * Items with {@code level <=} this value are eligible.
+     */
+    public int getCurriculumLevel() {
+        return Math.max(0, sp.getInt("curriculum_level", 0));
+    }
+
+    public void setCurriculumLevel(int level) {
+        sp.edit().putInt("curriculum_level", Math.max(0, level)).apply();
+        CurriculumStore.clearCache();
+    }
+
     public String getActiveCurriculumId() {
         return sp.getString("active_curriculum_id", "basic-math");
     }

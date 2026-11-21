@@ -60,8 +60,9 @@ public final class CurriculumParser {
             int weight = intOpt(obj, "weight", Question.DEFAULT_WEIGHT);
             // Catalog byId uses Question.id — prefer legacyId for ADB force_qid compatibility
             String catalogId = legacy != null ? legacy : id;
+            int level = intOpt(obj, "level", 0);
             questions.add(new Question(catalogId, type, spoken, symbolic, choices, correct, labels, weight));
-            meta.add(new CurriculumPack.ItemMeta(strOpt(obj, "tier", ""), legacy));
+            meta.add(new CurriculumPack.ItemMeta(strOpt(obj, "tier", ""), legacy, level));
         }
     }
 

@@ -8,17 +8,17 @@ QuizGate replaces stretches of idle tablet time with short, age-fit practice. Le
 ## Learners and age bands
 | Pack (current) | Age band (manifest) | Focus |
 |----------------|---------------------|--------|
-| **basic-math** v4 | about **4–7** | Addition and subtraction within 10; light multiplication within 10; no color/label items in this pack |
+| **basic-math** v5 | about **4–7** | Progression **levels**: L0 addition (no zeros) + few easy subtracts; L1 zero-identity + more subtract; L2 light multiply |
 
-Future packs will publish their own `ageMin` / `ageMax` and learning objectives the same way. Tiers inside a pack order skills from easier to harder (e.g. zero-identity addition sits in a later tier than simple kindergarten add).
+Future packs will publish their own `ageMin` / `ageMax` and learning objectives the same way. **Levels** gate how deep the pool goes (default device level **0**); age tiers remain a separate optional filter.
 
-## Learning objectives (basic-math v4)
+## Learning objectives (basic-math v5)
 By working through scheduled Hard quizzes and optional practice, a child practices:
 
 1. **Addition within 10** — combine two small addends; recognize sums.
 2. **Subtraction within 10** — take-away within the same range.
 3. **Light multiplication within 10** — early facts (small factors), introduced carefully.
-4. **Zero identity (tier 1)** — `n + 0` / `0 + n` as a distinct skill (`add_with_zero`), not dumped into the easiest tier.
+4. **Zero identity (level 1)** — `n + 0` / `0 + n` as a distinct skill (`add_with_zero`), not in level 0 (too confusing for first contact).
 5. **Multiple representations** — the same fact can appear as an equation blank, true/false, or multiple choice so fluency is not tied to one button layout.
 
 Division and broader grade bands are deferred to later packs. Color / “which is red” style items return only with UI that does not rely on text labels alone.

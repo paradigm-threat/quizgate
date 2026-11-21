@@ -30,11 +30,19 @@ Index: `https://quizgate.app/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
-**basic-math v4:** addition under 10, expanded subtraction (`subtract_within_10`), and light multiplication (`multiply_within_10`) — no color / “which one is red” items (those return in a later pack with chip-only UI, no text labels). Division is deferred; pack is unfinished until that pass, then SI may mark curricula **proficient**.
+**basic-math v5:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
 
-**Zero identity (`n + 0` / `0 + n`):** treated as tricky — skill `add_with_zero`, tier **1** only (not Kindergarten). Weight `1`.
+| Level | Contents |
+|------:|----------|
+| **0** | Getting started — all `add_within_10` (**no zeros**) + a few easy `subtract_within_10` |
+| **1** | Zero identity (`add_with_zero`: `n+0` / `0+n`) + remaining subtraction |
+| **2** | Light `multiply_within_10` |
+
+No color / “which one is red” items (later pack). Division deferred.
 
 Optional per-item `weight` (integer ≥1, default 1): `QuestionPicker` uses weighted random selection so rarer skills stay uncommon as the pool grows. basic-math sets addition `weight: 2` and subtraction/multiplication typically `weight: 1`.
+
+Age **`tier`** (K / 1) remains a separate filter (`active_tier`); levels are the primary “how deep” control.
 
 ## Render formats (ask-time)
 

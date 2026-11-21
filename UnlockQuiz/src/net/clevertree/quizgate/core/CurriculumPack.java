@@ -44,12 +44,23 @@ public final class CurriculumPack {
     }
 
     public Catalog catalogForTier(String tierId) {
-        if (tierId == null || tierId.isEmpty() || "all".equals(tierId)) return catalog;
+        return catalogFiltered(tierId, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Filter by age tier (optional) and curriculum level: include items with
+     * {@code item.level <= maxLevel}. Level 0 = getting-started pool.
+     */
+    public Catalog catalogFiltered(String tierId, int maxLevel) {
+        boolean filterTier = tierId != null && !tierId.isEmpty() && !"all".equals(tierId);
+        int cap = Math.max(0, maxLevel);
         List<Question> filtered = new ArrayList<>();
         for (int i = 0; i < catalog.size(); i++) {
             Question q = catalog.all().get(i);
             ItemMeta m = itemMeta.get(i);
-            if (tierId.equals(m.tier)) filtered.add(q);
+            if (m.level > cap) continue;
+            if (filterTier && !tierId.equals(m.tier)) continue;
+            filtered.add(q);
         }
         if (filtered.isEmpty()) return catalog;
         return new Catalog(filtered);
@@ -72,10 +83,17 @@ public final class CurriculumPack {
     public static final class ItemMeta {
         public final String tier;
         public final String legacyId;
+        /** Curriculum progression level (0 = getting started). */
+        public final int level;
 
         public ItemMeta(String tier, String legacyId) {
+            this(tier, legacyId, 0);
+        }
+
+        public ItemMeta(String tier, String legacyId, int level) {
             this.tier = tier == null ? "" : tier;
             this.legacyId = legacyId;
+            this.level = Math.max(0, level);
         }
     }
 }

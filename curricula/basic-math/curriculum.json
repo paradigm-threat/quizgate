@@ -15,7 +15,7 @@
       "ageMax": 7
     }
   ],
-  "roundSize": 3,
+  "roundSize": 1,
   "earnMinutesPerCorrect": 2,
   "wrongBehavior": "next",
   "consolingUnlock": true,
@@ -42,7 +42,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m02",
@@ -65,7 +66,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m03",
@@ -88,7 +90,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m04",
@@ -111,7 +114,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m05",
@@ -134,7 +138,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m06",
@@ -157,7 +162,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m07",
@@ -180,7 +186,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m08",
@@ -203,7 +210,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m09",
@@ -226,7 +234,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m10",
@@ -249,7 +258,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m11",
@@ -272,7 +282,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m12",
@@ -295,7 +306,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m13",
@@ -318,7 +330,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m14",
@@ -341,7 +354,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m15",
@@ -364,7 +378,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m16",
@@ -387,7 +402,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m46",
@@ -410,7 +426,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m47",
@@ -433,7 +450,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m48",
@@ -456,7 +474,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m49",
@@ -479,7 +498,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m50",
@@ -502,7 +522,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m17",
@@ -525,7 +546,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m18",
@@ -548,7 +570,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m19",
@@ -571,7 +594,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.1.m20",
@@ -594,7 +618,8 @@
         "digit",
         "choice"
       ],
-      "weight": 2
+      "weight": 2,
+      "level": 0
     },
     {
       "id": "bm.k.m21",
@@ -617,7 +642,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 0
     },
     {
       "id": "bm.k.m22",
@@ -640,7 +666,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 0
     },
     {
       "id": "bm.k.m23",
@@ -663,7 +690,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 0
     },
     {
       "id": "bm.1.m24",
@@ -686,7 +714,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m25",
@@ -709,7 +738,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.k.m26",
@@ -732,7 +762,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 0
     },
     {
       "id": "bm.k.m27",
@@ -755,7 +786,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 0
     },
     {
       "id": "bm.k.m28",
@@ -778,7 +810,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.k.m29",
@@ -801,7 +834,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.k.m30",
@@ -824,7 +858,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m31",
@@ -847,7 +882,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m32",
@@ -870,7 +906,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m33",
@@ -893,7 +930,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m34",
@@ -916,7 +954,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.1.m35",
@@ -939,7 +978,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 1
     },
     {
       "id": "bm.k.m36",
@@ -962,7 +1002,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.k.m37",
@@ -985,7 +1026,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.k.m38",
@@ -1008,7 +1050,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.k.m39",
@@ -1031,7 +1074,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.1.m40",
@@ -1054,7 +1098,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.1.m41",
@@ -1077,7 +1122,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.k.m42",
@@ -1100,7 +1146,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.1.m43",
@@ -1123,7 +1170,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.k.m44",
@@ -1146,7 +1194,8 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
     },
     {
       "id": "bm.k.m45",
@@ -1169,7 +1218,25 @@
         "digit",
         "choice"
       ],
-      "weight": 1
+      "weight": 1,
+      "level": 2
+    }
+  ],
+  "levels": [
+    {
+      "id": 0,
+      "label": "Getting started",
+      "description": "Feet wet: addition within 10 (no zeros) and a few easy subtractions. No identity-with-zero."
+    },
+    {
+      "id": 1,
+      "label": "Zeros & more subtract",
+      "description": "Plus/minus zero identity and the rest of subtraction within 10."
+    },
+    {
+      "id": 2,
+      "label": "Light multiply",
+      "description": "Multiplication within 10."
     }
   ]
 }
