@@ -52,7 +52,7 @@ Before SI / batch suggests the **next curriculum level**, repo defaults require 
 |------|--------:|-------------|
 | Accuracy of **answered** items (`right / (right+wrong)`) | **≥ 75%** | `level_up_min_accuracy_pct` |
 | Absolute correct count | **≥ 5** | `level_up_min_correct` |
-| Skip rate (`skipped / asked`) | **≤ 25%** | `level_up_max_skip_pct` |
+| Skips vs answered | **`skipped ≤ right + wrong`** (more skips than rights+wrongs → block) | omit = this rule; optional `level_up_max_skip_pct` = max `skipped/asked` % instead |
 
 Omit/blank in admin → device and SI use these defaults. Per-user overrides live on the tip `settings` object (same blank-means-default pattern as other admin knobs).
 

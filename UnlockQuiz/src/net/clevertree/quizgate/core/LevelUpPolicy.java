@@ -8,13 +8,19 @@ package net.clevertree.quizgate.core;
  * <ul>
  *   <li>{@link #DEFAULT_MIN_ACCURACY_PCT} — right / (right+wrong)</li>
  *   <li>{@link #DEFAULT_MIN_CORRECT} — absolute floor of correct answers</li>
- *   <li>{@link #DEFAULT_MAX_SKIP_PCT} — skipped / asked (too many skips → not ready)</li>
+ *   <li>Skips (default) — {@code skipped <= right + wrong} (more skips than
+ *       answered → not ready). Admin may set {@code level_up_max_skip_pct}
+ *       to use skipped/asked % instead.</li>
  * </ul>
  */
 public final class LevelUpPolicy {
     public static final int DEFAULT_MIN_ACCURACY_PCT = 75;
     public static final int DEFAULT_MIN_CORRECT = 5;
-    public static final int DEFAULT_MAX_SKIP_PCT = 25;
+    /**
+     * Sentinel: use default skip rule {@code skipped <= right + wrong}.
+     * Non-negative values mean max skipped/asked percent (admin override).
+     */
+    public static final int DEFAULT_MAX_SKIP_PCT = -1;
 
     public static final int MIN_ACCURACY_PCT = 1;
     public static final int MAX_ACCURACY_PCT = 100;
@@ -35,8 +41,13 @@ public final class LevelUpPolicy {
         return raw;
     }
 
+    /**
+     * {@code < 0} keeps the default answered-comparison skip rule.
+     * {@code 0..100} is an admin override: max skipped/asked percent.
+     */
     public static int parseMaxSkipPct(int raw) {
-        if (raw < MIN_SKIP_PCT || raw > MAX_SKIP_PCT) return DEFAULT_MAX_SKIP_PCT;
+        if (raw < 0) return DEFAULT_MAX_SKIP_PCT;
+        if (raw > MAX_SKIP_PCT) return DEFAULT_MAX_SKIP_PCT;
         return raw;
     }
 
@@ -45,6 +56,8 @@ public final class LevelUpPolicy {
      * @param right   correct answers
      * @param wrong   incorrect answers
      * @param skipped skips in the same window
+     * @param maxSkipPct {@link #DEFAULT_MAX_SKIP_PCT} (−1) = skipped ≤ right+wrong;
+     *                   else max skipped/asked %
      */
     public static Eligibility evaluate(
             int asked, int right, int wrong, int skipped,
@@ -62,7 +75,13 @@ public final class LevelUpPolicy {
 
         boolean enoughCorrect = r >= minR;
         boolean accurateEnough = answered > 0 && accuracyPct >= minAcc;
-        boolean skipsOk = a > 0 && skipPct <= maxSkip;
+        boolean skipsOk;
+        if (maxSkip < 0) {
+            // Default: more skips than answered (right+wrong) → block level-up.
+            skipsOk = (r + w + s) > 0 && s <= (r + w);
+        } else {
+            skipsOk = a > 0 && skipPct <= maxSkip;
+        }
         boolean eligible = enoughCorrect && accurateEnough && skipsOk;
 
         return new Eligibility(eligible, enoughCorrect, accurateEnough, skipsOk,
@@ -82,6 +101,7 @@ public final class LevelUpPolicy {
         public final int skipPct;
         public final int minAccuracyPct;
         public final int minCorrect;
+        /** −1 = default skipped≤right+wrong rule; else max skip % of asked. */
         public final int maxSkipPct;
 
         public Eligibility(boolean eligible, boolean enoughCorrect, boolean accurateEnough,

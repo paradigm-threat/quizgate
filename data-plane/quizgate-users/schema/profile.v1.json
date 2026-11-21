@@ -54,7 +54,7 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100,
-          "description": "Soft gate: max skipped/asked % (default 25)"
+          "description": "Optional soft gate: max skipped/asked %. Omit for default skipped≤right+wrong"
         },
         "stats_day_barrier_hour": {
           "type": "integer",

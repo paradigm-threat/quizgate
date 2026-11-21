@@ -55,7 +55,7 @@
     <h3>Anonymized stats</h3>
     <pre id="statsOut">Loading…</pre>
     <h3>Update settings</h3>
-    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM, curriculum level 0, level-up ≥75% accuracy / ≥5 correct / ≤25% skips.</p>
+    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM, curriculum level 0, level-up ≥75% accuracy / ≥5 correct / skips ≤ answered (right+wrong). Optional max-skip-% overrides that skip rule.</p>
     <div class="row">
       <div>
         <label for="curriculum">Curriculum id</label>
@@ -103,8 +103,8 @@
         <input id="lvlMinRight" type="number" min="1" max="10000" placeholder="5">
       </div>
       <div>
-        <label for="lvlSkip">Level-up max skip %</label>
-        <input id="lvlSkip" type="number" min="0" max="100" placeholder="25">
+        <label for="lvlSkip">Level-up max skip % of asked (optional)</label>
+        <input id="lvlSkip" type="number" min="0" max="100" placeholder="(default: skips≤answered)">
       </div>
     </div>
     <button id="btnSave" type="button">Queue settings update</button>

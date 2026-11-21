@@ -30,7 +30,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Time earn | Standalone rapid-fire jar minutes: `TimeEarnPolicy` bands + session cap (default 120m, admin `time_earn_cap_minutes`); play success **Earn more time** when remaining &lt; cap. Hard unlock: ~40% once/local-day offer of the same continue/Quit chrome (`PostUnlockPlayOfferPolicy`); Quit stays on lock restore path; further earns push jar onto the already-armed next alarm |
 | Media | Usage access for return-to-app; pre-pause+settle before quiz foreground; resume after unlock; API 31+ hide overlays |
 | Quiz UI | Centered in usable band; `QuizUiScale.scaleToFit` keeps chrome inside viewport (shrink if needed, never clip); DayNight colors + `UiContrastTest` (WCAG AA); 2D pan; overlays via MediaGate + OverlayGate |
-| Curriculum | bundled `basic-math` v5; progression **level** (default **0** = add within 10, no zeros, few easy subtracts; L1 zeros+more subtract; L2 multiply). Level-up soft gates default **75%** accuracy / **≥5** correct / **≤25%** skips (`LevelUpPolicy`; admin overrides; SI may exception) |
+| Curriculum | bundled `basic-math` v5; progression **level** (default **0** = add within 10, no zeros, few easy subtracts; L1 zeros+more subtract; L2 multiply). Level-up soft gates default **75%** accuracy / **≥5** correct / **skips ≤ answered** (`LevelUpPolicy`; admin overrides; SI may exception) |
 
 ## Key docs
 

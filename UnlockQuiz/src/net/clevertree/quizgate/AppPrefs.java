@@ -120,7 +120,10 @@ public final class AppPrefs {
                 net.clevertree.quizgate.core.LevelUpPolicy.parseMinCorrect(n)).apply();
     }
 
-    /** Max skipped/asked % allowed while still eligible for next level. */
+    /**
+     * Skip gate for level-up. Default {@code LevelUpPolicy.DEFAULT_MAX_SKIP_PCT} (−1)
+     * means skipped ≤ right+wrong; non-negative = max skipped/asked %.
+     */
     public int getLevelUpMaxSkipPct() {
         return net.clevertree.quizgate.core.LevelUpPolicy.parseMaxSkipPct(
                 sp.getInt("level_up_max_skip_pct",

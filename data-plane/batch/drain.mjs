@@ -64,9 +64,16 @@ function applyProgressSync(job) {
   const uuid = job.user_uuid;
   if (!isUuid(uuid)) throw new Error("invalid_uuid");
   const p = job.payload || {};
-  const profile = loadProfile(uuid) || emptyProfile(uuid);
+  const existing = loadProfile(uuid);
+  const isNew = !existing;
+  const profile = existing || emptyProfile(uuid);
   // TODO(SI): score from cache PVC day batches ({QUIZGATE_CACHE_DIR}/batches/{day}/{uuid}.json)
   // instead of job payload once batch scanner lands — never persist day/event trails on tip.
+  const before = JSON.stringify({
+    curriculum_id: profile.curriculum_id,
+    settings: profile.settings,
+    content_hints: profile.content_hints || [],
+  });
   const readiness = scoreReadiness(p.today, p.recent_quiz, profile.settings || {});
   profile.updated_at_ms = Date.now();
   profile.readiness = readiness;
@@ -82,6 +89,11 @@ function applyProgressSync(job) {
       ...(profile.content_hints || []).slice(-8),
       `consider_level:${readiness.next_level}`,
     ];
+    // Standing decision when eligible: advance curriculum_level (soft-gate path).
+    profile.settings = profile.settings || {};
+    const cur = Number(profile.settings.curriculum_level);
+    const base = Number.isFinite(cur) && cur >= 0 ? Math.floor(cur) : 0;
+    profile.settings.curriculum_level = base + 1;
   }
   // Frequency: slow down if struggling, keep default if healthy
   const asked = Number(p.today?.asked || 0);
@@ -99,6 +111,24 @@ function applyProgressSync(job) {
     profile.settings.performance_preference = p.performance.preference;
   }
 
+  const after = JSON.stringify({
+    curriculum_id: profile.curriculum_id,
+    settings: profile.settings,
+    content_hints: profile.content_hints || [],
+  });
+  const standingChanged = isNew || before !== after;
+  // Tip write only on standing change (new user, level bump, settings/hints).
+  // Do not tip-commit readiness-only “we looked” refreshes — ledger done_empty.
+  if (!standingChanged) {
+    return {
+      tip_commit: false,
+      done_empty: true,
+      readiness,
+      curriculum_id: profile.curriculum_id,
+      settings: profile.settings,
+    };
+  }
+
   // Tip: profile/settings/readiness only — no days.jsonl / events.jsonl (PII-ish time trails).
   commitUserFiles(
     uuid,
@@ -106,7 +136,13 @@ function applyProgressSync(job) {
     `batch: progress_sync ${uuid}`,
     SERVICE_ID,
   );
-  return { readiness, curriculum_id: profile.curriculum_id, settings: profile.settings };
+  return {
+    tip_commit: true,
+    done_empty: false,
+    readiness,
+    curriculum_id: profile.curriculum_id,
+    settings: profile.settings,
+  };
 }
 
 function applyIntakeGather(job) {

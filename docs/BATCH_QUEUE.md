@@ -54,8 +54,8 @@ Env: `QUIZGATE_BATCH_QUEUE_ROOT`.
 |-------|-------|-----------|
 | Intake accepts sync | `queued` | none |
 | Worker leases | `leased` | none |
-| No standing tip change | `done_empty` | **no tip commit** (proof = ledger) |
-| Standing tip change | `done` + `tip_commit` | local tip commit → **validate pass** → push |
+| Thresholds fail / tip already current / no decision | `done_empty` | **no tip commit** (proof = ledger; do not record “we reviewed”) |
+| Standing tip change (new user, level bump, …) | `done` + `tip_commit` | local tip commit → **validate pass** → push |
 | Crash after lease | TTL → requeue `queued` | none |
 | Duplicate `job_id` | ignore | none |
 
