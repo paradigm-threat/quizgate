@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import net.clevertree.quizgate.core.AnswerHintPolicy;
 import net.clevertree.quizgate.core.Catalog;
 import net.clevertree.quizgate.core.DiagBreadcrumb;
 import net.clevertree.quizgate.core.DiagnosticsStore;
@@ -168,6 +169,16 @@ public class QuizActivity extends Activity {
     private final MapColors colors = new MapColors();
     private TextView quizStatsWrong;
     private TextView quizStatsSkipped;
+
+    /** Correct MC tile for idle hints; cleared on rebind/cancel. */
+    private Button hintCorrectButton;
+    private LinearLayout countBlocksRow;
+    private AnswerHintPolicy.Config hintConfig = AnswerHintPolicy.Config.disabled();
+    private final Runnable hintSoftPulseTick = this::runHintSoftPulse;
+    private final Runnable hintStrongTick = this::runHintStrongReveal;
+    private final Runnable hintBlocksTick = this::runHintCountBlocks;
+    private boolean hintStrongDone;
+    private boolean hintBlocksDone;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -463,6 +474,7 @@ public class QuizActivity extends Activity {
     }
 
     private void bindQuestion(PresentedQuestion presented) {
+        cancelAnswerHints();
         Question q = presented.question;
         spoken.setText(presented.spoken);
         digitAnswer = new DigitAnswer();
@@ -511,6 +523,9 @@ public class QuizActivity extends Activity {
         refreshQuizDayStats();
         if (PerformanceMode.allowRichMotion(prefs)) {
             startBalloonPulse(questionBalloon, BALLOON_INFLATED, 3);
+        }
+        if (choiceFormat) {
+            scheduleAnswerHints(q);
         }
     }
 
@@ -601,6 +616,7 @@ public class QuizActivity extends Activity {
         }
         PresentedQuestion cur = session.getCurrent();
         if (cur == null) return;
+        cancelAnswerHints();
         setSkipEnabled(false);
         setDigitPadEnabled(false);
         if (playMode && timeEarnActive) {
@@ -669,14 +685,60 @@ public class QuizActivity extends Activity {
     }
 
     private void buildMultipleChoice(Question q) {
+        hintCorrectButton = null;
         List<Integer> order = new ArrayList<>();
-        order.add(0); order.add(1); order.add(2);
+        for (int i = 0; i < q.choices.size(); i++) order.add(i);
         Collections.shuffle(order, random);
-        for (int idx : order) {
-            final String choice = q.choices.get(idx);
-            Button btn = styleChoiceButton(q.displayLabel(idx), colors.forChoice(q.type, choice));
-            btn.setOnClickListener(v -> onChoice(choice));
-            choices.addView(btn);
+
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        boolean compact = QuizUiScale.useCompactChrome(dm.widthPixels, dm.heightPixels, dens);
+        int colW = QuizUiScale.columnWidthPx(dm.widthPixels, uiScale);
+        int n = order.size();
+        boolean grid = n >= 4;
+        int tile = grid
+                ? Math.max(QuizUiScale.scaledDp(compact ? 72 : 88, uiScale, dens), colW / 2 - dp(12))
+                : QuizUiScale.scaledDp(
+                        compact ? QuizUiScale.BASE_CHOICE_COMPACT_DP : QuizUiScale.BASE_CHOICE_DP,
+                        uiScale, dens);
+        int gap = QuizUiScale.scaledDp(compact ? 6 : 8, uiScale, dens);
+
+        if (!grid) {
+            for (int idx : order) {
+                final String choice = q.choices.get(idx);
+                Button btn = styleChoiceButton(q.displayLabel(idx), colors.forChoice(q.type, choice),
+                        colW, tile, false);
+                if (q.isCorrect(choice)) hintCorrectButton = btn;
+                btn.setOnClickListener(v -> onChoice(choice));
+                choices.addView(btn);
+            }
+            return;
+        }
+
+        // 2×2 grid of large tiles (4 options).
+        for (int row = 0; row < 2; row++) {
+            LinearLayout line = new LinearLayout(this);
+            line.setOrientation(LinearLayout.HORIZONTAL);
+            line.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams lineLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            line.setLayoutParams(lineLp);
+            for (int col = 0; col < 2; col++) {
+                int pos = row * 2 + col;
+                if (pos >= order.size()) break;
+                int idx = order.get(pos);
+                final String choice = q.choices.get(idx);
+                Button btn = styleChoiceButton(q.displayLabel(idx), colors.forChoice(q.type, choice),
+                        tile, tile, true);
+                if (q.isCorrect(choice)) hintCorrectButton = btn;
+                btn.setOnClickListener(v -> onChoice(choice));
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) btn.getLayoutParams();
+                lp.setMargins(gap, gap, gap, gap);
+                btn.setLayoutParams(lp);
+                line.addView(btn);
+            }
+            choices.addView(line);
         }
     }
 
@@ -861,29 +923,232 @@ public class QuizActivity extends Activity {
         boolean compact = QuizUiScale.useCompactChrome(
                 dm.widthPixels, dm.heightPixels, dens);
         int colW = QuizUiScale.columnWidthPx(dm.widthPixels, uiScale);
+        int btnH = QuizUiScale.scaledDp(
+                compact ? QuizUiScale.BASE_CHOICE_COMPACT_DP : QuizUiScale.BASE_CHOICE_DP,
+                uiScale, dens);
+        return styleChoiceButton(label, chipColor, colW, btnH, false);
+    }
+
+    private Button styleChoiceButton(String label, Integer chipColor, int widthPx, int heightPx,
+                                     boolean gridTile) {
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        boolean compact = QuizUiScale.useCompactChrome(
+                dm.widthPixels, dm.heightPixels, dens);
         Button btn = new Button(this);
         btn.setText(label);
         btn.setAllCaps(false);
         btn.setTextSize(TypedValue.COMPLEX_UNIT_SP,
-                QuizUiScale.sp(compact ? 22f : 26f, uiScale));
+                QuizUiScale.sp(gridTile ? (compact ? 28f : 34f) : (compact ? 22f : 26f), uiScale));
         btn.setTextColor(getResources().getColor(R.color.header, getTheme()));
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(QuizUiScale.scaledDp(18, uiScale, dens));
+        bg.setCornerRadius(QuizUiScale.scaledDp(gridTile ? 22 : 18, uiScale, dens));
         bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens),
                 getResources().getColor(R.color.button_stroke, getTheme()));
         bg.setColor(chipColor != null ? chipColor
                 : getResources().getColor(R.color.button, getTheme()));
         btn.setBackground(bg);
-        int btnH = QuizUiScale.scaledDp(
-                compact ? QuizUiScale.BASE_CHOICE_COMPACT_DP : QuizUiScale.BASE_CHOICE_DP,
-                uiScale, dens);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(colW, btnH);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(widthPx, heightPx);
         lp.gravity = Gravity.CENTER_HORIZONTAL;
         int m = QuizUiScale.scaledDp(compact ? 4 : 6, uiScale, dens);
         lp.setMargins(m, m, m, m);
         btn.setLayoutParams(lp);
         btn.setGravity(Gravity.CENTER);
+        btn.setTag(bg); // GradientDrawable for idle hint stroke pulse
         return btn;
+    }
+
+    private void scheduleAnswerHints(Question q) {
+        cancelAnswerHints();
+        int todayRight = 0;
+        try {
+            if (stats != null) {
+                todayRight = stats.dayStats(clock.nowMillis(), TimeZone.getDefault()).answeredRight;
+            }
+        } catch (Exception ignored) {}
+        boolean rich = PerformanceMode.allowRichMotion(prefs);
+        hintConfig = AnswerHintPolicy.resolve(
+                prefs.getHintMode(), todayRight, rich,
+                prefs.getHintDelayMs(), prefs.getHintPulseMs(), prefs.getHintPeriodMs(),
+                prefs.getHintStrongAfterMs(), prefs.getHintBlocksAfterMs(),
+                prefs.isHintBlocksEnabled());
+        if (!hintConfig.enabled || hintCorrectButton == null) return;
+        hintStrongDone = false;
+        hintBlocksDone = false;
+        handler.postDelayed(hintSoftPulseTick, hintConfig.delayMs);
+        if (hintConfig.strongEnabled) {
+            handler.postDelayed(hintStrongTick, hintConfig.strongAfterMs);
+        }
+        if (hintConfig.blocksEnabled && AnswerHintPolicy.parseAddends(q.symbolic) != null) {
+            handler.postDelayed(hintBlocksTick, hintConfig.blocksAfterMs);
+        }
+    }
+
+    private void cancelAnswerHints() {
+        handler.removeCallbacks(hintSoftPulseTick);
+        handler.removeCallbacks(hintStrongTick);
+        handler.removeCallbacks(hintBlocksTick);
+        if (hintCorrectButton != null) {
+            hintCorrectButton.animate().cancel();
+            hintCorrectButton.setScaleX(1f);
+            hintCorrectButton.setScaleY(1f);
+            Object tag = hintCorrectButton.getTag();
+            if (tag instanceof GradientDrawable) {
+                ((GradientDrawable) tag).setStroke(
+                        QuizUiScale.scaledDp(3, uiScale, getResources().getDisplayMetrics().density),
+                        getResources().getColor(R.color.button_stroke, getTheme()));
+            }
+        }
+        if (countBlocksRow != null) {
+            ViewGroup parent = (ViewGroup) countBlocksRow.getParent();
+            if (parent != null) parent.removeView(countBlocksRow);
+            countBlocksRow = null;
+        }
+        hintConfig = AnswerHintPolicy.Config.disabled();
+    }
+
+    private void runHintSoftPulse() {
+        if (currentAnswered || finishing || inTransition || hintCorrectButton == null) return;
+        if (!hintConfig.enabled) return;
+        final Button btn = hintCorrectButton;
+        final int pulse = Math.max(100, hintConfig.pulseMs);
+        float dens = getResources().getDisplayMetrics().density;
+        Object tag = btn.getTag();
+        final GradientDrawable bg = tag instanceof GradientDrawable ? (GradientDrawable) tag : null;
+        final int stroke = QuizUiScale.scaledDp(3, uiScale, dens);
+        final int fat = QuizUiScale.scaledDp(7, uiScale, dens);
+        final int strokeColor = getResources().getColor(R.color.button_stroke, getTheme());
+        final int accent = getResources().getColor(R.color.accent_dark, getTheme());
+        if (bg != null) bg.setStroke(fat, accent);
+        btn.animate().cancel();
+        btn.animate()
+                .scaleX(1.12f).scaleY(1.12f)
+                .setDuration(pulse / 2)
+                .setInterpolator(new OvershootInterpolator())
+                .withEndAction(() -> btn.animate()
+                        .scaleX(1f).scaleY(1f)
+                        .setDuration(pulse / 2)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .withEndAction(() -> {
+                            if (bg != null) bg.setStroke(stroke, strokeColor);
+                            if (hintConfig.enabled && hintConfig.softRepeat
+                                    && !currentAnswered && !finishing) {
+                                handler.postDelayed(hintSoftPulseTick, hintConfig.periodMs);
+                            }
+                        })
+                        .start())
+                .start();
+    }
+
+    private void runHintStrongReveal() {
+        if (currentAnswered || finishing || inTransition || hintCorrectButton == null) return;
+        if (!hintConfig.enabled || !hintConfig.strongEnabled || hintStrongDone) return;
+        hintStrongDone = true;
+        final Button btn = hintCorrectButton;
+        CharSequence label = btn.getText();
+        float dens = getResources().getDisplayMetrics().density;
+        Object tag = btn.getTag();
+        final GradientDrawable bg = tag instanceof GradientDrawable ? (GradientDrawable) tag : null;
+        final int stroke = QuizUiScale.scaledDp(3, uiScale, dens);
+        final int fat = QuizUiScale.scaledDp(8, uiScale, dens);
+        final int strokeColor = getResources().getColor(R.color.button_stroke, getTheme());
+        final int accent = getResources().getColor(R.color.accent_dark, getTheme());
+        final float baseSp = btn.getTextSize() / dens;
+        if (bg != null) bg.setStroke(fat, accent);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, baseSp * 1.45f);
+        btn.animate().cancel();
+        btn.animate()
+                .scaleX(1.28f).scaleY(1.28f)
+                .setDuration(420)
+                .setInterpolator(new OvershootInterpolator())
+                .withEndAction(() -> btn.animate()
+                        .scaleX(1f).scaleY(1f)
+                        .setDuration(380)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .withEndAction(() -> {
+                            btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, baseSp);
+                            btn.setText(label);
+                            if (bg != null) bg.setStroke(stroke, strokeColor);
+                        })
+                        .start())
+                .start();
+    }
+
+    private void runHintCountBlocks() {
+        if (currentAnswered || finishing || inTransition) return;
+        if (!hintConfig.enabled || !hintConfig.blocksEnabled || hintBlocksDone) return;
+        PresentedQuestion pq = session == null ? null : session.getCurrent();
+        if (pq == null) return;
+        int[] add = AnswerHintPolicy.parseAddends(pq.question.symbolic);
+        if (add == null) return;
+        hintBlocksDone = true;
+        ensureCountBlocksRow();
+        countBlocksRow.removeAllViews();
+        float dens = getResources().getDisplayMetrics().density;
+        int block = QuizUiScale.scaledDp(14, uiScale, dens);
+        int gap = QuizUiScale.scaledDp(3, uiScale, dens);
+        int colorA = Color.parseColor("#3498DB");
+        int colorB = Color.parseColor("#E87A2E");
+        int colorEq = Color.parseColor("#27AE60");
+        appendBlockGroup(countBlocksRow, add[0], colorA, block, gap);
+        appendPlusLabel(countBlocksRow);
+        appendBlockGroup(countBlocksRow, add[1], colorB, block, gap);
+        TextView eq = new TextView(this);
+        eq.setText(" = ");
+        eq.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(22f, uiScale));
+        eq.setTextColor(getResources().getColor(R.color.header, getTheme()));
+        countBlocksRow.addView(eq);
+        appendBlockGroup(countBlocksRow, add[0] + add[1], colorEq, block, gap);
+        countBlocksRow.setAlpha(0f);
+        countBlocksRow.animate().alpha(1f).setDuration(400).start();
+    }
+
+    private void ensureCountBlocksRow() {
+        if (countBlocksRow != null) return;
+        countBlocksRow = new LinearLayout(this);
+        countBlocksRow.setOrientation(LinearLayout.HORIZONTAL);
+        countBlocksRow.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = dp(6);
+        lp.bottomMargin = dp(2);
+        countBlocksRow.setLayoutParams(lp);
+        // Insert above the choice grid when possible.
+        ViewGroup parent = choices != null ? (ViewGroup) choices.getParent() : null;
+        if (parent != null) {
+            int idx = parent.indexOfChild(choices);
+            parent.addView(countBlocksRow, Math.max(0, idx));
+        } else if (questionBalloon instanceof ViewGroup) {
+            ((ViewGroup) questionBalloon).addView(countBlocksRow);
+        }
+    }
+
+    private void appendBlockGroup(LinearLayout row, int n, int color, int size, int gap) {
+        LinearLayout g = new LinearLayout(this);
+        g.setOrientation(LinearLayout.HORIZONTAL);
+        g.setGravity(Gravity.CENTER_VERTICAL);
+        for (int i = 0; i < n; i++) {
+            View b = new View(this);
+            GradientDrawable d = new GradientDrawable();
+            d.setShape(GradientDrawable.RECTANGLE);
+            d.setCornerRadius(size / 4f);
+            d.setColor(color);
+            b.setBackground(d);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+            lp.setMargins(gap / 2, 0, gap / 2, 0);
+            b.setLayoutParams(lp);
+            g.addView(b);
+        }
+        row.addView(g);
+    }
+
+    private void appendPlusLabel(LinearLayout row) {
+        TextView plus = new TextView(this);
+        plus.setText(" + ");
+        plus.setTextSize(TypedValue.COMPLEX_UNIT_SP, QuizUiScale.sp(22f, uiScale));
+        plus.setTextColor(getResources().getColor(R.color.header, getTheme()));
+        row.addView(plus);
     }
 
     private void refreshDigitAnswer() {
@@ -940,6 +1205,7 @@ public class QuizActivity extends Activity {
     private void onChoice(String choice) {
         if (session.isEnded() || finishing || inTransition) return;
         PresentedQuestion q = session.getCurrent();
+        cancelAnswerHints();
         setSkipEnabled(false);
         long now = clock.nowMillis();
         lastAnswerLatencyMs = questionShownAt > 0 ? Math.max(0L, now - questionShownAt) : -1L;

@@ -252,6 +252,29 @@ function applyAdminSettings(job) {
       profile.settings.level_up_max_skip_pct = Math.floor(n);
     }
   }
+  if (patch.hint_mode != null && patch.hint_mode !== "") {
+    const m = String(patch.hint_mode).trim().toLowerCase();
+    if (m === "off" || m === "until_first_correct" || m === "always") {
+      profile.settings.hint_mode = m;
+    }
+  }
+  for (const key of [
+    "hint_delay_ms",
+    "hint_pulse_ms",
+    "hint_period_ms",
+    "hint_strong_after_ms",
+    "hint_blocks_after_ms",
+  ]) {
+    if (patch[key] != null && patch[key] !== "") {
+      const n = Number(patch[key]);
+      if (Number.isFinite(n) && n >= 0 && n <= 120_000) {
+        profile.settings[key] = Math.floor(n);
+      }
+    }
+  }
+  if (patch.hint_blocks_enabled != null && patch.hint_blocks_enabled !== "") {
+    profile.settings.hint_blocks_enabled = Boolean(patch.hint_blocks_enabled);
+  }
   if (Array.isArray(patch.content_hints)) {
     profile.content_hints = patch.content_hints.slice(-20);
   }

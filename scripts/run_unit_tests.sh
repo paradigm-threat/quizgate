@@ -59,6 +59,8 @@ echo "== DayBatchSyncPolicyTest =="
 java -cp "$OUT" DayBatchSyncPolicyTest
 echo "== LevelUpPolicyTest =="
 java -cp "$OUT" LevelUpPolicyTest
+echo "== AnswerHintPolicyTest =="
+java -cp "$OUT" AnswerHintPolicyTest
 echo "== UiContrastTest =="
 java -cp "$OUT" UiContrastTest "$ROOT"
 

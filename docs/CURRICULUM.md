@@ -30,14 +30,18 @@ Index: `https://quizgate.app/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
-**basic-math v6:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
+**basic-math v7:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
 
 | Level | Contents |
 |------:|----------|
-| **0** | First contact — `add_within_8` (**addends 1–7, sums ≤7, no zeros**); **`formats: ["choice"]` only** (no keypad / T/F) |
+| **0** | First contact — `add_within_8` (**addends 1–7, sums ≤7, no zeros**); **4-option 2×2 choice grid** (`formats: ["choice"]` only) |
 | **1** | `add_within_10` (no zeros) + a few easy `subtract_within_10` |
 | **2** | Zero identity (`add_with_zero`: `n+0` / `0+n`) + remaining subtraction |
 | **3** | Light `multiply_within_10` |
+
+### Idle answer hints (multiple-choice)
+
+While today’s stats-day **right count is 0** (default `hint_mode=until_first_correct`), choice asks run a battery-safe ladder (`AnswerHintPolicy`): soft pulse on the correct tile (3s delay, 0.5s pulse, every 3s) → strong enlarge at 12s → one-shot count-blocks vignette at 18s. Slim/reduced motion skips strong/blocks. Admin overrides: `hint_mode`, `hint_delay_ms`, `hint_pulse_ms`, `hint_period_ms`, `hint_strong_after_ms`, `hint_blocks_after_ms`, `hint_blocks_enabled`.
 
 No color / “which one is red” items (later pack). Division deferred.
 

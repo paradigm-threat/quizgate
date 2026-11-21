@@ -61,6 +61,45 @@
           "minimum": 0,
           "maximum": 23,
           "description": "Local hour when stats day rolls (default 5)"
+        },
+        "hint_mode": {
+          "type": "string",
+          "enum": ["off", "until_first_correct", "always"],
+          "description": "MC idle hint gate (default until_first_correct)"
+        },
+        "hint_delay_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120000,
+          "description": "Ms before first soft pulse (default 3000)"
+        },
+        "hint_pulse_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120000,
+          "description": "Soft pulse duration ms (default 500)"
+        },
+        "hint_period_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120000,
+          "description": "Gap between soft pulses ms (default 3000)"
+        },
+        "hint_strong_after_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120000,
+          "description": "Strong answer reveal after ms; 0 disables (default 12000)"
+        },
+        "hint_blocks_after_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120000,
+          "description": "Count-blocks vignette after ms; 0 disables (default 18000)"
+        },
+        "hint_blocks_enabled": {
+          "type": "boolean",
+          "description": "Enable count-blocks idle stage (default true)"
         }
       }
     },

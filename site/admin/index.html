@@ -55,7 +55,7 @@
     <h3>Anonymized stats</h3>
     <pre id="statsOut">Loading…</pre>
     <h3>Update settings</h3>
-    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM, curriculum level 0, level-up ≥75% accuracy / ≥5 correct / skips ≤ answered (right+wrong). Optional max-skip-% overrides that skip rule.</p>
+    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM, curriculum level 0, level-up ≥75% accuracy / ≥5 correct / skips ≤ answered. Idle MC hints: until_first_correct, pulse 3s/0.5s/3s, strong at 12s, count-blocks at 18s.</p>
     <div class="row">
       <div>
         <label for="curriculum">Curriculum id</label>
@@ -105,6 +105,47 @@
       <div>
         <label for="lvlSkip">Level-up max skip % of asked (optional)</label>
         <input id="lvlSkip" type="number" min="0" max="100" placeholder="(default: skips≤answered)">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="hintMode">Idle hint mode</label>
+        <select id="hintMode">
+          <option value="">(leave unchanged)</option>
+          <option value="until_first_correct">Until first correct today</option>
+          <option value="always">Always</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+      <div>
+        <label for="hintDelay">Hint delay (ms)</label>
+        <input id="hintDelay" type="number" min="0" max="120000" placeholder="3000">
+      </div>
+      <div>
+        <label for="hintPulse">Hint pulse (ms)</label>
+        <input id="hintPulse" type="number" min="0" max="120000" placeholder="500">
+      </div>
+      <div>
+        <label for="hintPeriod">Hint period (ms)</label>
+        <input id="hintPeriod" type="number" min="0" max="120000" placeholder="3000">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="hintStrong">Strong reveal after (ms; 0=off)</label>
+        <input id="hintStrong" type="number" min="0" max="120000" placeholder="12000">
+      </div>
+      <div>
+        <label for="hintBlocksAfter">Count-blocks after (ms; 0=off)</label>
+        <input id="hintBlocksAfter" type="number" min="0" max="120000" placeholder="18000">
+      </div>
+      <div>
+        <label for="hintBlocksOn">Count-blocks enabled</label>
+        <select id="hintBlocksOn">
+          <option value="">(leave unchanged)</option>
+          <option value="true">On</option>
+          <option value="false">Off</option>
+        </select>
       </div>
     </div>
     <button id="btnSave" type="button">Queue settings update</button>
@@ -159,6 +200,19 @@ function fillFromProfile(p) {
     s.level_up_min_correct != null ? s.level_up_min_correct : "";
   document.getElementById("lvlSkip").value =
     s.level_up_max_skip_pct != null ? s.level_up_max_skip_pct : "";
+  document.getElementById("hintMode").value = s.hint_mode || "";
+  document.getElementById("hintDelay").value =
+    s.hint_delay_ms != null ? s.hint_delay_ms : "";
+  document.getElementById("hintPulse").value =
+    s.hint_pulse_ms != null ? s.hint_pulse_ms : "";
+  document.getElementById("hintPeriod").value =
+    s.hint_period_ms != null ? s.hint_period_ms : "";
+  document.getElementById("hintStrong").value =
+    s.hint_strong_after_ms != null ? s.hint_strong_after_ms : "";
+  document.getElementById("hintBlocksAfter").value =
+    s.hint_blocks_after_ms != null ? s.hint_blocks_after_ms : "";
+  document.getElementById("hintBlocksOn").value =
+    s.hint_blocks_enabled == null ? "" : String(s.hint_blocks_enabled);
 }
 
 async function refreshStats() {
@@ -233,6 +287,21 @@ document.getElementById("btnSave").onclick = async () => {
     if (lvlMinRight !== "") body.level_up_min_correct = Number(lvlMinRight);
     const lvlSkip = document.getElementById("lvlSkip").value.trim();
     if (lvlSkip !== "") body.level_up_max_skip_pct = Number(lvlSkip);
+    const hintMode = document.getElementById("hintMode").value;
+    if (hintMode) body.hint_mode = hintMode;
+    const hintDelay = document.getElementById("hintDelay").value.trim();
+    if (hintDelay !== "") body.hint_delay_ms = Number(hintDelay);
+    const hintPulse = document.getElementById("hintPulse").value.trim();
+    if (hintPulse !== "") body.hint_pulse_ms = Number(hintPulse);
+    const hintPeriod = document.getElementById("hintPeriod").value.trim();
+    if (hintPeriod !== "") body.hint_period_ms = Number(hintPeriod);
+    const hintStrong = document.getElementById("hintStrong").value.trim();
+    if (hintStrong !== "") body.hint_strong_after_ms = Number(hintStrong);
+    const hintBlocksAfter = document.getElementById("hintBlocksAfter").value.trim();
+    if (hintBlocksAfter !== "") body.hint_blocks_after_ms = Number(hintBlocksAfter);
+    const hintBlocksOn = document.getElementById("hintBlocksOn").value;
+    if (hintBlocksOn === "true") body.hint_blocks_enabled = true;
+    if (hintBlocksOn === "false") body.hint_blocks_enabled = false;
     if (Object.keys(body).length === 0) {
       msg(el, "Nothing to queue — fill at least one override.");
       return;

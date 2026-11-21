@@ -30,6 +30,7 @@ public class CurriculumParserTest {
 
         Question a01 = pack.catalog.byId("a01");
         Assert.isTrue(a01 != null, "L0 a01");
+        Assert.eq(4, a01.choices.size(), "L0 four choices");
         Assert.eq(1, RenderFormat.allowedFor(a01).size(), "L0 choice-only");
         Assert.eq(RenderFormat.CHOICE, RenderFormat.allowedFor(a01).get(0), "L0 format");
 

@@ -100,6 +100,30 @@ public final class RemoteSettingsPull {
                 prefs.setLevelUpMaxSkipPct(settings.optInt("level_up_max_skip_pct",
                         prefs.getLevelUpMaxSkipPct()));
             }
+            if (settings.has("hint_mode")) {
+                prefs.setHintMode(settings.optString("hint_mode", prefs.getHintMode()));
+            }
+            if (settings.has("hint_delay_ms")) {
+                prefs.setHintDelayMs(settings.optInt("hint_delay_ms", prefs.getHintDelayMs()));
+            }
+            if (settings.has("hint_pulse_ms")) {
+                prefs.setHintPulseMs(settings.optInt("hint_pulse_ms", prefs.getHintPulseMs()));
+            }
+            if (settings.has("hint_period_ms")) {
+                prefs.setHintPeriodMs(settings.optInt("hint_period_ms", prefs.getHintPeriodMs()));
+            }
+            if (settings.has("hint_strong_after_ms")) {
+                prefs.setHintStrongAfterMs(settings.optInt("hint_strong_after_ms",
+                        prefs.getHintStrongAfterMs()));
+            }
+            if (settings.has("hint_blocks_after_ms")) {
+                prefs.setHintBlocksAfterMs(settings.optInt("hint_blocks_after_ms",
+                        prefs.getHintBlocksAfterMs()));
+            }
+            if (settings.has("hint_blocks_enabled")) {
+                prefs.setHintBlocksEnabled(settings.optBoolean("hint_blocks_enabled",
+                        prefs.isHintBlocksEnabled()));
+            }
         }
         prefs.setLastRemoteProfileAt(System.currentTimeMillis());
         Log.i(BuildFingerprint.DIAG_LOG_TAG, "profile_pull_applied curriculum="

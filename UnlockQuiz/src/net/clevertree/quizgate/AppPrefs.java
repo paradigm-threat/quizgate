@@ -135,6 +135,92 @@ public final class AppPrefs {
                 net.clevertree.quizgate.core.LevelUpPolicy.parseMaxSkipPct(pct)).apply();
     }
 
+    /** Idle MC hint mode: off / until_first_correct / always. */
+    public String getHintMode() {
+        return net.clevertree.quizgate.core.AnswerHintPolicy.normalizeMode(
+                sp.getString("hint_mode",
+                        net.clevertree.quizgate.core.AnswerHintPolicy.MODE_UNTIL_FIRST_CORRECT));
+    }
+
+    public void setHintMode(String mode) {
+        sp.edit().putString("hint_mode",
+                net.clevertree.quizgate.core.AnswerHintPolicy.normalizeMode(mode)).apply();
+    }
+
+    public int getHintDelayMs() {
+        return net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(
+                sp.getInt("hint_delay_ms",
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_DELAY_MS),
+                net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_DELAY_MS);
+    }
+
+    public void setHintDelayMs(int ms) {
+        sp.edit().putInt("hint_delay_ms",
+                net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(ms,
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_DELAY_MS)).apply();
+    }
+
+    public int getHintPulseMs() {
+        return net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(
+                sp.getInt("hint_pulse_ms",
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_PULSE_MS),
+                net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_PULSE_MS);
+    }
+
+    public void setHintPulseMs(int ms) {
+        sp.edit().putInt("hint_pulse_ms",
+                net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(ms,
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_PULSE_MS)).apply();
+    }
+
+    public int getHintPeriodMs() {
+        return net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(
+                sp.getInt("hint_period_ms",
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_PERIOD_MS),
+                net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_PERIOD_MS);
+    }
+
+    public void setHintPeriodMs(int ms) {
+        sp.edit().putInt("hint_period_ms",
+                net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(ms,
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_PERIOD_MS)).apply();
+    }
+
+    public int getHintStrongAfterMs() {
+        return net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(
+                sp.getInt("hint_strong_after_ms",
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_STRONG_AFTER_MS),
+                net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_STRONG_AFTER_MS);
+    }
+
+    public void setHintStrongAfterMs(int ms) {
+        sp.edit().putInt("hint_strong_after_ms",
+                net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(ms,
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_STRONG_AFTER_MS)).apply();
+    }
+
+    public int getHintBlocksAfterMs() {
+        return net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(
+                sp.getInt("hint_blocks_after_ms",
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_BLOCKS_AFTER_MS),
+                net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_BLOCKS_AFTER_MS);
+    }
+
+    public void setHintBlocksAfterMs(int ms) {
+        sp.edit().putInt("hint_blocks_after_ms",
+                net.clevertree.quizgate.core.AnswerHintPolicy.clampMs(ms,
+                        net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_BLOCKS_AFTER_MS)).apply();
+    }
+
+    public boolean isHintBlocksEnabled() {
+        return sp.getBoolean("hint_blocks_enabled",
+                net.clevertree.quizgate.core.AnswerHintPolicy.DEFAULT_BLOCKS_ENABLED);
+    }
+
+    public void setHintBlocksEnabled(boolean v) {
+        sp.edit().putBoolean("hint_blocks_enabled", v).apply();
+    }
+
     public String getActiveCurriculumId() {
         return sp.getString("active_curriculum_id", "basic-math");
     }

@@ -72,7 +72,9 @@ public final class Question {
     public void validate() {
         if (id == null || id.isEmpty()) throw new IllegalStateException("empty id");
         if (spoken == null || spoken.isEmpty()) throw new IllegalStateException(id + " empty spoken");
-        if (choices == null || choices.size() != 3) throw new IllegalStateException(id + " need 3 choices");
+        if (choices == null || (choices.size() != 3 && choices.size() != 4)) {
+            throw new IllegalStateException(id + " need 3 or 4 choices");
+        }
         if (correct == null || !choices.contains(correct)) {
             throw new IllegalStateException(id + " correct not in choices: " + correct + " " + choices);
         }

@@ -8,7 +8,7 @@ QuizGate replaces stretches of idle tablet time with short, age-fit practice. Le
 ## Learners and age bands
 | Pack (current) | Age band (manifest) | Focus |
 |----------------|---------------------|--------|
-| **basic-math** v6 | about **4–7** | Progression **levels**: L0 add-under-8 MC-only; L1 add-within-10 + easy subtract; L2 zero-identity + more subtract; L3 light multiply |
+| **basic-math** v7 | about **4–7** | Progression **levels**: L0 add-under-8 4-option MC grid; L1 add-within-10 + easy subtract; L2 zero-identity + more subtract; L3 light multiply. Idle MC hints until first correct of the day |
 
 Future packs will publish their own `ageMin` / `ageMax` and learning objectives the same way. **Levels** gate how deep the pool goes (default device level **0**); age tiers remain a separate optional filter.
 
@@ -17,7 +17,7 @@ Future packs will publish their own `ageMin` / `ageMax` and learning objectives 
 ## Learning objectives (basic-math v5)
 By working through scheduled Hard quizzes and optional practice, a child practices:
 
-1. **Addition under 8 (level 0)** — tiny addends (sums ≤7), **multiple choice only** (no keypad / T/F yet).
+1. **Addition under 8 (level 0)** — tiny addends (sums ≤7), **4-option multiple-choice grid only** (no keypad / T/F yet); progressive idle hints while she has no rights yet today.
 2. **Addition within 10 (level 1)** — larger addends; equation / T/F / choice allowed; a few easy subtracts enter.
 3. **Subtraction within 10** — take-away within the same range (expands at level 2).
 4. **Zero identity (level 2)** — `n + 0` / `0 + n` as a distinct skill (`add_with_zero`).

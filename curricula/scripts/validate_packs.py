@@ -33,8 +33,8 @@ def validate_pack(pack_dir: Path) -> None:
             raise SystemExit(f"{pack_dir.name}: duplicate id {iid}")
         ids.add(iid)
         choices = item.get("choices") or []
-        if len(choices) != 3:
-            raise SystemExit(f"{pack_dir.name}: {iid} need 3 choices")
+        if len(choices) not in (3, 4):
+            raise SystemExit(f"{pack_dir.name}: {iid} need 3 or 4 choices")
         if item.get("correct") not in choices:
             raise SystemExit(f"{pack_dir.name}: {iid} correct not in choices")
         if "spoken" not in item or not item["spoken"]:
