@@ -57,6 +57,8 @@ echo "== QuizUiScaleTest =="
 java -cp "$OUT" QuizUiScaleTest
 echo "== DayBatchSyncPolicyTest =="
 java -cp "$OUT" DayBatchSyncPolicyTest
+echo "== LevelUpPolicyTest =="
+java -cp "$OUT" LevelUpPolicyTest
 echo "== UiContrastTest =="
 java -cp "$OUT" UiContrastTest "$ROOT"
 

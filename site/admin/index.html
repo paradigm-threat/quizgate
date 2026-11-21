@@ -55,7 +55,7 @@
     <h3>Anonymized stats</h3>
     <pre id="statsOut">Loading…</pre>
     <h3>Update settings</h3>
-    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM.</p>
+    <p class="hint">Blank = do not change (device keeps tip value or repo default). Defaults: interval 40±10 min, perf auto, time-earn cap 120, stats day barrier 5 AM, curriculum level 0, level-up ≥75% accuracy / ≥5 correct / ≤25% skips.</p>
     <div class="row">
       <div>
         <label for="curriculum">Curriculum id</label>
@@ -87,6 +87,24 @@
       <div>
         <label for="dayBarrier">Stats day barrier (hour 0–23)</label>
         <input id="dayBarrier" type="number" min="0" max="23" placeholder="5">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="currLevel">Curriculum level</label>
+        <input id="currLevel" type="number" min="0" max="99" placeholder="0">
+      </div>
+      <div>
+        <label for="lvlAcc">Level-up min accuracy %</label>
+        <input id="lvlAcc" type="number" min="1" max="100" placeholder="75">
+      </div>
+      <div>
+        <label for="lvlMinRight">Level-up min correct</label>
+        <input id="lvlMinRight" type="number" min="1" max="10000" placeholder="5">
+      </div>
+      <div>
+        <label for="lvlSkip">Level-up max skip %</label>
+        <input id="lvlSkip" type="number" min="0" max="100" placeholder="25">
       </div>
     </div>
     <button id="btnSave" type="button">Queue settings update</button>
@@ -133,6 +151,14 @@ function fillFromProfile(p) {
     s.time_earn_cap_minutes != null ? s.time_earn_cap_minutes : "";
   document.getElementById("dayBarrier").value =
     s.stats_day_barrier_hour != null ? s.stats_day_barrier_hour : "";
+  document.getElementById("currLevel").value =
+    s.curriculum_level != null ? s.curriculum_level : "";
+  document.getElementById("lvlAcc").value =
+    s.level_up_min_accuracy_pct != null ? s.level_up_min_accuracy_pct : "";
+  document.getElementById("lvlMinRight").value =
+    s.level_up_min_correct != null ? s.level_up_min_correct : "";
+  document.getElementById("lvlSkip").value =
+    s.level_up_max_skip_pct != null ? s.level_up_max_skip_pct : "";
 }
 
 async function refreshStats() {
@@ -199,6 +225,14 @@ document.getElementById("btnSave").onclick = async () => {
     if (earnCap !== "") body.time_earn_cap_minutes = Number(earnCap);
     const dayBarrier = document.getElementById("dayBarrier").value.trim();
     if (dayBarrier !== "") body.stats_day_barrier_hour = Number(dayBarrier);
+    const currLevel = document.getElementById("currLevel").value.trim();
+    if (currLevel !== "") body.curriculum_level = Number(currLevel);
+    const lvlAcc = document.getElementById("lvlAcc").value.trim();
+    if (lvlAcc !== "") body.level_up_min_accuracy_pct = Number(lvlAcc);
+    const lvlMinRight = document.getElementById("lvlMinRight").value.trim();
+    if (lvlMinRight !== "") body.level_up_min_correct = Number(lvlMinRight);
+    const lvlSkip = document.getElementById("lvlSkip").value.trim();
+    if (lvlSkip !== "") body.level_up_max_skip_pct = Number(lvlSkip);
     if (Object.keys(body).length === 0) {
       msg(el, "Nothing to queue — fill at least one override.");
       return;

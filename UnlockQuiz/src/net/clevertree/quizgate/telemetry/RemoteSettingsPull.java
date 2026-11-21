@@ -84,6 +84,22 @@ public final class RemoteSettingsPull {
                 prefs.setStatsDayBarrierHour(settings.optInt("stats_day_barrier_hour",
                         prefs.getStatsDayBarrierHour()));
             }
+            if (settings.has("curriculum_level")) {
+                prefs.setCurriculumLevel(settings.optInt("curriculum_level",
+                        prefs.getCurriculumLevel()));
+            }
+            if (settings.has("level_up_min_accuracy_pct")) {
+                prefs.setLevelUpMinAccuracyPct(settings.optInt("level_up_min_accuracy_pct",
+                        prefs.getLevelUpMinAccuracyPct()));
+            }
+            if (settings.has("level_up_min_correct")) {
+                prefs.setLevelUpMinCorrect(settings.optInt("level_up_min_correct",
+                        prefs.getLevelUpMinCorrect()));
+            }
+            if (settings.has("level_up_max_skip_pct")) {
+                prefs.setLevelUpMaxSkipPct(settings.optInt("level_up_max_skip_pct",
+                        prefs.getLevelUpMaxSkipPct()));
+            }
         }
         prefs.setLastRemoteProfileAt(System.currentTimeMillis());
         Log.i(BuildFingerprint.DIAG_LOG_TAG, "profile_pull_applied curriculum="

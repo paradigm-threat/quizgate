@@ -15,10 +15,13 @@ import {
   publishRemotes,
 } from "../lib/userStore.mjs";
 import { checkInbox, planAdminEmailAction } from "../lib/inboundMail.mjs";
+import { evaluateLevelUp } from "../lib/levelUpPolicy.mjs";
 
-function scoreReadiness(today, recentQuiz) {
+function scoreReadiness(today, recentQuiz, settings = {}) {
   const asked = Number(today?.asked || 0);
   const right = Number(today?.right || 0);
+  const wrong = Number(today?.wrong || 0);
+  const skipped = Number(today?.skipped || 0);
   const rate = asked > 0 ? right / asked : 0;
   const reasons = [];
   let score = rate;
@@ -31,10 +34,30 @@ function scoreReadiness(today, recentQuiz) {
   } else {
     reasons.push("building_mastery");
   }
+  const levelUp = evaluateLevelUp(
+    { asked, right, wrong, skipped },
+    settings || {},
+  );
+  reasons.push(...levelUp.reasons);
+  // Soft: thresholds met → hint next level; SI may still withhold (document why).
+  let nextLevel = null;
+  if (levelUp.eligible) {
+    const cur = Number(settings?.curriculum_level);
+    const base = Number.isFinite(cur) && cur >= 0 ? Math.floor(cur) : 0;
+    nextLevel = base + 1;
+    reasons.push("eligible_next_level");
+  }
   const next =
     asked >= 30 && rate >= 0.9 ? "basic-math-advanced" : null;
   if (next) reasons.push("ready_next_curriculum");
-  return { score, next_curriculum_id: next, reasons, recent_n: recentQuiz?.length || 0 };
+  return {
+    score,
+    next_curriculum_id: next,
+    next_level: nextLevel,
+    level_up: levelUp,
+    reasons,
+    recent_n: recentQuiz?.length || 0,
+  };
 }
 
 function applyProgressSync(job) {
@@ -44,7 +67,7 @@ function applyProgressSync(job) {
   const profile = loadProfile(uuid) || emptyProfile(uuid);
   // TODO(SI): score from cache PVC day batches ({QUIZGATE_CACHE_DIR}/batches/{day}/{uuid}.json)
   // instead of job payload once batch scanner lands — never persist day/event trails on tip.
-  const readiness = scoreReadiness(p.today, p.recent_quiz);
+  const readiness = scoreReadiness(p.today, p.recent_quiz, profile.settings || {});
   profile.updated_at_ms = Date.now();
   profile.readiness = readiness;
   if (p.curriculum_id) profile.curriculum_id = p.curriculum_id;
@@ -52,6 +75,12 @@ function applyProgressSync(job) {
     profile.content_hints = [
       ...(profile.content_hints || []).slice(-8),
       `consider:${readiness.next_curriculum_id}`,
+    ];
+  }
+  if (readiness.next_level != null) {
+    profile.content_hints = [
+      ...(profile.content_hints || []).slice(-8),
+      `consider_level:${readiness.next_level}`,
     ];
   }
   // Frequency: slow down if struggling, keep default if healthy
@@ -161,6 +190,30 @@ function applyAdminSettings(job) {
     const n = Number(patch.stats_day_barrier_hour);
     if (Number.isFinite(n) && n >= 0 && n <= 23) {
       profile.settings.stats_day_barrier_hour = Math.floor(n);
+    }
+  }
+  if (patch.curriculum_level != null && patch.curriculum_level !== "") {
+    const n = Number(patch.curriculum_level);
+    if (Number.isFinite(n) && n >= 0 && n <= 99) {
+      profile.settings.curriculum_level = Math.floor(n);
+    }
+  }
+  if (patch.level_up_min_accuracy_pct != null && patch.level_up_min_accuracy_pct !== "") {
+    const n = Number(patch.level_up_min_accuracy_pct);
+    if (Number.isFinite(n) && n >= 1 && n <= 100) {
+      profile.settings.level_up_min_accuracy_pct = Math.floor(n);
+    }
+  }
+  if (patch.level_up_min_correct != null && patch.level_up_min_correct !== "") {
+    const n = Number(patch.level_up_min_correct);
+    if (Number.isFinite(n) && n >= 1 && n <= 10_000) {
+      profile.settings.level_up_min_correct = Math.floor(n);
+    }
+  }
+  if (patch.level_up_max_skip_pct != null && patch.level_up_max_skip_pct !== "") {
+    const n = Number(patch.level_up_max_skip_pct);
+    if (Number.isFinite(n) && n >= 0 && n <= 100) {
+      profile.settings.level_up_max_skip_pct = Math.floor(n);
     }
   }
   if (Array.isArray(patch.content_hints)) {

@@ -14,6 +14,8 @@
       "properties": {
         "score": { "type": "number" },
         "next_curriculum_id": { "type": ["string", "null"] },
+        "next_level": { "type": ["integer", "null"] },
+        "level_up": { "type": "object" },
         "reasons": { "type": "array", "items": { "type": "string" } }
       }
     },
@@ -31,6 +33,34 @@
           "minimum": 1,
           "maximum": 180,
           "description": "Rapid-fire time-earn per-session cap (default 120)"
+        },
+        "curriculum_level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Active curriculum progression level (default 0)"
+        },
+        "level_up_min_accuracy_pct": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Soft gate: min right/(right+wrong) % (default 75)"
+        },
+        "level_up_min_correct": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Soft gate: min correct count (default 5)"
+        },
+        "level_up_max_skip_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Soft gate: max skipped/asked % (default 25)"
+        },
+        "stats_day_barrier_hour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23,
+          "description": "Local hour when stats day rolls (default 5)"
         }
       }
     },

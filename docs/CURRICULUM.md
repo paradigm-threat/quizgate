@@ -44,6 +44,22 @@ Optional per-item `weight` (integer ≥1, default 1): `QuestionPicker` uses weig
 
 Age **`tier`** (K / 1) remains a separate filter (`active_tier`); levels are the primary “how deep” control.
 
+## Level-up eligibility (soft gates)
+
+Before SI / batch suggests the **next curriculum level**, repo defaults require (all of):
+
+| Gate | Default | Setting key |
+|------|--------:|-------------|
+| Accuracy of **answered** items (`right / (right+wrong)`) | **≥ 75%** | `level_up_min_accuracy_pct` |
+| Absolute correct count | **≥ 5** | `level_up_min_correct` |
+| Skip rate (`skipped / asked`) | **≤ 25%** | `level_up_max_skip_pct` |
+
+Omit/blank in admin → device and SI use these defaults. Per-user overrides live on the tip `settings` object (same blank-means-default pattern as other admin knobs).
+
+**SI guidance:** treat thresholds as the normal bar — adhere by default. The model may still **withhold** a level-up or **advance early** when other evidence clearly warrants it; document the exception in readiness reasons / content hints. Parents remain final authority on what the device runs (`curriculum_level`).
+
+Shared implementations: `LevelUpPolicy` (app) · `data-plane/lib/levelUpPolicy.mjs` (batch).
+
 ## Render formats (ask-time)
 
 Catalog items stay **one logical question** (operands + op + correct result). The engine chooses a **render format** when asking — no duplicate rows for True/False vs fill-in vs multi-answer.

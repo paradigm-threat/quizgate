@@ -199,6 +199,10 @@ const server = createServer(async (req, res) => {
           performance_preference: body.performance_preference,
           time_earn_cap_minutes: body.time_earn_cap_minutes,
           stats_day_barrier_hour: body.stats_day_barrier_hour,
+          curriculum_level: body.curriculum_level,
+          level_up_min_accuracy_pct: body.level_up_min_accuracy_pct,
+          level_up_min_correct: body.level_up_min_correct,
+          level_up_max_skip_pct: body.level_up_max_skip_pct,
           content_hints: body.content_hints,
         },
       });

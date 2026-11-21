@@ -12,6 +12,8 @@ QuizGate replaces stretches of idle tablet time with short, age-fit practice. Le
 
 Future packs will publish their own `ageMin` / `ageMax` and learning objectives the same way. **Levels** gate how deep the pool goes (default device level **0**); age tiers remain a separate optional filter.
 
+**Level-up bar (default):** at least **75%** correct among answered questions, at least **5** correct, and skip rate at most **25%** of asks. Admin may override per device. SI uses these as soft gates (may exception with a reason). See [`CURRICULUM.md`](CURRICULUM.md).
+
 ## Learning objectives (basic-math v5)
 By working through scheduled Hard quizzes and optional practice, a child practices:
 

@@ -49,6 +49,24 @@ describe("admin jobs", () => {
       assert.equal(p.settings.time_earn_cap_minutes, 90);
       assert.equal(p.settings.stats_day_barrier_hour, 6);
 
+      enqueue({
+        type: "admin_settings",
+        user_uuid: uuid,
+        actor: "human_admin",
+        patch: {
+          level_up_min_accuracy_pct: 80,
+          level_up_min_correct: 8,
+          level_up_max_skip_pct: 20,
+          curriculum_level: 0,
+        },
+      });
+      await drainOnce(4);
+      p = loadProfile(uuid);
+      assert.equal(p.settings.level_up_min_accuracy_pct, 80);
+      assert.equal(p.settings.level_up_min_correct, 8);
+      assert.equal(p.settings.level_up_max_skip_pct, 20);
+      assert.equal(p.settings.curriculum_level, 0);
+
       // Blank / omitted fields must not wipe prior overrides or invent defaults on tip.
       enqueue({
         type: "admin_settings",

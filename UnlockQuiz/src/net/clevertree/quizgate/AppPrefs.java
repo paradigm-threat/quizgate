@@ -97,6 +97,41 @@ public final class AppPrefs {
         CurriculumStore.clearCache();
     }
 
+    /** Level-up soft gate: min accuracy % of answered (right/(right+wrong)). */
+    public int getLevelUpMinAccuracyPct() {
+        return net.clevertree.quizgate.core.LevelUpPolicy.parseMinAccuracyPct(
+                sp.getInt("level_up_min_accuracy_pct",
+                        net.clevertree.quizgate.core.LevelUpPolicy.DEFAULT_MIN_ACCURACY_PCT));
+    }
+
+    public void setLevelUpMinAccuracyPct(int pct) {
+        sp.edit().putInt("level_up_min_accuracy_pct",
+                net.clevertree.quizgate.core.LevelUpPolicy.parseMinAccuracyPct(pct)).apply();
+    }
+
+    public int getLevelUpMinCorrect() {
+        return net.clevertree.quizgate.core.LevelUpPolicy.parseMinCorrect(
+                sp.getInt("level_up_min_correct",
+                        net.clevertree.quizgate.core.LevelUpPolicy.DEFAULT_MIN_CORRECT));
+    }
+
+    public void setLevelUpMinCorrect(int n) {
+        sp.edit().putInt("level_up_min_correct",
+                net.clevertree.quizgate.core.LevelUpPolicy.parseMinCorrect(n)).apply();
+    }
+
+    /** Max skipped/asked % allowed while still eligible for next level. */
+    public int getLevelUpMaxSkipPct() {
+        return net.clevertree.quizgate.core.LevelUpPolicy.parseMaxSkipPct(
+                sp.getInt("level_up_max_skip_pct",
+                        net.clevertree.quizgate.core.LevelUpPolicy.DEFAULT_MAX_SKIP_PCT));
+    }
+
+    public void setLevelUpMaxSkipPct(int pct) {
+        sp.edit().putInt("level_up_max_skip_pct",
+                net.clevertree.quizgate.core.LevelUpPolicy.parseMaxSkipPct(pct)).apply();
+    }
+
     public String getActiveCurriculumId() {
         return sp.getString("active_curriculum_id", "basic-math");
     }
