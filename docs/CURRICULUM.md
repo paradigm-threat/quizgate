@@ -30,6 +30,13 @@ Index: `https://quizgate.app/curricula/index.json`
 
 Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQuiz/assets/curricula/basic-math/`.
 
+### Shared pack sync (all users) + offline
+
+1. Edit pack under `curricula/` → `python3 curricula/scripts/sync_pack_hashes.py` refreshes sha, `.qgpack`, and **index** (`version`, `packUrl`, `description`, `updatedAt`).
+2. Deploy site (`./scripts/deploy_site.sh --prod`) so `quizgate.app` serves the same pack to everyone.
+3. Devices with **curriculum sync** enabled (default on) pull the index on Setup / Sync now, and throttled (~6h) on app open (`Diag.syncDayBatchesOnOpen` → `CurriculumIndexClient`). Any network is fine. `bundled: true` means “also in APK”, **not** “skip updates”.
+4. Sync installs when the index version/sha is newer than the **installed** dir (or none yet), so every device gets `files/curricula/{id}/` for offline use even when the APK already ships the same pack. `CurriculumStore` loads the **higher version** of installed vs APK assets.
+
 **basic-math v7:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
 
 | Level | Contents |

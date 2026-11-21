@@ -508,7 +508,7 @@ public class SetupActivity extends Activity {
         sb.append("\n+ morning gate");
         sb.append("\nCurriculum: ").append(p.getActiveCurriculumId());
         sb.append(" · tier ").append(p.getActiveTier());
-        sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (Wi‑Fi)" : "off");
+        sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (any network)" : "off");
         sb.append("\nMath entry: ").append(p.getMathEntryMode());
         status.setText(sb.toString());
     }

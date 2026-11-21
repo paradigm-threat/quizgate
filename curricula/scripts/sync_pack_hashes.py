@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Rewrite pack contentSha256/sizeBytes from curriculum.json and rebuild .qgpack.
 
+Also refreshes curricula/index.json + site/curricula/index.json with version,
+packUrl, description, and updatedAt so devices can sync the shared SoT pack.
+
 Use after editing curriculum.json so CI validate_packs stays green:
   python3 curricula/scripts/sync_pack_hashes.py
   ./scripts/run_regression.sh
@@ -13,12 +16,14 @@ import shutil
 import subprocess
 import sys
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CURRICULA = ROOT / "curricula"
 SITE = ROOT / "site" / "curricula"
 ASSETS = ROOT / "UnlockQuiz" / "assets" / "curricula"
+PACK_BASE_URL = "https://quizgate.app/curricula/packs"
 
 
 def sha_and_size(path: Path) -> tuple[str, int]:
@@ -26,20 +31,50 @@ def sha_and_size(path: Path) -> tuple[str, int]:
     return hashlib.sha256(raw).hexdigest(), len(raw)
 
 
-def patch_index(path: Path, sha: str, size: int, pack_id: str) -> None:
+def patch_index(
+    path: Path,
+    *,
+    pack_id: str,
+    sha: str,
+    size: int,
+    version: int,
+    title: str,
+    description: str,
+    age_min: int,
+    age_max: int,
+    difficulty_rank: int,
+    locale: str,
+    min_app_version: int,
+    bundled: bool,
+) -> None:
     text = path.read_text()
     data = json.loads(text)
     updated = False
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    pack_url = f"{PACK_BASE_URL}/{pack_id}-v{version}.qgpack"
+
+    def apply_fields(obj: dict) -> None:
+        nonlocal updated
+        obj["id"] = pack_id
+        obj["title"] = title or pack_id
+        obj["ageMin"] = age_min
+        obj["ageMax"] = age_max
+        obj["difficultyRank"] = difficulty_rank
+        obj["locale"] = locale or "en"
+        obj["version"] = version
+        obj["minAppVersion"] = min_app_version
+        obj["description"] = description or ""
+        obj["contentSha256"] = sha
+        obj["sizeBytes"] = size
+        obj["packUrl"] = pack_url
+        obj["bundled"] = bundled
+        updated = True
 
     def walk(obj):
-        nonlocal updated
         if isinstance(obj, dict):
             oid = obj.get("id") or obj.get("packId") or ""
             if oid == pack_id or (isinstance(oid, str) and oid.startswith(pack_id)):
-                if "contentSha256" in obj or "sizeBytes" in obj:
-                    obj["contentSha256"] = sha
-                    obj["sizeBytes"] = size
-                    updated = True
+                apply_fields(obj)
             for v in obj.values():
                 walk(v)
         elif isinstance(obj, list):
@@ -48,9 +83,16 @@ def patch_index(path: Path, sha: str, size: int, pack_id: str) -> None:
 
     walk(data)
     if not updated:
-        raise SystemExit(f"{path}: no entry for pack {pack_id}")
+        # Create a curricula[] entry if missing.
+        curricula = data.setdefault("curricula", [])
+        if not isinstance(curricula, list):
+            raise SystemExit(f"{path}: curricula is not a list")
+        entry: dict = {}
+        apply_fields(entry)
+        curricula.append(entry)
+    data["updatedAt"] = now
     path.write_text(json.dumps(data, indent=2) + "\n")
-    print(f"updated {path.relative_to(ROOT)}")
+    print(f"updated {path.relative_to(ROOT)} → v{version} {pack_url}")
 
 
 def rebuild_qgpack(pack_dir: Path, version: int) -> None:
@@ -89,7 +131,21 @@ def sync_pack(pack_dir: Path) -> None:
 
     for index in (CURRICULA / "index.json", SITE / "index.json"):
         if index.is_file():
-            patch_index(index, sha, size, pack_id)
+            patch_index(
+                index,
+                pack_id=pack_id,
+                sha=sha,
+                size=size,
+                version=version,
+                title=str(man.get("title") or pack_id),
+                description=str(man.get("description") or ""),
+                age_min=int(man.get("ageMin") or 4),
+                age_max=int(man.get("ageMax") or 7),
+                difficulty_rank=int(man.get("difficultyRank") or 10),
+                locale=str(man.get("locale") or "en"),
+                min_app_version=int(man.get("minAppVersion") or 1),
+                bundled=True,
+            )
 
     rebuild_qgpack(pack_dir, version)
 

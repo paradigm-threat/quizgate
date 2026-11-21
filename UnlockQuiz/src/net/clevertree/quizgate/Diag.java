@@ -164,6 +164,8 @@ public final class Diag {
     public static void syncDayBatchesOnOpen(Context ctx) {
         if (ctx == null) return;
         final Context app = ctx.getApplicationContext();
+        // Shared curriculum pull (independent of Intake opt-in); throttled.
+        CurriculumIndexClient.syncIfEnabled(app, false);
         AppPrefs prefs = new AppPrefs(app);
         if (!prefs.isRemoteUploadEnabled()) return;
         if (!DAY_BATCH_SYNC_RUNNING.compareAndSet(false, true)) {

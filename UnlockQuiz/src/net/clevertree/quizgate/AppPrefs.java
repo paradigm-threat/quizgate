@@ -84,6 +84,15 @@ public final class AppPrefs {
         sp.edit().putBoolean("sync_enabled", v).apply();
     }
 
+    /** Wall clock of last curriculum index sync attempt/success (0 = never). */
+    public long getLastCurriculumSyncAt() {
+        return sp.getLong("last_curriculum_sync_at", 0L);
+    }
+
+    public void setLastCurriculumSyncAt(long ms) {
+        sp.edit().putLong("last_curriculum_sync_at", Math.max(0L, ms)).apply();
+    }
+
     /**
      * Active curriculum progression level (default 0 = getting started).
      * Items with {@code level <=} this value are eligible.

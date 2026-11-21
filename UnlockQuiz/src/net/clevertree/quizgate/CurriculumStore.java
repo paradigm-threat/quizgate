@@ -3,6 +3,7 @@ package net.clevertree.quizgate;
 import android.content.Context;
 
 import net.clevertree.quizgate.core.CurriculumPack;
+import net.clevertree.quizgate.core.CurriculumPackSelect;
 import net.clevertree.quizgate.core.CurriculumParser;
 
 import java.io.BufferedReader;
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Loads bundled + installed curriculum packs. */
+/** Loads bundled + installed curriculum packs; prefers the higher version. */
 public final class CurriculumStore {
     private static CurriculumPack activeCached;
     private static String activeCacheKey;
@@ -44,13 +45,60 @@ public final class CurriculumStore {
         return pack;
     }
 
+    /**
+     * Prefer the newer of installed {@code files/curricula/{id}/} vs APK assets.
+     * Tie-break: matching contentSha prefers installed (synced offline copy).
+     */
     public static CurriculumPack loadById(Context ctx, String id) {
         if (id == null || id.isEmpty()) id = "basic-math";
-        File installed = new File(installedDir(ctx), id);
-        if (new File(installed, "curriculum.json").isFile()) {
-            return loadFromDir(installed);
+        CurriculumPack installed = null;
+        File installedDir = new File(installedDir(ctx), id);
+        if (new File(installedDir, "curriculum.json").isFile()) {
+            try {
+                installed = loadFromDir(installedDir);
+            } catch (Exception ignored) {
+                installed = null;
+            }
         }
-        return loadBundled(ctx, id);
+        CurriculumPack bundled = loadBundled(ctx, id);
+        return CurriculumPackSelect.preferNewer(installed, bundled);
+    }
+
+    /** Highest local version for {@code id} (installed or bundled). */
+    public static int localVersion(Context ctx, String id) {
+        CurriculumPack p = loadById(ctx, id);
+        return p == null ? 0 : p.version;
+    }
+
+    public static String localContentSha(Context ctx, String id) {
+        CurriculumPack p = loadById(ctx, id);
+        return p == null ? "" : (p.contentSha256 == null ? "" : p.contentSha256);
+    }
+
+    /**
+     * Version of the unpacked pack under {@code files/curricula/{id}/} only
+     * (0 if missing/unreadable). Sync compares the index against this so a
+     * current APK still downloads a shared offline copy when packUrl is set.
+     */
+    public static int installedVersion(Context ctx, String id) {
+        CurriculumPack p = loadInstalledOnly(ctx, id);
+        return p == null ? 0 : p.version;
+    }
+
+    public static String installedContentSha(Context ctx, String id) {
+        CurriculumPack p = loadInstalledOnly(ctx, id);
+        return p == null ? "" : (p.contentSha256 == null ? "" : p.contentSha256);
+    }
+
+    private static CurriculumPack loadInstalledOnly(Context ctx, String id) {
+        if (id == null || id.isEmpty()) id = "basic-math";
+        File installedDir = new File(installedDir(ctx), id);
+        if (!new File(installedDir, "curriculum.json").isFile()) return null;
+        try {
+            return loadFromDir(installedDir);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static CurriculumPack loadBundled(Context ctx, String id) {
@@ -76,16 +124,16 @@ public final class CurriculumStore {
 
     public static List<CurriculumPack> listInstalledAndBundled(Context ctx) {
         List<CurriculumPack> out = new ArrayList<>();
-        CurriculumPack bundled = loadBundled(ctx, "basic-math");
-        if (bundled != null) out.add(bundled);
+        CurriculumPack best = loadById(ctx, "basic-math");
+        if (best != null) out.add(best);
         File root = installedDir(ctx);
         File[] kids = root.listFiles();
         if (kids != null) {
             for (File d : kids) {
                 if (!d.isDirectory()) continue;
-                if ("basic-math".equals(d.getName()) && bundled != null) continue;
+                if ("basic-math".equals(d.getName())) continue;
                 try {
-                    out.add(loadFromDir(d));
+                    out.add(loadById(ctx, d.getName()));
                 } catch (Exception ignored) {}
             }
         }

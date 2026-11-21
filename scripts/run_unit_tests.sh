@@ -61,6 +61,8 @@ echo "== LevelUpPolicyTest =="
 java -cp "$OUT" LevelUpPolicyTest
 echo "== AnswerHintPolicyTest =="
 java -cp "$OUT" AnswerHintPolicyTest
+echo "== CurriculumSyncTest =="
+java -cp "$OUT" CurriculumSyncTest
 echo "== UiContrastTest =="
 java -cp "$OUT" UiContrastTest "$ROOT"
 
