@@ -58,6 +58,13 @@ describe("admin jobs", () => {
           level_up_min_correct: 8,
           level_up_max_skip_pct: 20,
           curriculum_level: 0,
+          hint_mode: "always",
+          hint_delay_ms: 2500,
+          hint_pulse_ms: 400,
+          hint_period_ms: 3500,
+          hint_strong_after_ms: 10000,
+          hint_blocks_after_ms: 15000,
+          hint_blocks_enabled: false,
         },
       });
       await drainOnce(4);
@@ -66,6 +73,13 @@ describe("admin jobs", () => {
       assert.equal(p.settings.level_up_min_correct, 8);
       assert.equal(p.settings.level_up_max_skip_pct, 20);
       assert.equal(p.settings.curriculum_level, 0);
+      assert.equal(p.settings.hint_mode, "always");
+      assert.equal(p.settings.hint_delay_ms, 2500);
+      assert.equal(p.settings.hint_pulse_ms, 400);
+      assert.equal(p.settings.hint_period_ms, 3500);
+      assert.equal(p.settings.hint_strong_after_ms, 10000);
+      assert.equal(p.settings.hint_blocks_after_ms, 15000);
+      assert.equal(p.settings.hint_blocks_enabled, false);
 
       // Blank / omitted fields must not wipe prior overrides or invent defaults on tip.
       enqueue({

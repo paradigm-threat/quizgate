@@ -93,7 +93,47 @@ if errs:
         print(" -", e)
     sys.exit(1)
 print(f"PASS controls visible on {W}x{H}")
+# Emit tap targets for shell follow-up (centers of each choice + Skip)
+out = open(path + ".taps", "w")
+for t, x1, y1, x2, y2 in choices:
+    out.write(f"choice {t} {(x1+x2)//2} {(y1+y2)//2}\n")
+if skip:
+    x1, y1, x2, y2 = skip
+    out.write(f"skip Skip {(x1+x2)//2} {(y1+y2)//2}\n")
+out.close()
 PY
+
+# Soft-tap each choice center then Skip — confirms hit targets are live (no crash).
+# Uses wrong answers first if possible; Skip last so we always leave the ask.
+TAP_FILE="${UI_HOST}.taps"
+if [[ -f "$TAP_FILE" ]]; then
+  while read -r kind label cx cy; do
+    [[ "$kind" == "choice" ]] || continue
+    "${ADB[@]}" shell input tap "$cx" "$cy" >/dev/null || true
+    sleep 0.35
+  done < "$TAP_FILE"
+  # Re-open a fresh ask, then tap Skip once
+  "${ADB[@]}" shell am force-stop "$PKG"
+  "${ADB[@]}" shell am start -n "$PKG/.QuizActivity" --es TRIGGER_PLAY 1 >/dev/null
+  sleep 2.0
+  "${ADB[@]}" shell uiautomator dump "$UI_DEV" >/dev/null
+  "${ADB[@]}" pull "$UI_DEV" "$UI_HOST" >/dev/null
+  SKIP_XY=$(python3 - "$UI_HOST" <<'PY'
+import re, sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+m = re.search(r'text="Skip"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml) or \
+    re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"[^>]*text="Skip"', xml)
+if not m:
+    raise SystemExit("Skip missing on re-open")
+x1, y1, x2, y2 = map(int, m.groups())
+print((x1 + x2) // 2, (y1 + y2) // 2)
+PY
+)
+  read -r SX SY <<<"$SKIP_XY"
+  "${ADB[@]}" shell input tap "$SX" "$SY" >/dev/null
+  sleep 0.8
+  echo "OK tapped choice centers + Skip"
+fi
 
 "${ADB[@]}" shell am force-stop "$PKG"
 echo "assert_quiz_controls_visible OK"

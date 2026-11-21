@@ -14,6 +14,12 @@ python3 curricula/scripts/si_batch_review.py
 echo "== Unit tests =="
 ./scripts/run_unit_tests.sh
 
+echo "== Data-plane JS tests =="
+(
+  cd "$ROOT/data-plane"
+  node --test batch/adminJobs.test.mjs batch/drain.test.mjs lib/levelUpPolicy.test.mjs
+)
+
 # Optional device gate: MC/Skip fully on-screen and tappable.
 if [[ -n "${SERIAL:-}" ]]; then
   echo "== Device: quiz controls visible (SERIAL=$SERIAL) =="
