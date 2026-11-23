@@ -78,7 +78,32 @@ function normalizeCurriculumId(id, fallback = null) {
  * `day` defaults to the UTC receive day; clients may pass their local day for backfill.
  * Does not store recent_quiz / event trails.
  */
-export function writeDayBatch(uuid, { today, curriculum_id, day } = {}) {
+/** Cap per-day question map size (qid → counts). */
+const MAX_BY_QUESTION = 80;
+
+export function normalizeByQuestion(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out = {};
+  let n = 0;
+  for (const [qid, v] of Object.entries(raw)) {
+    if (n >= MAX_BY_QUESTION) break;
+    const id = String(qid || "")
+      .trim()
+      .slice(0, 64);
+    if (!id || /[\\/\0"]/.test(id)) continue;
+    if (!v || typeof v !== "object") continue;
+    out[id] = {
+      shown: nonNegInt(v.shown),
+      correct: nonNegInt(v.correct),
+      wrong: nonNegInt(v.wrong),
+      skipped: nonNegInt(v.skipped),
+    };
+    n++;
+  }
+  return n > 0 ? out : null;
+}
+
+export function writeDayBatch(uuid, { today, curriculum_id, day, by_question } = {}) {
   if (!isUuid(uuid)) throw new Error("invalid_uuid");
   const dayKey = assertDayKey(day || utcDayKey());
   const fp = dayBatchPath(uuid, dayKey);
@@ -94,6 +119,9 @@ export function writeDayBatch(uuid, { today, curriculum_id, day } = {}) {
   }
 
   const now = Date.now();
+  const byQ =
+    normalizeByQuestion(by_question) ||
+    (by_question === undefined ? normalizeByQuestion(prev?.by_question) : null);
   const rec = {
     schema: DAY_BATCH_SCHEMA,
     user_uuid: uuid,
@@ -106,6 +134,7 @@ export function writeDayBatch(uuid, { today, curriculum_id, day } = {}) {
     received_at_ms: now,
     sync_count: nonNegInt(prev?.sync_count) + 1,
   };
+  if (byQ) rec.by_question = byQ;
 
   const tmp = `${fp}.${process.pid}.${now}.tmp`;
   writeFileSync(tmp, JSON.stringify(rec, null, 2) + "\n");

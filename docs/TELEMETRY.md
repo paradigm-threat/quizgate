@@ -13,6 +13,7 @@ Intake is **`https://api.quizgate.app`** only (see [`DATA_PLANE.md`](DATA_PLANE.
 | Path | Role |
 |------|------|
 | `files/stats/events.jsonl` | Recent raw quiz events (ring buffer) |
+| `files/stats/questions.jsonl` | Durable per-question rollups (`shown`/`correct`/`wrong`/`skipped`) — survives event compaction |
 | `files/stats/sessions.jsonl` | Recent session summaries (ring buffer) |
 | `files/stats/days.jsonl` | Durable per-day rollups (asked/right/wrong/skipped). Day key uses local **stats day barrier** (default **05:00**; admin `stats_day_barrier_hour`) — wall times before the barrier belong to the previous day |
 | `files/stats/diagnostics/schedule.jsonl` | Alarm / quiz lifecycle timestamps (`alarm_scheduled`, `alarm_fired`, arm, quiz start/end, `perf_mode`, …) |

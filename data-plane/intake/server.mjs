@@ -315,6 +315,7 @@ const server = createServer(async (req, res) => {
         today,
         curriculum_id: curriculumId,
         day,
+        by_question: payload.by_question || payload.byQuestion || null,
       });
     } catch (err) {
       return json(res, 500, {

@@ -36,7 +36,10 @@ describe("batch drain", () => {
       assert.ok(profile);
       assert.equal(profile.user_uuid, uuid);
       assert.equal(profile.curriculum_id, "basic-math");
-      assert.equal(profile.settings.curriculum_level, 1);
+      // Soft gates hint next level; tip curriculum_level stays parent/SI-owned.
+      assert.equal(profile.settings.curriculum_level == null ? 0 : profile.settings.curriculum_level, 0);
+      assert.ok((profile.content_hints || []).some((h) => String(h).startsWith("consider_level:")));
+      assert.equal(profile.readiness.next_level, 1);
       assert.ok(profile.readiness.score >= 0);
       assert.ok(Array.isArray(profile.readiness.reasons));
       const userDir = join(users, "users", uuid);

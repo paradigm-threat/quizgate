@@ -69,6 +69,25 @@ public class StatsStoreTest {
         Assert.eq(StatsStore.SESSION_LOCK, StatsStore.inferSessionTypeFromTrigger("interval"), "interval→lock");
         Assert.eq(StatsStore.SESSION_PLAY, StatsStore.inferSessionTypeFromTrigger("play"), "play");
 
+        // Durable per-question rollups (survive beyond day cards)
+        java.util.List<StatsStore.QuestionEntry> qs = store.allQuestionStats();
+        Assert.isTrue(qs.size() >= 2, "question rollups");
+        StatsStore.QuestionStats m01 = null;
+        StatsStore.QuestionStats m03 = null;
+        for (StatsStore.QuestionEntry e : qs) {
+            if ("m01".equals(e.questionId)) m01 = e.stats;
+            if ("m03".equals(e.questionId)) m03 = e.stats;
+        }
+        Assert.isTrue(m01 != null, "m01 rollup");
+        Assert.eq(1, m01.wrong, "m01 wrong");
+        Assert.isTrue(m01.shown >= 1, "m01 shown");
+        Assert.isTrue(m03 != null, "m03 rollup");
+        Assert.eq(1, m03.skipped, "m03 skipped");
+        java.util.Map<String, StatsStore.QuestionStats> dayQ =
+                store.questionStatsForDay(StatsStore.dayKey(now, utc, 0), utc);
+        Assert.isTrue(dayQ.containsKey("m02"), "day by_question m02");
+        Assert.eq(1, dayQ.get("m02").correct, "day m02 correct");
+
         // Historic days survive in days.jsonl even after raw event prune
         long older = now - 3L * 24L * 60L * 60L * 1000L;
         store.appendEvent(new StatsEvent(older, "old", "shown", "m01", "", 0), utc);

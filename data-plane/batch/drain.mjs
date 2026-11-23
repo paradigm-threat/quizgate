@@ -89,20 +89,19 @@ function applyProgressSync(job) {
       ...(profile.content_hints || []).slice(-8),
       `consider_level:${readiness.next_level}`,
     ];
-    // Standing decision when eligible: advance curriculum_level (soft-gate path).
-    profile.settings = profile.settings || {};
-    const cur = Number(profile.settings.curriculum_level);
-    const base = Number.isFinite(cur) && cur >= 0 ? Math.floor(cur) : 0;
-    profile.settings.curriculum_level = base + 1;
+    // Soft gates only *suggest* a level — SI / parent apply curriculum_level.
+    // Auto-bump raced SI withholds and forced L0→L1 on thin eligible days.
   }
-  // Frequency: slow down if struggling, keep default if healthy
+  // Frequency: slow only when *answered* accuracy is weak (ignore abandoned shown).
   const asked = Number(p.today?.asked || 0);
   const right = Number(p.today?.right || 0);
-  const rate = asked > 0 ? right / asked : 1;
-  if (asked >= 10 && rate < 0.5) {
+  const wrong = Number(p.today?.wrong || 0);
+  const answered = right + wrong;
+  const answeredRate = answered > 0 ? right / answered : 1;
+  if (answered >= 5 && answeredRate < 0.5) {
     profile.settings.interval_ms = 2_700_000; // 45m
     profile.settings.jitter_ms = 900_000;
-    readiness.reasons.push("slow_frequency_low_accuracy");
+    readiness.reasons.push("slow_frequency_low_answered_accuracy");
   } else if (p.interval_ms && p.jitter_ms) {
     profile.settings.interval_ms = Number(p.interval_ms);
     profile.settings.jitter_ms = Number(p.jitter_ms);

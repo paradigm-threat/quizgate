@@ -185,6 +185,11 @@ public final class Diag {
         try {
             AppPrefs prefs = new AppPrefs(app);
             StatsStore store = stats(app);
+            // Build durable questions.jsonl from events if missing (one-time).
+            try {
+                store.allQuestionStats();
+            } catch (Exception ignored) {
+            }
             TimeZone zone = TimeZone.getDefault();
             long now = System.currentTimeMillis();
             String today = StatsStore.dayKey(now, zone, prefs.getStatsDayBarrierHour());
@@ -213,8 +218,14 @@ public final class Diag {
             for (String day : need) {
                 StatsStore.DayStats rollup = byDay.get(day);
                 if (rollup == null) rollup = new StatsStore.DayStats();
+                java.util.Map<String, StatsStore.QuestionStats> byQ = null;
+                try {
+                    byQ = store.questionStatsForDay(day, zone);
+                } catch (Exception ignored) {
+                    byQ = null;
+                }
                 boolean uploadedOk = TelemetryUploader.uploadDayBatch(
-                        app, uuid, day, rollup, curriculum);
+                        app, uuid, day, rollup, curriculum, byQ);
                 if (!uploadedOk) {
                     Log.w(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_stop day=" + day);
                     break;

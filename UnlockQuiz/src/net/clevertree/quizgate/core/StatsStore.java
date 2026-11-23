@@ -16,6 +16,8 @@ import java.util.TimeZone;
  * Local quiz stats. Raw events/sessions are ring-buffered; per-day rollups in
  * {@code days.jsonl} persist historic asked/right/wrong/skipped within a day cap,
  * plus lock vs voluntary ({@code play}) splits for behavioral analysis (no ability gate).
+ * Per-question rollups in {@code questions.jsonl} (shown/correct/wrong/skipped) survive
+ * event compaction so SI can see which items struggle.
  * Paths: {@code files/stats/} (app-private). Never deleted on package replace.
  */
 public final class StatsStore {
@@ -24,6 +26,8 @@ public final class StatsStore {
     public static final int MAX_SESSION_LINES = 400;
     public static final long MAX_SESSION_BYTES = 256L * 1024L;
     public static final int MAX_DAY_ROLLUPS = 90;
+    /** Cap distinct question ids retained in the durable rollup. */
+    public static final int MAX_QUESTION_ROLLUPS = 400;
 
     /** Scheduled Hard lock quiz (restricts until unlock). */
     public static final String SESSION_LOCK = "lock";
@@ -34,10 +38,13 @@ public final class StatsStore {
     private final File eventsFile;
     private final File sessionsFile;
     private final File daysFile;
+    private final File questionsFile;
+    private final File questionsMarker;
     private final File contextMarker;
     private final BoundedJsonl eventsLog;
     private final BoundedJsonl sessionsLog;
     private boolean migrated;
+    private boolean questionsMigrated;
     /** Local hour (0–23) when the stats day rolls; default 5 AM. */
     private int dayBarrierHour = StatsDayPolicy.DEFAULT_BARRIER_HOUR;
 
@@ -55,6 +62,8 @@ public final class StatsStore {
         this.eventsFile = new File(dir, "events.jsonl");
         this.sessionsFile = new File(dir, "sessions.jsonl");
         this.daysFile = new File(dir, "days.jsonl");
+        this.questionsFile = new File(dir, "questions.jsonl");
+        this.questionsMarker = new File(dir, ".questions_v1");
         this.contextMarker = new File(dir, ".day_context_v1");
         int every = Math.max(1, compactEvery);
         this.eventsLog = new BoundedJsonl(eventsFile, MAX_EVENT_LINES, MAX_EVENT_BYTES, every);
@@ -74,6 +83,7 @@ public final class StatsStore {
     public File getEventsFile() { return eventsFile; }
     public File getSessionsFile() { return sessionsFile; }
     public File getDaysFile() { return daysFile; }
+    public File getQuestionsFile() { return questionsFile; }
 
     /** Normalize to {@link #SESSION_LOCK}, {@link #SESSION_PLAY}, or empty. */
     public static String normalizeSessionType(String raw) {
@@ -100,6 +110,7 @@ public final class StatsStore {
         if (e.ts > 0 && isDayCountedType(e.type) && !e.demo) {
             upsertDayFromEvent(e.ts, zone == null ? TimeZone.getDefault() : zone,
                     e.type, e.sessionType);
+            upsertQuestionFromEvent(e.questionId, e.type);
         }
     }
 
@@ -145,7 +156,7 @@ public final class StatsStore {
     }
 
     public synchronized long approximateSizeBytes() {
-        return sizeOf(eventsFile) + sizeOf(sessionsFile) + sizeOf(daysFile);
+        return sizeOf(eventsFile) + sizeOf(sessionsFile) + sizeOf(daysFile) + sizeOf(questionsFile);
     }
 
     public Aggregates aggregates() throws IOException {
@@ -161,20 +172,56 @@ public final class StatsStore {
                 }
             }
         }
-        if (eventsFile.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    String qid = JsonUtil.extract(line, "question_id");
-                    String type = JsonUtil.extract(line, "type");
-                    if (qid.isEmpty()) continue;
-                    int[] pair = a.perQuestion.computeIfAbsent(qid, k -> new int[2]);
-                    if ("correct".equals(type)) pair[0]++;
-                    else if ("wrong".equals(type)) pair[1]++;
-                }
-            }
+        ensureQuestionsMigrated();
+        for (Map.Entry<String, QuestionStats> e : loadQuestionRollups().entrySet()) {
+            QuestionStats q = e.getValue();
+            a.perQuestion.put(e.getKey(), new int[]{q.correct, q.wrong, q.shown, q.skipped});
         }
         return a;
+    }
+
+    /** All-time per-question rollups (durable across event compaction). */
+    public synchronized List<QuestionEntry> allQuestionStats() throws IOException {
+        ensureQuestionsMigrated();
+        Map<String, QuestionStats> map = loadQuestionRollups();
+        List<QuestionEntry> out = new ArrayList<>();
+        for (Map.Entry<String, QuestionStats> e : map.entrySet()) {
+            out.add(new QuestionEntry(e.getKey(), copyQuestion(e.getValue())));
+        }
+        out.sort((a, b) -> {
+            int ta = a.stats.wrong + a.stats.skipped;
+            int tb = b.stats.wrong + b.stats.skipped;
+            if (ta != tb) return Integer.compare(tb, ta);
+            return a.questionId.compareTo(b.questionId);
+        });
+        return out;
+    }
+
+    /**
+     * Per-question counts for one stats day, derived from the events ring buffer.
+     * Used for day-batch upload ({@code by_question}).
+     */
+    public synchronized Map<String, QuestionStats> questionStatsForDay(String dayKey, TimeZone zone)
+            throws IOException {
+        String day = canonicalDayKey(dayKey);
+        Map<String, QuestionStats> out = new HashMap<>();
+        if (day.isEmpty() || !eventsFile.exists()) return out;
+        TimeZone z = zone == null ? TimeZone.getDefault() : zone;
+        try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("\"demo\":true")) continue;
+                String type = JsonUtil.extract(line, "type");
+                if (!isDayCountedType(type)) continue;
+                String qid = JsonUtil.extract(line, "question_id");
+                if (qid.isEmpty()) continue;
+                long ts = JsonUtil.extractLong(line, "ts");
+                if (ts < 0) continue;
+                if (!day.equals(dayKeyFor(ts, z))) continue;
+                applyQuestionEvent(out.computeIfAbsent(qid, k -> new QuestionStats()), type);
+            }
+        }
+        return out;
     }
 
     public DayStats dayStats(long nowMs, TimeZone zone) throws IOException {
@@ -200,6 +247,125 @@ public final class StatsStore {
     private static boolean isDayCountedType(String type) {
         return "shown".equals(type) || "correct".equals(type)
                 || "wrong".equals(type) || "skipped".equals(type);
+    }
+
+    private void upsertQuestionFromEvent(String questionId, String type) throws IOException {
+        String qid = TelemetryRedaction.safeToken(questionId == null ? "" : questionId);
+        if (qid.isEmpty()) return;
+        ensureQuestionsMigrated();
+        Map<String, QuestionStats> map = loadQuestionRollups();
+        QuestionStats q = map.computeIfAbsent(qid, k -> new QuestionStats());
+        applyQuestionEvent(q, type);
+        writeQuestionRollups(map);
+    }
+
+    private void ensureQuestionsMigrated() throws IOException {
+        if (questionsMigrated) return;
+        questionsMigrated = true;
+        if (questionsMarker.exists() && questionsFile.exists()) return;
+        Map<String, QuestionStats> map = new HashMap<>();
+        if (eventsFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if (line.contains("\"demo\":true")) continue;
+                    String type = JsonUtil.extract(line, "type");
+                    if (!isDayCountedType(type)) continue;
+                    String qid = JsonUtil.extract(line, "question_id");
+                    if (qid.isEmpty()) continue;
+                    applyQuestionEvent(map.computeIfAbsent(qid, k -> new QuestionStats()), type);
+                }
+            }
+        }
+        writeQuestionRollups(map);
+        FileWriter mw = new FileWriter(questionsMarker, false);
+        try {
+            mw.write("1\n");
+        } finally {
+            mw.close();
+        }
+    }
+
+    private Map<String, QuestionStats> loadQuestionRollups() throws IOException {
+        Map<String, QuestionStats> map = new HashMap<>();
+        if (!questionsFile.exists()) return map;
+        try (BufferedReader br = new BufferedReader(new FileReader(questionsFile))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String id = JsonUtil.extract(line, "id");
+                if (id.isEmpty()) id = JsonUtil.extract(line, "question_id");
+                if (id.isEmpty()) continue;
+                QuestionStats q = map.get(id);
+                if (q == null) q = new QuestionStats();
+                q.shown = Math.max(q.shown, (int) Math.max(0, JsonUtil.extractLong(line, "shown")));
+                q.correct = Math.max(q.correct, (int) Math.max(0, JsonUtil.extractLong(line, "correct")));
+                q.wrong = Math.max(q.wrong, (int) Math.max(0, JsonUtil.extractLong(line, "wrong")));
+                q.skipped = Math.max(q.skipped, (int) Math.max(0, JsonUtil.extractLong(line, "skipped")));
+                map.put(id, q);
+            }
+        }
+        return map;
+    }
+
+    private void writeQuestionRollups(Map<String, QuestionStats> map) throws IOException {
+        List<Map.Entry<String, QuestionStats>> entries = new ArrayList<>(map.entrySet());
+        entries.sort((a, b) -> {
+            int ta = a.getValue().wrong + a.getValue().skipped;
+            int tb = b.getValue().wrong + b.getValue().skipped;
+            if (ta != tb) return Integer.compare(tb, ta);
+            int ua = a.getValue().shown;
+            int ub = b.getValue().shown;
+            if (ua != ub) return Integer.compare(ub, ua);
+            return a.getKey().compareTo(b.getKey());
+        });
+        if (entries.size() > MAX_QUESTION_ROLLUPS) {
+            entries = new ArrayList<>(entries.subList(0, MAX_QUESTION_ROLLUPS));
+        }
+        File tmp = new File(questionsFile.getAbsolutePath() + ".tmp");
+        FileWriter fw = new FileWriter(tmp, false);
+        try {
+            for (Map.Entry<String, QuestionStats> e : entries) {
+                QuestionStats q = e.getValue();
+                fw.write("{\"id\":\"");
+                fw.write(JsonUtil.esc(e.getKey()));
+                fw.write("\",\"shown\":");
+                fw.write(Integer.toString(q.shown));
+                fw.write(",\"correct\":");
+                fw.write(Integer.toString(q.correct));
+                fw.write(",\"wrong\":");
+                fw.write(Integer.toString(q.wrong));
+                fw.write(",\"skipped\":");
+                fw.write(Integer.toString(q.skipped));
+                fw.write("}\n");
+            }
+        } finally {
+            fw.close();
+        }
+        if (!tmp.renameTo(questionsFile)) {
+            try (FileReader fr = new FileReader(tmp); FileWriter out = new FileWriter(questionsFile, false)) {
+                char[] buf = new char[4096];
+                int n;
+                while ((n = fr.read(buf)) >= 0) out.write(buf, 0, n);
+            }
+            //noinspection ResultOfMethodCallIgnored
+            tmp.delete();
+        }
+    }
+
+    private static void applyQuestionEvent(QuestionStats q, String type) {
+        if ("shown".equals(type)) q.shown++;
+        else if ("correct".equals(type)) q.correct++;
+        else if ("wrong".equals(type)) q.wrong++;
+        else if ("skipped".equals(type)) q.skipped++;
+    }
+
+    private static QuestionStats copyQuestion(QuestionStats src) {
+        QuestionStats q = new QuestionStats();
+        q.shown = src.shown;
+        q.correct = src.correct;
+        q.wrong = src.wrong;
+        q.skipped = src.skipped;
+        return q;
     }
 
     private void upsertDayFromEvent(long ts, TimeZone zone, String type, String sessionType)
@@ -451,9 +617,29 @@ public final class StatsStore {
         public int correct;
         public int bypass;
         public int consoling;
+        /**
+         * Per question id → {@code [correct, wrong, shown, skipped]}.
+         * Legacy callers used index 0/1 as correct/wrong; shown/skipped appended.
+         */
         public final Map<String, int[]> perQuestion = new HashMap<>();
         public double bypassRate() {
             return sessions == 0 ? 0 : (double) bypass / sessions;
+        }
+    }
+
+    public static final class QuestionStats {
+        public int shown;
+        public int correct;
+        public int wrong;
+        public int skipped;
+    }
+
+    public static final class QuestionEntry {
+        public final String questionId;
+        public final QuestionStats stats;
+        public QuestionEntry(String questionId, QuestionStats stats) {
+            this.questionId = questionId;
+            this.stats = stats;
         }
     }
 

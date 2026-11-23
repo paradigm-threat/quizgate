@@ -108,6 +108,28 @@ describe("dayBatch", () => {
     }
   });
 
+  it("stores by_question map when provided", () => {
+    const root = mkdtempSync(join(tmpdir(), "qg-batches-bq-"));
+    process.env.QUIZGATE_BATCH_DIR = root;
+    const uuid = "851f35c3-2432-4e44-81cd-84050a403e50";
+    try {
+      const rec = writeDayBatch(uuid, {
+        day: "2026-11-21",
+        today: { asked: 4, right: 1, wrong: 0, skipped: 1 },
+        by_question: {
+          a10: { shown: 2, correct: 0, wrong: 0, skipped: 1 },
+          a04: { shown: 1, correct: 1, wrong: 0, skipped: 0 },
+        },
+      });
+      assert.equal(rec.by_question.a10.skipped, 1);
+      assert.equal(rec.by_question.a04.correct, 1);
+      assert.equal(readDayBatch(uuid, "2026-11-21").by_question.a10.shown, 2);
+    } finally {
+      delete process.env.QUIZGATE_BATCH_DIR;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("explicit day writes that day's file; omitted day uses UTC today", () => {
     const root = mkdtempSync(join(tmpdir(), "qg-batches-day-"));
     process.env.QUIZGATE_BATCH_DIR = root;

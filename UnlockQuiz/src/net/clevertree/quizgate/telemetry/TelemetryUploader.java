@@ -44,6 +44,12 @@ public final class TelemetryUploader {
      */
     public static boolean uploadDayBatch(Context ctx, String userUuid, String dayKey,
                                          StatsStore.DayStats stats, String curriculumId) {
+        return uploadDayBatch(ctx, userUuid, dayKey, stats, curriculumId, null);
+    }
+
+    public static boolean uploadDayBatch(Context ctx, String userUuid, String dayKey,
+                                         StatsStore.DayStats stats, String curriculumId,
+                                         java.util.Map<String, StatsStore.QuestionStats> byQuestion) {
         if (ctx == null) return false;
         boolean runtime = new AppPrefs(ctx).isRemoteUploadEnabled();
         if (!BuildFingerprint.uploadAllowed(runtime)) return false;
@@ -73,7 +79,30 @@ public final class TelemetryUploader {
         sb.append(",\"right_play\":").append(d.rightPlay);
         sb.append(",\"wrong_play\":").append(d.wrongPlay);
         sb.append(",\"skipped_play\":").append(d.skippedPlay);
-        sb.append("}}");
+        sb.append('}');
+        if (byQuestion != null && !byQuestion.isEmpty()) {
+            sb.append(",\"by_question\":{");
+            boolean first = true;
+            int n = 0;
+            for (java.util.Map.Entry<String, StatsStore.QuestionStats> e : byQuestion.entrySet()) {
+                if (n >= 80) break;
+                String qid = e.getKey();
+                if (qid == null || qid.isEmpty()) continue;
+                StatsStore.QuestionStats q = e.getValue();
+                if (q == null) continue;
+                if (!first) sb.append(',');
+                first = false;
+                sb.append('"').append(JsonUtil.esc(qid)).append("\":{");
+                sb.append("\"shown\":").append(q.shown);
+                sb.append(",\"correct\":").append(q.correct);
+                sb.append(",\"wrong\":").append(q.wrong);
+                sb.append(",\"skipped\":").append(q.skipped);
+                sb.append('}');
+                n++;
+            }
+            sb.append('}');
+        }
+        sb.append('}');
         return postJson(ApiConfig.userSyncUrl(uuid), sb.toString(), "day_batch day=" + day);
     }
 

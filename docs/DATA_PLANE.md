@@ -19,7 +19,7 @@ Public hosts are **`*.quizgate.app` only**.
 3. Upload is off by default. Runtime **Share anonymous progress** (onboarding + Parents/Setup `remote_management`) or the compile flag enables async on-open day-batch POSTs to  
    `POST /v1/users/{uuid}/sync` — no scheduled jobs. The client backfills any local days not yet uploaded (closed days once; today ≤1× per local day). Optional parent email registers a hash for human admin.
 4. Intake **caches + enqueues** (PVC). It does **not** commit the tip. On each sync it also upserts an ephemeral **day batch** under the cache PVC:
-   `{QUIZGATE_CACHE_DIR}/batches/{YYYY-MM-DD}/{uuid}.json` (override root with `QUIZGATE_BATCH_DIR`) — aggregates only (`asked`/`right`/`wrong`/`skipped`, plus `*_lock` / `*_play` splits when the client sends them), no quiz event trails.
+   `{QUIZGATE_CACHE_DIR}/batches/{YYYY-MM-DD}/{uuid}.json` (override root with `QUIZGATE_BATCH_DIR`) — aggregates (`asked`/`right`/`wrong`/`skipped`, plus `*_lock` / `*_play` splits) and optional `by_question` map (per-qid shown/correct/wrong/skipped for that day, capped). No raw event trails.
    - **Unique per uuid + day:** exactly one file per `(uuid, day)`. Re-syncs atomically overwrite the counts (last write wins) and bump `sync_count`; no duplicate files.
    - **Day key:** optional body `day` (`YYYY-MM-DD`, e.g. the device's local day for backfill). When omitted, Intake uses the **UTC receive day**. Malformed `day` → `400 invalid_day`.
    - Identical bodies within 30s are deduped by the request cache (`deduped: true`, no `sync_count` bump).
