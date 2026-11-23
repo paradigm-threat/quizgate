@@ -8,23 +8,27 @@ QuizGate replaces stretches of idle tablet time with short, age-fit practice. Le
 ## Learners and age bands
 | Pack (current) | Age band (manifest) | Focus |
 |----------------|---------------------|--------|
-| **basic-math** v7 | about **4–7** | Progression **levels**: L0 add-under-8 4-option MC grid; L1 add-within-10 + easy subtract; L2 zero-identity + more subtract; L3 light multiply. Idle MC hints until first correct of the day |
+| **basic-math** v8 | about **4–7** | Progression **levels**: L0 easiest add (sums ≤5) 4-option MC grid; L1 add-within-10 + harder under-8 adds + easy subtract; L2 zeros + subtract + doubles; L3 light multiply + ×0/×1. Idle MC hints until first correct of the day |
+
+| Pack (planned) | Age band | Focus |
+|----------------|----------|--------|
+| **first-touch** (not built) | about **1–3** | Picture/audio taps only after UI exists: match-same, body/self, animal sounds, count 1–3, big/small — no reading gate |
 
 Future packs will publish their own `ageMin` / `ageMax` and learning objectives the same way. **Levels** gate how deep the pool goes (default device level **0**); age tiers remain a separate optional filter.
 
 **Level-up bar (default):** at least **75%** correct among answered questions, at least **5** correct, and **not more skips than answered** (`skipped ≤ right + wrong`). Admin may override per device (including an optional skip-%-of-asked cap). SI uses these as soft gates (may exception with a reason). See [`CURRICULUM.md`](CURRICULUM.md).
 
-## Learning objectives (basic-math v5)
+## Learning objectives (basic-math v8)
 By working through scheduled Hard quizzes and optional practice, a child practices:
 
-1. **Addition under 8 (level 0)** — tiny addends (sums ≤7), **4-option multiple-choice grid only** (no keypad / T/F yet); progressive idle hints while she has no rights yet today.
-2. **Addition within 10 (level 1)** — larger addends; equation / T/F / choice allowed; a few easy subtracts enter.
+1. **Easiest addition (level 0)** — sums ≤5 (addends 1–4), **4-option multiple-choice grid only** (no keypad / T/F yet); progressive idle hints while she has no rights yet today. Tuned so first contact is more often solved correctly.
+2. **Addition within 10 (level 1)** — larger addends including former under-8 sums 6–7; equation / T/F / choice allowed; more easy subtracts (`n−1`, `n−2`) enter.
 3. **Subtraction within 10** — take-away within the same range (expands at level 2).
-4. **Zero identity (level 2)** — `n + 0` / `0 + n` as a distinct skill (`add_with_zero`).
-5. **Light multiplication within 10 (level 3)** — early facts (small factors).
+4. **Zero identity + doubles (level 2)** — `n + 0` / `0 + n`; doubles and near-doubles as tagged skills; remaining subtraction.
+5. **Light multiplication within 10 (level 3)** — early facts plus **×0 / ×1** identity.
 6. **Multiple representations** — from level 1 up, the same fact can appear as equation blank, true/false, or multiple choice.
 
-Division and broader grade bands are deferred to later packs. Color / “which is red” style items return only with UI that does not rely on text labels alone.
+Division and broader grade bands are deferred to later packs. Color / “which is red” style items return only with UI that does not rely on text labels alone. Ages **1–3** need a separate picture/audio pack (see [`CURRICULUM.md`](CURRICULUM.md) backlog) — not levels inside basic-math.
 
 ## How a session teaches
 - **Hard lock (scheduled):** one correct answer unlocks (round size 1). The goal is a short, successful practice burst — not a multi-question jail.

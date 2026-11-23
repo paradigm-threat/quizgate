@@ -1,7 +1,8 @@
 # QuizGate curricula (source of truth)
 
 Signed `.qgpack` zips are built from folders here. The Android APK bundles
-`basic-math` as a fallback. **All users** get updates from the shared index:
+`basic-math` **v8** as a fallback (L0 = sums ≤5 MC-only for first-contact success).
+**All users** get updates from the shared index:
 
 `https://quizgate.app/curricula/index.json` → download `.qgpack` →
 `files/curricula/{id}/` on device (offline).

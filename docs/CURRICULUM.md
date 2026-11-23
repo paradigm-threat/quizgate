@@ -37,14 +37,20 @@ Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQu
 3. Devices with **curriculum sync** enabled (default on) pull the index on Setup / Sync now, and throttled (~6h) on app open (`Diag.syncDayBatchesOnOpen` → `CurriculumIndexClient`). Any network is fine. `bundled: true` means “also in APK”, **not** “skip updates”.
 4. Sync installs when the index version/sha is newer than the **installed** dir (or none yet), so every device gets `files/curricula/{id}/` for offline use even when the APK already ships the same pack. `CurriculumStore` loads the **higher version** of installed vs APK assets.
 
-**basic-math v7:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
+**basic-math v8:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
 
 | Level | Contents |
 |------:|----------|
-| **0** | First contact — `add_within_8` (**addends 1–7, sums ≤7, no zeros**); **4-option 2×2 choice grid** (`formats: ["choice"]` only) |
-| **1** | `add_within_10` (no zeros) + a few easy `subtract_within_10` |
-| **2** | Zero identity (`add_with_zero`: `n+0` / `0+n`) + remaining subtraction |
-| **3** | Light `multiply_within_10` |
+| **0** | First contact — easiest add only (**sums ≤5**, addends 1–4, no zeros); **4-option 2×2 choice grid** (`formats: ["choice"]` only); higher weight on `1+1` / `1+2` / `2+1` |
+| **1** | `add_within_10` + former harder under-8 adds (sums 6–7) + more easy `subtract_within_10` (`n−1`, `n−2`) |
+| **2** | Zero identity (`add_with_zero`) + remaining subtraction + **doubles** / **near-doubles** |
+| **3** | Light `multiply_within_10` + **×0 / ×1** identity |
+
+### Next content backlog
+
+**basic-math (same pack, later bumps):** missing-addend render format (`□ + 2 = 5`); optional compare-small once non-text UI exists; defer division, teens/place value, money, clocks, word problems, color-by-name.
+
+**Toddler / ages 1–3 (new pack later — not built yet):** separate pack (e.g. `first-touch`), `ageMin: 1`, `ageMax: 3`, only after **picture-tile + optional audio** ask UI exists. Planned progression: match-same → body/self → animals & sounds → count 1–3 → big/small → shapes/routines. Avoid letters-first phonics as the gate. **Do not ship** until picture/audio choice path exists.
 
 ### Idle answer hints (multiple-choice)
 
@@ -91,8 +97,9 @@ Optional per-item `formats` overrides the type defaults (basic-math L0 uses `["c
 
 ### Roadmap (not implemented)
 
-- **Missing addend / algebra blank** — e.g. `□ + 2 = 3` or `x + 2 = 3` (Pickles-style “fill the blank” on an addend). Same catalog row; new `RenderFormat` + presentation only.
+- **Missing addend / algebra blank** — e.g. `□ + 2 = 3` or `x + 2 = 3` (Pickles-style “fill the blank” on an addend). Same catalog row; new `RenderFormat` + presentation only. Biggest teach win before new subjects.
 - Compare / inequality cards and other Pickles templates as additional formats when the template engine grows.
+- **Toddler pack + picture/audio UI** — see backlog above; content blocked on large picture taps (2→3→4 choices), almost no reading.
 
 ## Sync
 

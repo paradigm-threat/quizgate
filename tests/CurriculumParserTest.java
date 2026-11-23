@@ -55,24 +55,29 @@ public class CurriculumParserTest {
 
         Assert.isTrue(pack.catalogForTier("K").size() > 0, "tier K");
 
-        // Level 0 = add under 8, MC only; prior L0 content is now L1.
+        // Level 0 = easiest add (sums ≤5), MC only; harder under-8 adds are L1.
         Catalog l0 = pack.catalogFiltered("all", 0);
-        Assert.isTrue(l0.size() >= 15, "level 0 pool");
+        Assert.isTrue(l0.size() >= 8, "level 0 pool");
+        Assert.isTrue(l0.size() <= 12, "level 0 stays small/easy");
         Assert.isTrue(l0.byId("a01") != null, "L0 has a01");
+        Assert.isTrue(l0.byId("a06") == null, "L0 excludes 1+6 (moved to L1)");
         Assert.isTrue(l0.byId("m01") == null, "L0 excludes former add-within-10");
         Assert.isTrue(l0.byId("m21") == null, "L0 excludes subtract");
         Assert.isTrue(l0.byId("m16") == null, "L0 excludes 1+0");
         Assert.isTrue(l0.byId("m36") == null, "L0 excludes multiply");
         Catalog l1 = pack.catalogFiltered("all", 1);
         Assert.isTrue(l1.byId("m01") != null, "L1 has add-within-10");
+        Assert.isTrue(l1.byId("a06") != null, "L1 has harder under-8 add");
         Assert.isTrue(l1.byId("m21") != null, "L1 has easy subtract");
         Assert.isTrue(l1.byId("m16") == null, "L1 excludes zero identity");
         Assert.isTrue(l1.byId("m36") == null, "L1 excludes multiply");
         Catalog l2 = pack.catalogFiltered("all", 2);
         Assert.isTrue(l2.byId("m16") != null, "L2 includes zero identity");
+        Assert.isTrue(l2.byId("d01") != null, "L2 includes doubles");
         Assert.isTrue(l2.byId("m36") == null, "L2 still excludes multiply");
         Catalog l3 = pack.catalogFiltered("all", 3);
         Assert.isTrue(l3.byId("m36") != null, "L3 includes multiply");
+        Assert.isTrue(l3.byId("x51") != null, "L3 includes multiply identity");
 
         // Round of 3 corrects unlocks
         QuestionPicker picker = new QuestionPicker(pack.catalog, new Random(7L))

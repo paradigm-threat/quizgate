@@ -33,10 +33,10 @@
       "symbolic": "1 + 1 = _",
       "promptMedia": null,
       "choices": [
-        "1",
         "2",
+        "1",
         "3",
-        "4"
+        "0"
       ],
       "correct": "2",
       "entry": [
@@ -45,7 +45,7 @@
       "formats": [
         "choice"
       ],
-      "weight": 2,
+      "weight": 4,
       "level": 0
     },
     {
@@ -60,10 +60,10 @@
       "symbolic": "1 + 2 = _",
       "promptMedia": null,
       "choices": [
-        "1",
-        "2",
         "3",
-        "4"
+        "2",
+        "4",
+        "1"
       ],
       "correct": "3",
       "entry": [
@@ -72,7 +72,7 @@
       "formats": [
         "choice"
       ],
-      "weight": 2,
+      "weight": 4,
       "level": 0
     },
     {
@@ -87,10 +87,10 @@
       "symbolic": "1 + 3 = _",
       "promptMedia": null,
       "choices": [
-        "2",
-        "3",
         "4",
-        "5"
+        "3",
+        "5",
+        "2"
       ],
       "correct": "4",
       "entry": [
@@ -99,7 +99,7 @@
       "formats": [
         "choice"
       ],
-      "weight": 2,
+      "weight": 3,
       "level": 0
     },
     {
@@ -114,10 +114,10 @@
       "symbolic": "1 + 4 = _",
       "promptMedia": null,
       "choices": [
-        "3",
-        "4",
         "5",
-        "6"
+        "4",
+        "6",
+        "3"
       ],
       "correct": "5",
       "entry": [
@@ -143,18 +143,15 @@
       "choices": [
         "4",
         "5",
-        "6",
-        "7"
+        "6"
       ],
       "correct": "6",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a06",
@@ -170,18 +167,15 @@
       "choices": [
         "5",
         "6",
-        "7",
-        "8"
+        "7"
       ],
       "correct": "7",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a07",
@@ -195,10 +189,10 @@
       "symbolic": "2 + 1 = _",
       "promptMedia": null,
       "choices": [
-        "1",
-        "2",
         "3",
-        "4"
+        "2",
+        "4",
+        "1"
       ],
       "correct": "3",
       "entry": [
@@ -207,7 +201,7 @@
       "formats": [
         "choice"
       ],
-      "weight": 2,
+      "weight": 4,
       "level": 0
     },
     {
@@ -222,10 +216,10 @@
       "symbolic": "2 + 2 = _",
       "promptMedia": null,
       "choices": [
-        "2",
-        "3",
         "4",
-        "5"
+        "3",
+        "5",
+        "2"
       ],
       "correct": "4",
       "entry": [
@@ -234,7 +228,7 @@
       "formats": [
         "choice"
       ],
-      "weight": 2,
+      "weight": 3,
       "level": 0
     },
     {
@@ -249,10 +243,10 @@
       "symbolic": "2 + 3 = _",
       "promptMedia": null,
       "choices": [
-        "3",
-        "4",
         "5",
-        "6"
+        "4",
+        "6",
+        "3"
       ],
       "correct": "5",
       "entry": [
@@ -278,18 +272,15 @@
       "choices": [
         "4",
         "5",
-        "6",
-        "7"
+        "6"
       ],
       "correct": "6",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a11",
@@ -305,18 +296,15 @@
       "choices": [
         "5",
         "6",
-        "7",
-        "8"
+        "7"
       ],
       "correct": "7",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a12",
@@ -330,10 +318,10 @@
       "symbolic": "3 + 1 = _",
       "promptMedia": null,
       "choices": [
-        "2",
-        "3",
         "4",
-        "5"
+        "3",
+        "5",
+        "2"
       ],
       "correct": "4",
       "entry": [
@@ -342,7 +330,7 @@
       "formats": [
         "choice"
       ],
-      "weight": 2,
+      "weight": 3,
       "level": 0
     },
     {
@@ -357,10 +345,10 @@
       "symbolic": "3 + 2 = _",
       "promptMedia": null,
       "choices": [
-        "3",
-        "4",
         "5",
-        "6"
+        "4",
+        "6",
+        "3"
       ],
       "correct": "5",
       "entry": [
@@ -386,18 +374,15 @@
       "choices": [
         "4",
         "5",
-        "6",
-        "7"
+        "6"
       ],
       "correct": "6",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a15",
@@ -413,18 +398,15 @@
       "choices": [
         "5",
         "6",
-        "7",
-        "8"
+        "7"
       ],
       "correct": "7",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a16",
@@ -438,10 +420,10 @@
       "symbolic": "4 + 1 = _",
       "promptMedia": null,
       "choices": [
-        "3",
-        "4",
         "5",
-        "6"
+        "4",
+        "6",
+        "3"
       ],
       "correct": "5",
       "entry": [
@@ -467,18 +449,15 @@
       "choices": [
         "4",
         "5",
-        "6",
-        "7"
+        "6"
       ],
       "correct": "6",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a18",
@@ -494,18 +473,15 @@
       "choices": [
         "5",
         "6",
-        "7",
-        "8"
+        "7"
       ],
       "correct": "7",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a19",
@@ -521,18 +497,15 @@
       "choices": [
         "4",
         "5",
-        "6",
-        "7"
+        "6"
       ],
       "correct": "6",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a20",
@@ -548,18 +521,15 @@
       "choices": [
         "5",
         "6",
-        "7",
-        "8"
+        "7"
       ],
       "correct": "7",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.a21",
@@ -575,18 +545,15 @@
       "choices": [
         "5",
         "6",
-        "7",
-        "8"
+        "7"
       ],
       "correct": "7",
       "entry": [
-        "choice"
-      ],
-      "formats": [
+        "digit",
         "choice"
       ],
       "weight": 2,
-      "level": 0
+      "level": 1
     },
     {
       "id": "bm.k.m01",
@@ -1282,7 +1249,7 @@
         "choice"
       ],
       "weight": 1,
-      "level": 2
+      "level": 1
     },
     {
       "id": "bm.1.m25",
@@ -1378,7 +1345,7 @@
         "choice"
       ],
       "weight": 1,
-      "level": 2
+      "level": 1
     },
     {
       "id": "bm.k.m29",
@@ -1426,7 +1393,7 @@
         "choice"
       ],
       "weight": 1,
-      "level": 2
+      "level": 1
     },
     {
       "id": "bm.1.m31",
@@ -1474,7 +1441,7 @@
         "choice"
       ],
       "weight": 1,
-      "level": 2
+      "level": 1
     },
     {
       "id": "bm.1.m33",
@@ -1557,7 +1524,7 @@
       ],
       "type": "math",
       "spoken": "What is two times two?",
-      "symbolic": "2 \u00d7 2 = _",
+      "symbolic": "2 × 2 = _",
       "promptMedia": null,
       "choices": [
         "3",
@@ -1581,7 +1548,7 @@
       ],
       "type": "math",
       "spoken": "What is two times three?",
-      "symbolic": "2 \u00d7 3 = _",
+      "symbolic": "2 × 3 = _",
       "promptMedia": null,
       "choices": [
         "5",
@@ -1605,7 +1572,7 @@
       ],
       "type": "math",
       "spoken": "What is two times four?",
-      "symbolic": "2 \u00d7 4 = _",
+      "symbolic": "2 × 4 = _",
       "promptMedia": null,
       "choices": [
         "6",
@@ -1629,7 +1596,7 @@
       ],
       "type": "math",
       "spoken": "What is two times five?",
-      "symbolic": "2 \u00d7 5 = _",
+      "symbolic": "2 × 5 = _",
       "promptMedia": null,
       "choices": [
         "8",
@@ -1653,7 +1620,7 @@
       ],
       "type": "math",
       "spoken": "What is three times three?",
-      "symbolic": "3 \u00d7 3 = _",
+      "symbolic": "3 × 3 = _",
       "promptMedia": null,
       "choices": [
         "6",
@@ -1677,7 +1644,7 @@
       ],
       "type": "math",
       "spoken": "What is three times two?",
-      "symbolic": "3 \u00d7 2 = _",
+      "symbolic": "3 × 2 = _",
       "promptMedia": null,
       "choices": [
         "5",
@@ -1701,7 +1668,7 @@
       ],
       "type": "math",
       "spoken": "What is one times five?",
-      "symbolic": "1 \u00d7 5 = _",
+      "symbolic": "1 × 5 = _",
       "promptMedia": null,
       "choices": [
         "1",
@@ -1725,7 +1692,7 @@
       ],
       "type": "math",
       "spoken": "What is four times two?",
-      "symbolic": "4 \u00d7 2 = _",
+      "symbolic": "4 × 2 = _",
       "promptMedia": null,
       "choices": [
         "6",
@@ -1749,7 +1716,7 @@
       ],
       "type": "math",
       "spoken": "What is five times one?",
-      "symbolic": "5 \u00d7 1 = _",
+      "symbolic": "5 × 1 = _",
       "promptMedia": null,
       "choices": [
         "4",
@@ -1773,7 +1740,7 @@
       ],
       "type": "math",
       "spoken": "What is three times one?",
-      "symbolic": "3 \u00d7 1 = _",
+      "symbolic": "3 × 1 = _",
       "promptMedia": null,
       "choices": [
         "2",
@@ -1781,6 +1748,750 @@
         "4"
       ],
       "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.1.m51",
+      "legacyId": "m51",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is six minus one?",
+      "symbolic": "6 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m52",
+      "legacyId": "m52",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is seven minus one?",
+      "symbolic": "7 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "5",
+        "6"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m53",
+      "legacyId": "m53",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is seven minus two?",
+      "symbolic": "7 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m54",
+      "legacyId": "m54",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is eight minus one?",
+      "symbolic": "8 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m55",
+      "legacyId": "m55",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is nine minus one?",
+      "symbolic": "9 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "7",
+        "8"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m56",
+      "legacyId": "m56",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is nine minus two?",
+      "symbolic": "9 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m57",
+      "legacyId": "m57",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is ten minus one?",
+      "symbolic": "10 - 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.m58",
+      "legacyId": "m58",
+      "tier": "1",
+      "skills": [
+        "subtract_within_10"
+      ],
+      "type": "math",
+      "spoken": "What is ten minus two?",
+      "symbolic": "10 - 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "7",
+        "8"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "bm.1.d01",
+      "legacyId": "d01",
+      "tier": "1",
+      "skills": [
+        "doubles"
+      ],
+      "type": "math",
+      "spoken": "What is two plus two?",
+      "symbolic": "2 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d02",
+      "legacyId": "d02",
+      "tier": "1",
+      "skills": [
+        "doubles"
+      ],
+      "type": "math",
+      "spoken": "What is three plus three?",
+      "symbolic": "3 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "5",
+        "6"
+      ],
+      "correct": "6",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d03",
+      "legacyId": "d03",
+      "tier": "1",
+      "skills": [
+        "doubles"
+      ],
+      "type": "math",
+      "spoken": "What is four plus four?",
+      "symbolic": "4 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "7",
+        "8"
+      ],
+      "correct": "8",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d04",
+      "legacyId": "d04",
+      "tier": "1",
+      "skills": [
+        "doubles"
+      ],
+      "type": "math",
+      "spoken": "What is five plus five?",
+      "symbolic": "5 + 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "9",
+        "10"
+      ],
+      "correct": "10",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d05",
+      "legacyId": "d05",
+      "tier": "1",
+      "skills": [
+        "near_doubles"
+      ],
+      "type": "math",
+      "spoken": "What is three plus four?",
+      "symbolic": "3 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d06",
+      "legacyId": "d06",
+      "tier": "1",
+      "skills": [
+        "near_doubles"
+      ],
+      "type": "math",
+      "spoken": "What is four plus three?",
+      "symbolic": "4 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "6",
+        "7"
+      ],
+      "correct": "7",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d07",
+      "legacyId": "d07",
+      "tier": "1",
+      "skills": [
+        "near_doubles"
+      ],
+      "type": "math",
+      "spoken": "What is four plus five?",
+      "symbolic": "4 + 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d08",
+      "legacyId": "d08",
+      "tier": "1",
+      "skills": [
+        "near_doubles"
+      ],
+      "type": "math",
+      "spoken": "What is five plus four?",
+      "symbolic": "5 + 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "8",
+        "9"
+      ],
+      "correct": "9",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d09",
+      "legacyId": "d09",
+      "tier": "1",
+      "skills": [
+        "near_doubles"
+      ],
+      "type": "math",
+      "spoken": "What is two plus three?",
+      "symbolic": "2 + 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.1.d10",
+      "legacyId": "d10",
+      "tier": "1",
+      "skills": [
+        "near_doubles"
+      ],
+      "type": "math",
+      "spoken": "What is three plus two?",
+      "symbolic": "3 + 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5"
+      ],
+      "correct": "5",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 2
+    },
+    {
+      "id": "bm.k.x51",
+      "legacyId": "x51",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is two times zero?",
+      "symbolic": "2 × 0 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x52",
+      "legacyId": "x52",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is zero times two?",
+      "symbolic": "0 × 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x53",
+      "legacyId": "x53",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is three times zero?",
+      "symbolic": "3 × 0 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x54",
+      "legacyId": "x54",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is zero times three?",
+      "symbolic": "0 × 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x55",
+      "legacyId": "x55",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is four times zero?",
+      "symbolic": "4 × 0 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x56",
+      "legacyId": "x56",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is zero times four?",
+      "symbolic": "0 × 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x57",
+      "legacyId": "x57",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is five times zero?",
+      "symbolic": "5 × 0 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x58",
+      "legacyId": "x58",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is zero times five?",
+      "symbolic": "0 × 5 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "0",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x59",
+      "legacyId": "x59",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is one times two?",
+      "symbolic": "1 × 2 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "2",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x60",
+      "legacyId": "x60",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is two times one?",
+      "symbolic": "2 × 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "correct": "2",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x61",
+      "legacyId": "x61",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is one times three?",
+      "symbolic": "1 × 3 = _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "3",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x62",
+      "legacyId": "x62",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is one times four?",
+      "symbolic": "1 × 4 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "4",
+      "entry": [
+        "digit",
+        "choice"
+      ],
+      "weight": 1,
+      "level": 3
+    },
+    {
+      "id": "bm.k.x63",
+      "legacyId": "x63",
+      "tier": "K",
+      "skills": [
+        "multiply_identity"
+      ],
+      "type": "math",
+      "spoken": "What is four times one?",
+      "symbolic": "4 × 1 = _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": "4",
       "entry": [
         "digit",
         "choice"

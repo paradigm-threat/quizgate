@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-21T21:54:15Z",
+  "updatedAt": "2026-11-22T13:27:36Z",
   "curricula": [
     {
       "id": "basic-math",
@@ -8,12 +8,12 @@
       "ageMax": 7,
       "difficultyRank": 10,
       "locale": "en",
-      "version": 7,
+      "version": 8,
       "minAppVersion": 1,
-      "description": "Level 0: addition under 8 (no zeros), 4-option multiple-choice grid only. L1: addition within 10 + easy subtract. L2: zero-identity + more subtract. L3: light multiply. Idle answer hints until first correct of the day.",
-      "contentSha256": "4e3838dd4e59e95a7257ba7a71789e7bd3d933dd5403c9a71c4e09b26fdb60de",
-      "sizeBytes": 33047,
-      "packUrl": "https://quizgate.app/curricula/packs/basic-math-v7.qgpack",
+      "description": "Level 0: easiest addition (sums \u22645, no zeros), 4-option MC grid only. L1: add within 10 + harder under-8 adds + easy subtract. L2: zero-identity + doubles/near-doubles + more subtract. L3: light multiply + \u00d70/\u00d71 identity. Idle answer hints until first correct of the day.",
+      "contentSha256": "024cbad191406c6b2dad189b9ca6c37630139c6bc3ec5292746ac95963cedfb5",
+      "sizeBytes": 46253,
+      "packUrl": "https://quizgate.app/curricula/packs/basic-math-v8.qgpack",
       "bundled": true
     }
   ]
