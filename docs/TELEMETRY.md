@@ -86,7 +86,15 @@ Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
   - `last_switch_at` / `last_switch_from` / `last_switch_to`
   - Numerics: `battery_pct`, `charging`, `battery_saver`, `battery_low_broadcast`, `low_ram_device`, `ram_class_mb`, `total_ram_mb`, `cpu_count`, `thermal_severe`
 
-`Diag.syncDayBatchesOnOpen` / `flushAfterInteractiveSession` is the UI entry point. It POSTs lean day batches (`day` + `today` counts including lock/play) via `TelemetryUploader.uploadDayBatch`. A local `files/stats/uploaded_days.txt` ledger remembers closed days already sent.
+`Diag.syncDayBatchesOnOpen` / `flushAfterInteractiveSession` is the UI entry point. It POSTs lean day batches via `TelemetryUploader.uploadDayBatch`:
+
+- `day` + `today` counts (including lock/play)
+- optional `by_question` / `by_format` (`equation`|`true_false`|`choice` → shown/correct/wrong/skipped)
+- optional `schedule` health: `a11y`, `armed`, kind counts (`alarm_fired`, `arm_blocked`, `boot_skip`, …), `interactive_ms`, and `fire_status` (`ok`|`a11y_off`|`never_armed`|`no_fire_while_interactive`|`idle_or_off`|`unknown`)
+
+**Zero-day upload:** closed barrier days missing from `days.jsonl` (last 3) still sync as empty rollups + schedule health so SI can see “no asks.” A local `files/stats/uploaded_days.txt` ledger remembers closed days already sent; today ≤1 snapshot/day.
+
+**Qualified hours:** `files/stats/interactive.jsonl` accumulates screen-on ms per stats day from `ScreenLockGate` (`SCREEN_ON`/`OFF`/`USER_PRESENT`, barrier-aware). Expected fires ≈ `interactive_ms / interval_ms` — never a 24h baseline. Best-effort when Accessibility is off (app process still registers the receiver).
 
 ### Media / overlay breadcrumbs (`kind=media`)
 

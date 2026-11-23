@@ -10,6 +10,8 @@ import {
   DAY_BATCH_SCHEMA,
   dayBatchPath,
   normalizeToday,
+  normalizeByFormat,
+  normalizeSchedule,
   assertDayKey,
 } from "./dayBatch.mjs";
 
@@ -124,6 +126,51 @@ describe("dayBatch", () => {
       assert.equal(rec.by_question.a10.skipped, 1);
       assert.equal(rec.by_question.a04.correct, 1);
       assert.equal(readDayBatch(uuid, "2026-11-21").by_question.a10.shown, 2);
+    } finally {
+      delete process.env.QUIZGATE_BATCH_DIR;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("stores by_format and schedule health; omit keeps prior", () => {
+    const root = mkdtempSync(join(tmpdir(), "qg-batches-fmt-"));
+    process.env.QUIZGATE_BATCH_DIR = root;
+    const uuid = "851f35c3-2432-4e44-81cd-84050a403e50";
+    try {
+      const a = writeDayBatch(uuid, {
+        day: "2026-11-22",
+        today: { asked: 0, right: 0, wrong: 0, skipped: 0 },
+        by_format: {
+          choice: { shown: 3, correct: 2, wrong: 0, skipped: 1 },
+          equation: { shown: 1, correct: 0, wrong: 1, skipped: 0 },
+        },
+        schedule: {
+          a11y: 0,
+          armed: 1,
+          alarm_fired: 0,
+          arm_blocked: 1,
+          boot_skip: 1,
+          interactive_ms: 0,
+          fire_status: "a11y_off",
+        },
+      });
+      assert.equal(a.by_format.choice.correct, 2);
+      assert.equal(a.schedule.fire_status, "a11y_off");
+      assert.equal(a.schedule.arm_blocked, 1);
+      assert.deepEqual(normalizeByFormat({ choice: { shown: 1 } }).choice, {
+        shown: 1, correct: 0, wrong: 0, skipped: 0,
+      });
+      assert.equal(normalizeSchedule({ fire_status: "nope" }).fire_status, "unknown");
+
+      const b = writeDayBatch(uuid, {
+        day: "2026-11-22",
+        today: { asked: 0, right: 0, wrong: 0, skipped: 0 },
+        // omit by_format / schedule → keep prior
+      });
+      assert.equal(b.sync_count, 2);
+      assert.equal(b.by_format.choice.shown, 3);
+      assert.equal(b.schedule.fire_status, "a11y_off");
+      assert.equal(b.schedule.interactive_ms, 0);
     } finally {
       delete process.env.QUIZGATE_BATCH_DIR;
       rmSync(root, { recursive: true, force: true });

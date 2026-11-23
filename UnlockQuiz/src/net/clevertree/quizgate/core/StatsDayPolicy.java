@@ -44,4 +44,23 @@ public final class StatsDayPolicy {
                 c.get(Calendar.MONTH) + 1,
                 c.get(Calendar.DAY_OF_MONTH));
     }
+
+    /**
+     * Instant of the next stats-day barrier strictly after {@code whenMs}
+     * (local wall clock at {@code barrierHour}:00:00).
+     */
+    public static long nextBarrierMs(long whenMs, TimeZone zone, int barrierHour) {
+        int barrier = parseBarrierHour(barrierHour);
+        TimeZone tz = zone == null ? TimeZone.getDefault() : zone;
+        Calendar c = Calendar.getInstance(tz);
+        c.setTimeInMillis(whenMs);
+        c.set(Calendar.HOUR_OF_DAY, barrier);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        if (c.getTimeInMillis() <= whenMs) {
+            c.add(Calendar.DAY_OF_YEAR, 1);
+        }
+        return c.getTimeInMillis();
+    }
 }

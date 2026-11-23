@@ -224,6 +224,38 @@ public final class StatsStore {
         return out;
     }
 
+    /**
+     * Per-{@code render_format} counts for one stats day ({@code by_format} day-batch).
+     * Unknown / empty format → {@code unknown}. Caps at a few known keys.
+     */
+    public synchronized Map<String, QuestionStats> formatStatsForDay(String dayKey, TimeZone zone)
+            throws IOException {
+        String day = canonicalDayKey(dayKey);
+        Map<String, QuestionStats> out = new HashMap<>();
+        if (day.isEmpty() || !eventsFile.exists()) return out;
+        TimeZone z = zone == null ? TimeZone.getDefault() : zone;
+        try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("\"demo\":true")) continue;
+                String type = JsonUtil.extract(line, "type");
+                if (!isDayCountedType(type)) continue;
+                long ts = JsonUtil.extractLong(line, "ts");
+                if (ts < 0) continue;
+                if (!day.equals(dayKeyFor(ts, z))) continue;
+                String fmt = TelemetryRedaction.safeToken(JsonUtil.extract(line, "render_format"));
+                if (fmt.isEmpty()) fmt = "unknown";
+                if (!isKnownRenderFormat(fmt)) fmt = "unknown";
+                applyQuestionEvent(out.computeIfAbsent(fmt, k -> new QuestionStats()), type);
+            }
+        }
+        return out;
+    }
+
+    private static boolean isKnownRenderFormat(String fmt) {
+        return "equation".equals(fmt) || "true_false".equals(fmt) || "choice".equals(fmt);
+    }
+
     public DayStats dayStats(long nowMs, TimeZone zone) throws IOException {
         ensureMigrated(zone);
         String today = dayKeyFor(nowMs, zone);

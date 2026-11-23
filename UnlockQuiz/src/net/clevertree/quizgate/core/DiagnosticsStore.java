@@ -158,6 +158,10 @@ public final class DiagnosticsStore {
     }
 
     public int fireCountForDay(String dayKey, TimeZone zone) throws IOException {
+        return fireCountForDay(dayKey, zone, StatsDayPolicy.DEFAULT_BARRIER_HOUR);
+    }
+
+    public int fireCountForDay(String dayKey, TimeZone zone, int barrierHour) throws IOException {
         if (dayKey == null || dayKey.isEmpty()) return 0;
         int n = 0;
         for (String line : schedule.readAll()) {
@@ -165,9 +169,51 @@ public final class DiagnosticsStore {
             if (!KIND_ALARM_FIRED.equals(kind) && !"fire".equals(kind)) continue;
             long ts = JsonUtil.extractLong(line, "ts");
             if (ts <= 0) continue;
-            if (dayKey.equals(StatsStore.dayKey(ts, zone))) n++;
+            if (dayKey.equals(StatsStore.dayKey(ts, zone, barrierHour))) n++;
         }
         return n;
+    }
+
+    /**
+     * Privacy-safe schedule health counts for one stats day (day-batch {@code schedule}).
+     */
+    public ScheduleHealthPolicy.Snapshot scheduleSnapshotForDay(
+            String dayKey,
+            TimeZone zone,
+            int barrierHour,
+            boolean a11y,
+            boolean armed,
+            long interactiveMs) throws IOException {
+        ScheduleHealthPolicy.Snapshot s = new ScheduleHealthPolicy.Snapshot();
+        s.a11y = a11y ? 1 : 0;
+        s.armed = armed ? 1 : 0;
+        s.interactiveMs = Math.max(0L, interactiveMs);
+        String day = StatsStore.canonicalDayKey(dayKey);
+        if (day.isEmpty()) {
+            s.finalizeStatus();
+            return s;
+        }
+        for (String line : schedule.readAll()) {
+            long ts = JsonUtil.extractLong(line, "ts");
+            if (ts <= 0) continue;
+            if (!day.equals(StatsStore.dayKey(ts, zone, barrierHour))) continue;
+            String kind = JsonUtil.extract(line, "kind");
+            if (KIND_ALARM_FIRED.equals(kind) || "fire".equals(kind)) {
+                s.alarmFired++;
+            } else if (KIND_ALARM_SCHEDULED.equals(kind)) {
+                s.alarmScheduled++;
+            } else if (KIND_ARM_BLOCKED.equals(kind)) {
+                s.armBlocked++;
+            } else if (KIND_SKIP_FIRE.equals(kind)) {
+                s.skipFire++;
+            } else if (KIND_BOOT_SKIP.equals(kind)) {
+                s.bootSkip++;
+            } else if (KIND_QUIZ_STARTED.equals(kind)) {
+                s.quizStarted++;
+            }
+        }
+        s.finalizeStatus();
+        return s;
     }
 
     private static void pushMemory(List<String> ring, String line, int cap) {

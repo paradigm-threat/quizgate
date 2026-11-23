@@ -44,6 +44,12 @@ function nonNegInt(v) {
   return Math.min(Math.floor(n), 1_000_000);
 }
 
+function nonNegLong(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(Math.floor(n), Number.MAX_SAFE_INTEGER);
+}
+
 const SPLIT_KEYS = ["asked", "right", "wrong", "skipped"].flatMap((k) => [
   `${k}_lock`,
   `${k}_play`,
@@ -80,6 +86,26 @@ function normalizeCurriculumId(id, fallback = null) {
  */
 /** Cap per-day question map size (qid → counts). */
 const MAX_BY_QUESTION = 80;
+const MAX_BY_FORMAT = 8;
+
+const FIRE_STATUS = new Set([
+  "ok",
+  "a11y_off",
+  "never_armed",
+  "no_fire_while_interactive",
+  "idle_or_off",
+  "unknown",
+]);
+
+function normalizeCountBlock(v) {
+  if (!v || typeof v !== "object") return null;
+  return {
+    shown: nonNegInt(v.shown),
+    correct: nonNegInt(v.correct),
+    wrong: nonNegInt(v.wrong),
+    skipped: nonNegInt(v.skipped),
+  };
+}
 
 export function normalizeByQuestion(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
@@ -91,19 +117,63 @@ export function normalizeByQuestion(raw) {
       .trim()
       .slice(0, 64);
     if (!id || /[\\/\0"]/.test(id)) continue;
-    if (!v || typeof v !== "object") continue;
-    out[id] = {
-      shown: nonNegInt(v.shown),
-      correct: nonNegInt(v.correct),
-      wrong: nonNegInt(v.wrong),
-      skipped: nonNegInt(v.skipped),
-    };
+    const block = normalizeCountBlock(v);
+    if (!block) continue;
+    out[id] = block;
     n++;
   }
   return n > 0 ? out : null;
 }
 
-export function writeDayBatch(uuid, { today, curriculum_id, day, by_question } = {}) {
+/** Day-level ask-format map: equation|true_false|choice|unknown → counts. */
+export function normalizeByFormat(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out = {};
+  let n = 0;
+  for (const [fmt, v] of Object.entries(raw)) {
+    if (n >= MAX_BY_FORMAT) break;
+    const id = String(fmt || "")
+      .trim()
+      .slice(0, 32);
+    if (!id || /[\\/\0"]/.test(id)) continue;
+    const block = normalizeCountBlock(v);
+    if (!block) continue;
+    out[id] = block;
+    n++;
+  }
+  return n > 0 ? out : null;
+}
+
+export function normalizeSchedule(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  let status = String(raw.fire_status || raw.fireStatus || "unknown")
+    .trim()
+    .slice(0, 48);
+  if (!FIRE_STATUS.has(status)) status = "unknown";
+  return {
+    a11y: nonNegInt(raw.a11y) > 0 ? 1 : 0,
+    armed: nonNegInt(raw.armed) > 0 ? 1 : 0,
+    alarm_fired: nonNegInt(raw.alarm_fired ?? raw.alarmFired),
+    alarm_scheduled: nonNegInt(raw.alarm_scheduled ?? raw.alarmScheduled),
+    arm_blocked: nonNegInt(raw.arm_blocked ?? raw.armBlocked),
+    skip_fire: nonNegInt(raw.skip_fire ?? raw.skipFire),
+    boot_skip: nonNegInt(raw.boot_skip ?? raw.bootSkip),
+    quiz_started: nonNegInt(raw.quiz_started ?? raw.quizStarted),
+    interactive_ms: nonNegLong(raw.interactive_ms ?? raw.interactiveMs),
+    fire_status: status,
+  };
+}
+
+/** Omit / null from Intake → keep previous; explicit object replaces. */
+function keepOrReplace(nextRaw, prevVal, normalize) {
+  if (nextRaw == null) return prevVal ?? null;
+  return normalize(nextRaw);
+}
+
+export function writeDayBatch(
+  uuid,
+  { today, curriculum_id, day, by_question, by_format, schedule } = {}
+) {
   if (!isUuid(uuid)) throw new Error("invalid_uuid");
   const dayKey = assertDayKey(day || utcDayKey());
   const fp = dayBatchPath(uuid, dayKey);
@@ -119,9 +189,21 @@ export function writeDayBatch(uuid, { today, curriculum_id, day, by_question } =
   }
 
   const now = Date.now();
-  const byQ =
-    normalizeByQuestion(by_question) ||
-    (by_question === undefined ? normalizeByQuestion(prev?.by_question) : null);
+  const byQ = keepOrReplace(
+    by_question,
+    normalizeByQuestion(prev?.by_question),
+    normalizeByQuestion
+  );
+  const byFmt = keepOrReplace(
+    by_format,
+    normalizeByFormat(prev?.by_format),
+    normalizeByFormat
+  );
+  const sched = keepOrReplace(
+    schedule,
+    normalizeSchedule(prev?.schedule),
+    normalizeSchedule
+  );
   const rec = {
     schema: DAY_BATCH_SCHEMA,
     user_uuid: uuid,
@@ -135,6 +217,8 @@ export function writeDayBatch(uuid, { today, curriculum_id, day, by_question } =
     sync_count: nonNegInt(prev?.sync_count) + 1,
   };
   if (byQ) rec.by_question = byQ;
+  if (byFmt) rec.by_format = byFmt;
+  if (sched) rec.schedule = sched;
 
   const tmp = `${fp}.${process.pid}.${now}.tmp`;
   writeFileSync(tmp, JSON.stringify(rec, null, 2) + "\n");

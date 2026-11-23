@@ -6,6 +6,7 @@ import android.util.Log;
 import net.clevertree.quizgate.AppPrefs;
 import net.clevertree.quizgate.core.BuildFingerprint;
 import net.clevertree.quizgate.core.JsonUtil;
+import net.clevertree.quizgate.core.ScheduleHealthPolicy;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.TelemetryPayload;
 
@@ -44,12 +45,20 @@ public final class TelemetryUploader {
      */
     public static boolean uploadDayBatch(Context ctx, String userUuid, String dayKey,
                                          StatsStore.DayStats stats, String curriculumId) {
-        return uploadDayBatch(ctx, userUuid, dayKey, stats, curriculumId, null);
+        return uploadDayBatch(ctx, userUuid, dayKey, stats, curriculumId, null, null, null);
     }
 
     public static boolean uploadDayBatch(Context ctx, String userUuid, String dayKey,
                                          StatsStore.DayStats stats, String curriculumId,
                                          java.util.Map<String, StatsStore.QuestionStats> byQuestion) {
+        return uploadDayBatch(ctx, userUuid, dayKey, stats, curriculumId, byQuestion, null, null);
+    }
+
+    public static boolean uploadDayBatch(Context ctx, String userUuid, String dayKey,
+                                         StatsStore.DayStats stats, String curriculumId,
+                                         java.util.Map<String, StatsStore.QuestionStats> byQuestion,
+                                         java.util.Map<String, StatsStore.QuestionStats> byFormat,
+                                         ScheduleHealthPolicy.Snapshot schedule) {
         if (ctx == null) return false;
         boolean runtime = new AppPrefs(ctx).isRemoteUploadEnabled();
         if (!BuildFingerprint.uploadAllowed(runtime)) return false;
@@ -60,7 +69,7 @@ public final class TelemetryUploader {
             return false;
         }
         StatsStore.DayStats d = stats != null ? stats : new StatsStore.DayStats();
-        StringBuilder sb = new StringBuilder(256);
+        StringBuilder sb = new StringBuilder(384);
         sb.append("{\"user_uuid\":\"").append(JsonUtil.esc(uuid)).append('"');
         sb.append(",\"day\":\"").append(JsonUtil.esc(day)).append('"');
         if (curriculumId != null && !curriculumId.isEmpty()) {
@@ -80,30 +89,54 @@ public final class TelemetryUploader {
         sb.append(",\"wrong_play\":").append(d.wrongPlay);
         sb.append(",\"skipped_play\":").append(d.skippedPlay);
         sb.append('}');
-        if (byQuestion != null && !byQuestion.isEmpty()) {
-            sb.append(",\"by_question\":{");
-            boolean first = true;
-            int n = 0;
-            for (java.util.Map.Entry<String, StatsStore.QuestionStats> e : byQuestion.entrySet()) {
-                if (n >= 80) break;
-                String qid = e.getKey();
-                if (qid == null || qid.isEmpty()) continue;
-                StatsStore.QuestionStats q = e.getValue();
-                if (q == null) continue;
-                if (!first) sb.append(',');
-                first = false;
-                sb.append('"').append(JsonUtil.esc(qid)).append("\":{");
-                sb.append("\"shown\":").append(q.shown);
-                sb.append(",\"correct\":").append(q.correct);
-                sb.append(",\"wrong\":").append(q.wrong);
-                sb.append(",\"skipped\":").append(q.skipped);
-                sb.append('}');
-                n++;
-            }
+        appendCountMap(sb, "by_question", byQuestion, 80);
+        appendCountMap(sb, "by_format", byFormat, 8);
+        if (schedule != null) {
+            sb.append(",\"schedule\":{");
+            sb.append("\"a11y\":").append(schedule.a11y);
+            sb.append(",\"armed\":").append(schedule.armed);
+            sb.append(",\"alarm_fired\":").append(schedule.alarmFired);
+            sb.append(",\"alarm_scheduled\":").append(schedule.alarmScheduled);
+            sb.append(",\"arm_blocked\":").append(schedule.armBlocked);
+            sb.append(",\"skip_fire\":").append(schedule.skipFire);
+            sb.append(",\"boot_skip\":").append(schedule.bootSkip);
+            sb.append(",\"quiz_started\":").append(schedule.quizStarted);
+            sb.append(",\"interactive_ms\":").append(Math.max(0L, schedule.interactiveMs));
+            String status = schedule.fireStatus == null ? ScheduleHealthPolicy.STATUS_UNKNOWN
+                    : schedule.fireStatus;
+            sb.append(",\"fire_status\":\"").append(JsonUtil.esc(status)).append('"');
             sb.append('}');
         }
         sb.append('}');
         return postJson(ApiConfig.userSyncUrl(uuid), sb.toString(), "day_batch day=" + day);
+    }
+
+    private static void appendCountMap(
+            StringBuilder sb,
+            String field,
+            java.util.Map<String, StatsStore.QuestionStats> map,
+            int cap) {
+        if (map == null || map.isEmpty()) return;
+        sb.append(",\"").append(field).append("\":{");
+        boolean first = true;
+        int n = 0;
+        for (java.util.Map.Entry<String, StatsStore.QuestionStats> e : map.entrySet()) {
+            if (n >= cap) break;
+            String key = e.getKey();
+            if (key == null || key.isEmpty()) continue;
+            StatsStore.QuestionStats q = e.getValue();
+            if (q == null) continue;
+            if (!first) sb.append(',');
+            first = false;
+            sb.append('"').append(JsonUtil.esc(key)).append("\":{");
+            sb.append("\"shown\":").append(q.shown);
+            sb.append(",\"correct\":").append(q.correct);
+            sb.append(",\"wrong\":").append(q.wrong);
+            sb.append(",\"skipped\":").append(q.skipped);
+            sb.append('}');
+            n++;
+        }
+        sb.append('}');
     }
 
     private static boolean postSync(TelemetryPayload payload) {

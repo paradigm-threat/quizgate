@@ -9,7 +9,10 @@ import android.os.PowerManager;
 import android.util.Log;
 
 import net.clevertree.quizgate.core.DiagnosticsStore;
+import net.clevertree.quizgate.core.InteractiveMinutesStore;
 import net.clevertree.quizgate.core.ScreenLockPolicy;
+import net.clevertree.quizgate.core.StatsDayPolicy;
+import net.clevertree.quizgate.core.StatsStore;
 
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,11 +25,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link QuizGateAccessibilityService}. Dynamic registration is required —
  * modern Android does not deliver {@code SCREEN_OFF}/{@code SCREEN_ON} to
  * manifest receivers. Do not unregister when Accessibility unbinds.
+ *
+ * <p>Also accumulates barrier-day {@code interactive_ms} (screen-on time) for
+ * day-batch schedule health — no package names.
  */
 public final class ScreenLockGate {
     private static final AtomicLong lastWakeAt = new AtomicLong(0L);
     private static final long WAKE_DEBOUNCE_MS = 800L;
     private static final AtomicBoolean receiverRegistered = new AtomicBoolean(false);
+    /** Wall-clock when the current interactive stretch began; 0 = not tracking. */
+    private static final AtomicLong interactiveSinceMs = new AtomicLong(0L);
 
     private static BroadcastReceiver screenReceiver;
 
@@ -72,6 +80,8 @@ public final class ScreenLockGate {
             }
             receiverRegistered.set(true);
             Log.i(AlarmScheduler.TAG, "screen_lock receiver registered");
+            // Best-effort: start interactive clock if already awake (a11y-independent).
+            markInteractiveIfNeeded(app);
         } catch (Exception e) {
             Log.e(AlarmScheduler.TAG, "screen_lock register failed", e);
             Diag.nonFatal(app, "screen_lock_register", e);
@@ -85,6 +95,7 @@ public final class ScreenLockGate {
     public static void unregister(Context ctx) {
         if (ctx == null || !receiverRegistered.get() || screenReceiver == null) return;
         try {
+            flushInteractive(ctx, System.currentTimeMillis());
             ctx.getApplicationContext().unregisterReceiver(screenReceiver);
         } catch (Exception e) {
             Log.w(AlarmScheduler.TAG, "screen_lock unregister", e);
@@ -95,6 +106,7 @@ public final class ScreenLockGate {
     public static void onScreenOff(Context ctx) {
         if (ctx == null) return;
         Context app = ctx.getApplicationContext();
+        flushInteractive(app, System.currentTimeMillis());
         AppPrefs prefs = new AppPrefs(app);
         if (!ScreenLockPolicy.shouldPendOnScreenOff(prefs.isArmed())) return;
         long now = System.currentTimeMillis();
@@ -116,6 +128,7 @@ public final class ScreenLockGate {
     public static void onWake(Context ctx, String action) {
         if (ctx == null) return;
         Context app = ctx.getApplicationContext();
+        markInteractiveIfNeeded(app);
         AppPrefs prefs = new AppPrefs(app);
         long now = System.currentTimeMillis();
         boolean inGrace = prefs.inUnlockGrace(now);
@@ -159,15 +172,63 @@ public final class ScreenLockGate {
     /** Clear pending after unlock / consoling / parent override, then re-arm if interactive. */
     public static void clearPendingAndRearm(Context ctx) {
         if (ctx == null) return;
-        AppPrefs prefs = new AppPrefs(ctx);
+        Context app = ctx.getApplicationContext();
+        markInteractiveIfNeeded(app);
+        AppPrefs prefs = new AppPrefs(app);
         prefs.setPendingScreenLock(false);
         prefs.beginUnlockGrace(System.currentTimeMillis());
-        QuizLaunch.cancelNotification(ctx);
-        AlarmScheduler.armWhileInteractive(ctx);
+        QuizLaunch.cancelNotification(app);
+        AlarmScheduler.armWhileInteractive(app);
+    }
+
+    /**
+     * Flush open interactive stretch into {@code interactive.jsonl} and restart
+     * the clock if still interactive. Safe to call from day-batch sync.
+     */
+    public static void reconcileInteractive(Context ctx) {
+        if (ctx == null) return;
+        Context app = ctx.getApplicationContext();
+        long now = System.currentTimeMillis();
+        flushInteractive(app, now);
+        if (isInteractive(app)) {
+            interactiveSinceMs.compareAndSet(0L, now);
+        }
+    }
+
+    static void markInteractiveIfNeeded(Context ctx) {
+        if (ctx == null) return;
+        if (!isInteractive(ctx)) return;
+        interactiveSinceMs.compareAndSet(0L, System.currentTimeMillis());
+    }
+
+    static void flushInteractive(Context ctx, long nowMs) {
+        long start = interactiveSinceMs.getAndSet(0L);
+        if (start <= 0L || nowMs <= start || ctx == null) return;
+        try {
+            AppPrefs prefs = new AppPrefs(ctx);
+            int barrier = prefs.getStatsDayBarrierHour();
+            TimeZone zone = TimeZone.getDefault();
+            InteractiveMinutesStore store = new InteractiveMinutesStore(Diag.statsDir(ctx));
+            long cursor = start;
+            // Cap one flush at 12h to absorb missed SCREEN_OFF.
+            long end = Math.min(nowMs, start + 12L * 60L * 60L * 1000L);
+            int guard = 0;
+            while (cursor < end && guard++ < 8) {
+                String day = StatsStore.dayKey(cursor, zone, barrier);
+                long next = StatsDayPolicy.nextBarrierMs(cursor, zone, barrier);
+                long chunkEnd = Math.min(end, next);
+                long delta = chunkEnd - cursor;
+                if (delta > 0L) store.addMs(day, delta);
+                cursor = chunkEnd;
+            }
+        } catch (Exception e) {
+            Log.w(AlarmScheduler.TAG, "interactive_ms flush failed", e);
+        }
     }
 
     /** Test hook. */
     static void resetWakeClockForTests() {
         lastWakeAt.set(0L);
+        interactiveSinceMs.set(0L);
     }
 }

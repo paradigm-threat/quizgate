@@ -316,6 +316,8 @@ const server = createServer(async (req, res) => {
         curriculum_id: curriculumId,
         day,
         by_question: payload.by_question || payload.byQuestion || null,
+        by_format: payload.by_format || payload.byFormat || null,
+        schedule: payload.schedule || null,
       });
     } catch (err) {
       return json(res, 500, {

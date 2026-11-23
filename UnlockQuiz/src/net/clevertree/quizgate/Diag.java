@@ -14,6 +14,8 @@ import net.clevertree.quizgate.core.DayBatchSyncPolicy;
 import net.clevertree.quizgate.core.DayUploadLedger;
 import net.clevertree.quizgate.core.DiagBreadcrumb;
 import net.clevertree.quizgate.core.DiagnosticsStore;
+import net.clevertree.quizgate.core.InteractiveMinutesStore;
+import net.clevertree.quizgate.core.ScheduleHealthPolicy;
 import net.clevertree.quizgate.core.StatsStore;
 import net.clevertree.quizgate.core.TelemetryPayload;
 import net.clevertree.quizgate.core.TelemetryRedaction;
@@ -190,9 +192,11 @@ public final class Diag {
                 store.allQuestionStats();
             } catch (Exception ignored) {
             }
+            ScreenLockGate.reconcileInteractive(app);
             TimeZone zone = TimeZone.getDefault();
             long now = System.currentTimeMillis();
-            String today = StatsStore.dayKey(now, zone, prefs.getStatsDayBarrierHour());
+            int barrier = prefs.getStatsDayBarrierHour();
+            String today = StatsStore.dayKey(now, zone, barrier);
             java.util.List<StatsStore.DayEntry> entries = store.allDayStats(zone);
             java.util.List<String> localKeys = new java.util.ArrayList<>();
             java.util.Map<String, StatsStore.DayStats> byDay = new java.util.HashMap<>();
@@ -205,7 +209,7 @@ public final class Diag {
             java.util.Set<String> uploaded = ledger.load();
             String todaySnap = prefs.getTodayBatchSnapshotDay();
             java.util.List<String> need = DayBatchSyncPolicy.daysNeedingUpload(
-                    localKeys, uploaded, today, todaySnap);
+                    localKeys, uploaded, today, todaySnap, DayBatchSyncPolicy.ZERO_DAY_LOOKBACK, zone);
             Log.i(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync need=" + need.size()
                     + " today=" + today);
             if (need.isEmpty()) {
@@ -214,18 +218,40 @@ public final class Diag {
             }
             String uuid = AnonUserId.getOrCreate(app);
             String curriculum = prefs.getActiveCurriculumId();
+            DiagnosticsStore diag = diagnostics(app);
+            InteractiveMinutesStore interactive = new InteractiveMinutesStore(statsDir(app));
+            boolean a11y = GateMode.isAccessibilityEnabled(app);
+            boolean armed = prefs.isArmed();
             int ok = 0;
             for (String day : need) {
                 StatsStore.DayStats rollup = byDay.get(day);
                 if (rollup == null) rollup = new StatsStore.DayStats();
                 java.util.Map<String, StatsStore.QuestionStats> byQ = null;
+                java.util.Map<String, StatsStore.QuestionStats> byFmt = null;
                 try {
                     byQ = store.questionStatsForDay(day, zone);
                 } catch (Exception ignored) {
                     byQ = null;
                 }
+                try {
+                    byFmt = store.formatStatsForDay(day, zone);
+                } catch (Exception ignored) {
+                    byFmt = null;
+                }
+                long interactiveMs = 0L;
+                try {
+                    interactiveMs = interactive.getMs(day);
+                } catch (Exception ignored) {
+                }
+                ScheduleHealthPolicy.Snapshot schedule = null;
+                try {
+                    schedule = diag.scheduleSnapshotForDay(
+                            day, zone, barrier, a11y, armed, interactiveMs);
+                } catch (Exception ignored) {
+                    schedule = null;
+                }
                 boolean uploadedOk = TelemetryUploader.uploadDayBatch(
-                        app, uuid, day, rollup, curriculum, byQ);
+                        app, uuid, day, rollup, curriculum, byQ, byFmt, schedule);
                 if (!uploadedOk) {
                     Log.w(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_stop day=" + day);
                     break;
