@@ -101,6 +101,8 @@ public final class PerfPolicy {
             case "alarm_fired":
             case "skip_fire":
             case "arm":
+            case "arm_blocked":
+            case "boot_skip":
             case "bal_blocked":
             case "launch_ok":
             case "quiz_started":

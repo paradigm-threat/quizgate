@@ -41,6 +41,12 @@
     <string name="setup_next_quiz_armed">Next quiz in ~%1$d min</string>
     <string name="setup_next_quiz_due">Next quiz due now</string>
     <string name="setup_next_quiz_unarmed">Arm scheduling to see the next quiz countdown</string>
+    <string name="setup_next_quiz_a11y_paused">Schedule paused — turn Accessibility back on</string>
+    <string name="setup_status_a11y_paused_title">Armed — paused</string>
+    <string name="setup_status_a11y_paused">Schedule paused — Accessibility is off. Turn it back on to resume alarms.</string>
+    <string name="a11y_arm_channel">Schedule paused</string>
+    <string name="a11y_arm_title">QuizGate schedule is paused</string>
+    <string name="a11y_arm_text">Accessibility is off, so the lock cannot run. Turn QuizGate back on under Accessibility to resume.</string>
     <string name="setup_schedule_health_none">Last fired: never · Next alarm: —</string>
     <string name="setup_schedule_health_line">Last fired: %1$s · Next alarm: %2$s</string>
     <string name="setup_schedule_health_never">never</string>

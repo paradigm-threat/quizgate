@@ -21,7 +21,7 @@ Other agents land schedule, onboarding, performance, telemetry, and media fixes 
 | Area | Default / fact |
 |------|----------------|
 | Schedule | 40±10 min → fire window 30–50 min while interactive; quiet 20:00–07:00; morning 07:00. Minutes jar adds free time on top of that window (never shrinks it). Screen off cancels alarms + sets `pending_screen_lock`; wake opens Hard quiz (no idle RTC wake). Never `KEEP_SCREEN_ON` / `TURN_SCREEN_ON` — power-off stays off; a11y/onStop reintercept only while interactive |
-| Re-arm | Boot / `MY_PACKAGE_REPLACED` / `TIME_SET` / wake-skip (grace or !pending) via `armWhileInteractive` only while interactive and not pending; else pend lock |
+| Re-arm | Boot / `MY_PACKAGE_REPLACED` / `TIME_SET` / wake-skip (grace or !pending) via `armWhileInteractive` only while interactive and not pending; else pend lock. Accessibility off cancels alarms, keeps arm intent, posts a pause notification (`arm_blocked`, not silent `boot_skip`); restoring Accessibility re-arms under the same interactive / !pending rule |
 | Gate mode | Hard-only: Accessibility confine during active scheduled lock; Home/Back never bypass. Widget/Setup `TRIGGER_PLAY` is unlocked practice |
 | Never stack locks | One Hard session → one unlock (roundSize 1). After unlock: 120s grace blocks reintercept while the screen stays on; pending cleared; FSI notif cancelled. Intentional screen-off clears grace + always pends; wake opens Hard quiz. ScreenLockGate registers from app start (not only a11y) |
 | Grants (`ScheduleAuth`) | exact → notif → battery → **Accessibility** (Arm-critical) → overlay → FSI → usage. Overlay/FSI recommended for launch |

@@ -378,6 +378,7 @@ public class SetupActivity extends Activity {
         super.onResume();
         // Parent is in Setup — never keep a stale hard confine from e2e / process death.
         HardGate.clearSessionQuiet(this);
+        A11yArm.reconcile(this, "setup_resume");
         refreshStatus();
         countdownHandler.removeCallbacks(countdownTick);
         countdownHandler.post(countdownTick);
@@ -501,13 +502,21 @@ public class SetupActivity extends Activity {
             minutesJar.setText("Minutes jar: " + p.getMinutesBalance());
         }
         StringBuilder sb = new StringBuilder();
-        sb.append(p.isArmed() ? "Armed" : "Not armed");
+        boolean a11yPaused = p.isArmed() && !GateMode.isAccessibilityEnabled(this);
+        if (a11yPaused) {
+            sb.append(getString(R.string.setup_status_a11y_paused_title));
+        } else {
+            sb.append(p.isArmed() ? "Armed" : "Not armed");
+        }
         sb.append("\nSchedule: ~").append(Scheduler.formatMinutes(p.getIntervalMs()));
         sb.append(" ±").append(Scheduler.formatMinutes(p.getJitterMs()));
         sb.append(" (").append(Scheduler.formatWindow(p.getIntervalMs(), p.getJitterMs())).append(")");
         sb.append("\n+ morning gate");
         sb.append("\nCurriculum: ").append(p.getActiveCurriculumId());
         sb.append(" · tier ").append(p.getActiveTier());
+        if (a11yPaused) {
+            sb.append("\n").append(getString(R.string.setup_status_a11y_paused));
+        }
         sb.append("\nSync: ").append(p.isSyncEnabled() ? "on (any network)" : "off");
         sb.append("\nMath entry: ").append(p.getMathEntryMode());
         status.setText(sb.toString());
@@ -654,6 +663,11 @@ public class SetupActivity extends Activity {
     private void refreshCountdown() {
         if (nextQuiz == null) return;
         AppPrefs p = new AppPrefs(this);
+        if (p.isArmed() && !GateMode.isAccessibilityEnabled(this)) {
+            nextQuiz.setText(R.string.setup_next_quiz_a11y_paused);
+            refreshScheduleHealth(p);
+            return;
+        }
         if (!p.isArmed() || p.nextAlarmAt() <= 0L) {
             nextQuiz.setText(R.string.setup_next_quiz_unarmed);
             refreshScheduleHealth(p);

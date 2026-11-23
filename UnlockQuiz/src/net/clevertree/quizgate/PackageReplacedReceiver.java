@@ -45,5 +45,6 @@ public class PackageReplacedReceiver extends BroadcastReceiver {
         } catch (Throwable ignored) {}
         ScheduleAuth.log(context, DiagnosticsStore.KIND_PERM, "package_replaced",
                 prefs.nextAlarmAt(), prefs.getIntervalMs(), prefs.getJitterMs());
+        A11yArm.reconcile(context, "package_replaced");
     }
 }

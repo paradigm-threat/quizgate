@@ -38,6 +38,9 @@ public class AlarmReceiver extends BroadcastReceiver {
                     now, TimeZone.getDefault(), DiagnosticsStore.KIND_SKIP_FIRE, trigger,
                     "lock", 0L, prefs.getIntervalMs(), prefs.getJitterMs(),
                     null, "screen_off"));
+            if (!GateMode.isAccessibilityEnabled(context)) {
+                A11yArm.showBlocked(context, "alarm_screen_off");
+            }
             Log.i(AlarmScheduler.TAG, "alarm skip_fire screen_off trigger=" + trigger);
             return;
         }
@@ -46,6 +49,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
             if (!sched.needsMorningGate(now, prefs.lastClearedDay())) {
                 Log.i(AlarmScheduler.TAG, "morning already cleared today, skip quiz");
+                if (AlarmScheduler.blockIfA11yOff(context, "morning_cleared")) return;
                 long nextMorning = sched.nextMorningAlarm(now);
                 AlarmScheduler.scheduleMorning(context, nextMorning);
                 Diag.schedule(context, new DiagnosticsStore.ScheduleEvent(
@@ -64,8 +68,10 @@ public class AlarmReceiver extends BroadcastReceiver {
             AlarmScheduler.scheduleAfterFire(context);
         } else {
             prefs.setLastFiredAt(now);
-            net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
-            AlarmScheduler.scheduleMorning(context, sched.nextMorningAlarm(now));
+            if (!AlarmScheduler.blockIfA11yOff(context, "morning")) {
+                net.clevertree.quizgate.core.Scheduler sched = AlarmScheduler.scheduler(context);
+                AlarmScheduler.scheduleMorning(context, sched.nextMorningAlarm(now));
+            }
         }
         ForegroundApp.captureNow(context);
         // Pause while the player is still foreground, settle, then bring quiz up —

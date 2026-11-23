@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.A11yArmPolicy;
 import net.clevertree.quizgate.core.DiagnosticsStore;
 
 import java.util.TimeZone;
@@ -28,11 +29,14 @@ public class BootReceiver extends BroadcastReceiver {
         if (!relevant) return;
 
         AppPrefs prefs = new AppPrefs(context);
-        if (!prefs.isArmed()) {
+        // boot_skip only when the user never armed. A leftover next-alarm is still
+        // arm intent (the flag can be lost); Accessibility-off is arm_blocked, not this.
+        if (!A11yArmPolicy.hasArmIntent(prefs.isArmed(), prefs.nextAlarmAt())) {
             Log.i(AlarmScheduler.TAG, "boot: not armed, skip action=" + action);
-            ScheduleAuth.log(context, "boot_skip", action, 0, 0, -1);
+            ScheduleAuth.log(context, DiagnosticsStore.KIND_BOOT_SKIP, action, 0, 0, -1);
             return;
         }
+        if (!prefs.isArmed()) prefs.setArmed(true);
         long now = System.currentTimeMillis();
         boolean interactive = ScreenLockGate.isInteractive(context);
         String note = "action=" + action + " interactive=" + interactive;
@@ -57,6 +61,8 @@ public class BootReceiver extends BroadcastReceiver {
         } else {
             Log.i(AlarmScheduler.TAG, "boot: screen off — pending, no wake alarms action=" + action);
         }
+        // Pause + notify if Accessibility is off; otherwise keep the alarm just set.
+        A11yArm.reconcile(context, "boot_" + action);
         ScoreWidgetProvider.refreshAll(context);
         Log.i(AlarmScheduler.TAG, "boot: handled action=" + action);
     }

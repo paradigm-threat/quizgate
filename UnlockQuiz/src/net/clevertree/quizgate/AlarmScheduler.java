@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
+import net.clevertree.quizgate.core.A11yArmPolicy;
 import net.clevertree.quizgate.core.DiagnosticsStore;
 import net.clevertree.quizgate.core.JarSchedulePolicy;
 import net.clevertree.quizgate.core.Scheduler;
@@ -65,20 +66,65 @@ public final class AlarmScheduler {
     /**
      * Arm schedule only while the device is interactive and no pending screen lock.
      * No-ops (cancels any leftover wake alarms) when screen is off or pending.
+     * Always reschedules — boot and wake need a fresh AlarmManager entry even
+     * when {@code next_alarm_at} still looks future.
      */
     public static void armWhileInteractive(Context ctx) {
+        armWhileInteractive(ctx, "arm_interactive", true);
+    }
+
+    /**
+     * Like {@link #armWhileInteractive(Context)} but keeps an already-future alarm
+     * when {@code force} is false (settings observer / Setup resume must not
+     * slide the window). Accessibility off still cancels and surfaces.
+     */
+    public static void armWhileInteractive(Context ctx, String reason) {
+        armWhileInteractive(ctx, reason, false);
+    }
+
+    private static void armWhileInteractive(Context ctx, String reason, boolean force) {
         if (ctx == null) return;
+        if (reason == null || reason.isEmpty()) reason = "arm_interactive";
         AppPrefs prefs = new AppPrefs(ctx);
+        if (blockIfA11yOff(ctx, reason)) return;
         boolean interactive = ScreenLockGate.isInteractive(ctx);
         if (!ScreenLockPolicy.shouldArmSchedule(
                 prefs.isArmed(), interactive, prefs.isPendingScreenLock())) {
             cancelAllAlarms(ctx);
             Log.i(TAG, "armWhileInteractive skip armed=" + prefs.isArmed()
                     + " interactive=" + interactive
-                    + " pending=" + prefs.isPendingScreenLock());
+                    + " pending=" + prefs.isPendingScreenLock()
+                    + " reason=" + reason);
             return;
         }
-        scheduleArmedWindows(ctx, prefs, "arm_interactive");
+        long now = System.currentTimeMillis();
+        long existing = prefs.nextAlarmAt();
+        if (!force && existing > now + 30_000L) {
+            A11yArm.clearBlocked(ctx);
+            Log.i(TAG, "armWhileInteractive keep next=" + existing + " reason=" + reason);
+            return;
+        }
+        scheduleArmedWindows(ctx, prefs, reason);
+    }
+
+    /**
+     * Armed intent with Accessibility off: cancel wake alarms and surface the
+     * pause. Does not clear {@code armed} or pending screen lock.
+     *
+     * @return true when the caller must not schedule
+     */
+    public static boolean blockIfA11yOff(Context ctx, String reason) {
+        if (ctx == null) return false;
+        AppPrefs prefs = new AppPrefs(ctx);
+        A11yArm.healArmIntent(prefs);
+        boolean a11y = GateMode.isAccessibilityEnabled(ctx);
+        if (!A11yArmPolicy.shouldCancelAlarmsForA11yOff(prefs.isArmed(), a11y)) {
+            return false;
+        }
+        cancelAllAlarms(ctx);
+        A11yArm.showBlocked(ctx, reason);
+        Log.i(TAG, "block schedule — accessibility off reason=" + reason);
+        return true;
     }
 
     public static void armAll(Context ctx) {
@@ -97,6 +143,10 @@ public final class AlarmScheduler {
             } catch (Throwable t) {
                 Log.w(TAG, "arm diag", t);
             }
+            if (blockIfA11yOff(ctx, "arm_screen_off")) {
+                Log.i(TAG, "armed but screen off and accessibility off — paused");
+                return;
+            }
             Log.i(TAG, "armed but screen off — pending lock, no wake alarms");
             return;
         }
@@ -105,6 +155,8 @@ public final class AlarmScheduler {
     }
 
     private static void scheduleArmedWindows(Context ctx, AppPrefs prefs, String armReason) {
+        if (blockIfA11yOff(ctx, armReason)) return;
+        A11yArm.clearBlocked(ctx);
         long now = new SystemClock().nowMillis();
         Scheduler sched = scheduler(ctx);
         long morningAt = sched.nextMorningAlarm(now);
@@ -143,10 +195,14 @@ public final class AlarmScheduler {
      */
     public static void scheduleAfterFire(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
+        A11yArm.healArmIntent(prefs);
         if (!prefs.isArmed()) return;
         if (ScreenLockPolicy.shouldSkipFireWhileOff(ScreenLockGate.isInteractive(ctx))) {
             prefs.setPendingScreenLock(true);
             cancelAllAlarms(ctx);
+            if (!GateMode.isAccessibilityEnabled(ctx)) {
+                A11yArm.showBlocked(ctx, "after_fire_screen_off");
+            }
             Log.i(TAG, "after_fire screen off — pending, no re-arm");
             return;
         }
@@ -155,6 +211,7 @@ public final class AlarmScheduler {
             Log.i(TAG, "after_fire pending screen lock — no re-arm");
             return;
         }
+        if (blockIfA11yOff(ctx, "after_fire")) return;
         long now = new SystemClock().nowMillis();
         prefs.setLastFiredAt(now);
         Scheduler base = scheduler(ctx);
@@ -179,7 +236,9 @@ public final class AlarmScheduler {
      */
     public static void ensureNextInterval(Context ctx, String reason) {
         AppPrefs prefs = new AppPrefs(ctx);
+        A11yArm.healArmIntent(prefs);
         if (!prefs.isArmed()) return;
+        if (blockIfA11yOff(ctx, "ensure_" + (reason == null ? "abandon" : reason))) return;
         if (!ScreenLockPolicy.shouldArmSchedule(
                 prefs.isArmed(), ScreenLockGate.isInteractive(ctx), prefs.isPendingScreenLock())) {
             cancelAllAlarms(ctx);
@@ -210,6 +269,7 @@ public final class AlarmScheduler {
 
     public static void scheduleAfterSessionEnd(Context ctx) {
         AppPrefs prefs = new AppPrefs(ctx);
+        A11yArm.healArmIntent(prefs);
         // Unlock / consoling / parent override clears the wake-pending latch.
         // Grace blocks reintercept while the screen stays on; intentional
         // screen-off clears grace and pends (see ScreenLockGate.onScreenOff).
@@ -225,7 +285,16 @@ public final class AlarmScheduler {
             // Already off after unlock: cancel alarms; next SCREEN_OFF/ON (or a
             // later off) will pend + clear grace so wake locks.
             cancelAllAlarms(ctx);
+            if (!GateMode.isAccessibilityEnabled(ctx)) {
+                A11yArm.showBlocked(ctx, "session_end_screen_off");
+            }
             Log.i(TAG, "session end while screen off — grace held until next screen-off");
+            return;
+        }
+        if (blockIfA11yOff(ctx, "after_session")) return;
+        if (!GateMode.isAccessibilityEnabled(ctx)) {
+            cancelAllAlarms(ctx);
+            Log.i(TAG, "session end — accessibility off, not scheduling");
             return;
         }
 
@@ -270,6 +339,7 @@ public final class AlarmScheduler {
     public static long applyJarBonusToNextAlarm(Context ctx) {
         if (ctx == null) return 0L;
         AppPrefs prefs = new AppPrefs(ctx);
+        if (blockIfA11yOff(ctx, "jar")) return 0L;
         int bal = prefs.getMinutesBalance();
         long bonusMs = JarSchedulePolicy.bonusMsFromMinutes(bal);
         if (bonusMs <= 0L) return 0L;

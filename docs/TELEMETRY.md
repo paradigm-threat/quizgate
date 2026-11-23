@@ -58,8 +58,10 @@ Day rollups (`days.jsonl`) keep totals plus `asked_lock` / `asked_play` (and rig
 
 `ts`, `tz`, `tz_offset_min`, `kind`:
 
-- `arm` — scheduling armed (note may include `arm_screen_off_pending` / `arm_interactive`)
-- `alarm_scheduled` — next alarm window set (interactive only)
+- `arm` — scheduling armed (note may include `arm_screen_off_pending` / `arm_interactive` / `reason=a11y_connected`)
+- `alarm_scheduled` — next alarm window set (interactive, Accessibility on). A note with `a11y=0` on this kind is a bug — wake alarms must not stay set while Accessibility is off
+- `arm_blocked` — user had armed (or a stored next-alarm), Accessibility is off, wake alarms were cancelled, and a persistent **Schedule paused** notification was posted. Slim keeps this kind. Logged at most once an hour until Accessibility returns
+- `boot_skip` — boot / `TIME_SET` / timezone broadcast while the user had **never** armed (`armed` false and `next_alarm_at` 0). The note is the permission snapshot, so `a11y=0` here means Accessibility happened to be off — it is not itself the skip reason. An armed schedule with Accessibility off is `arm_blocked`, not `boot_skip`
 - `alarm_fired` — OS alarm delivered
 - `skip_fire` — morning skipped, or `note=screen_off` / `screen_off_pending` when schedule cancelled on sleep
 - `launch_attempt` — includes wake-to-lock (`trigger=wake`, `note=wake_lock …`)
@@ -67,6 +69,8 @@ Day rollups (`days.jsonl`) keep totals plus `asked_lock` / `asked_play` (and rig
 - `perf_mode` — Auto performance↔slim switch (reason codes + stats in `note`)
 
 Plus `trigger`, `session_type`, `next_alarm_at`, `interval_ms`, `jitter_ms`, optional `other_app` boolean (**never** package name), optional short `note`.
+
+**Accessibility dropped:** arm intent is kept. Interval and morning alarms are cancelled and Parents shows **Armed — paused**. Restoring the Accessibility service (or the secure setting) re-arms with the same rule as `armWhileInteractive`: interactive and not `pending_screen_lock`. That re-arm writes `arm` + `alarm_scheduled` with `reason=a11y_connected` (or `a11y_setting` / `app_start`). It does not turn the screen on.
 
 ### Upload / snapshot payload (`TelemetryPayload`, schema **v3**)
 

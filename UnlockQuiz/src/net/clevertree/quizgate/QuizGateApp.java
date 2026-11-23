@@ -36,6 +36,13 @@ public class QuizGateApp extends Application {
         } catch (Exception e) {
             Log.w(BuildFingerprint.DIAG_LOG_TAG, "screen_lock register on start", e);
         }
+        // Heal a silent dead schedule: pause if Accessibility is off, re-arm if it is on.
+        try {
+            A11yArm.registerSettingsWatch(this);
+            A11yArm.reconcile(this, "app_start");
+        } catch (Exception e) {
+            Log.w(BuildFingerprint.DIAG_LOG_TAG, "a11y arm reconcile on start", e);
+        }
         // Slim: skip process-start snapshot I/O; uncaught handler still snapshots.
         if (!PerformanceMode.isSlim(this)) {
             Diag.logcatSnapshot(this);

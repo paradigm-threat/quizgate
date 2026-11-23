@@ -16,7 +16,9 @@ public final class AppPrefs {
     }
 
     public void setArmed(boolean v) {
-        sp.edit().putBoolean("armed", v).apply();
+        // commit(): boot and a11y-restore must see arm intent after process death.
+        // apply() could drop the flag and leave only boot_skip (a11y=0).
+        sp.edit().putBoolean("armed", v).commit();
     }
 
     public String lastClearedDay() {
@@ -51,7 +53,9 @@ public final class AppPrefs {
     }
 
     public void setNextAlarmAt(long ms) {
-        sp.edit().putLong("next_alarm_at", ms).apply();
+        // commit(): cancel-on-a11y-off must stick so a later restore does not
+        // treat a stale next-alarm as already scheduled.
+        sp.edit().putLong("next_alarm_at", ms).commit();
     }
 
     /** Wall-clock ms of the last interval/morning alarm fire (0 = never). */

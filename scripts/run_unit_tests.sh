@@ -43,6 +43,8 @@ echo "== PerfPolicyTest =="
 java -cp "$OUT" PerfPolicyTest
 echo "== GatePolicyTest =="
 java -cp "$OUT" GatePolicyTest
+echo "== A11yArmPolicyTest =="
+java -cp "$OUT" A11yArmPolicyTest
 echo "== ScreenLockPolicyTest =="
 java -cp "$OUT" ScreenLockPolicyTest
 echo "== CurriculumParserTest =="

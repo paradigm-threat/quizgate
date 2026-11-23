@@ -12,7 +12,8 @@ import java.util.TimeZone;
  *
  * <p>Schedule kinds: {@code alarm_scheduled}, {@code alarm_fired}, {@code launch_attempt},
  * {@code bal_blocked}, {@code launch_ok}, {@code quiz_started}, {@code quiz_ended},
- * {@code skip_fire}, {@code arm}, {@code hard_reintercept}, {@code hard_unlock}.
+ * {@code skip_fire}, {@code arm}, {@code arm_blocked}, {@code boot_skip},
+ * {@code hard_reintercept}, {@code hard_unlock}.
  */
 public final class DiagnosticsStore {
     public static final int MAX_BREADCRUMBS = 500;
@@ -32,6 +33,13 @@ public final class DiagnosticsStore {
     public static final String KIND_QUIZ_ENDED = "quiz_ended";
     public static final String KIND_SKIP_FIRE = "skip_fire";
     public static final String KIND_ARM = "arm";
+    /**
+     * Armed intent, but Accessibility is off so wake alarms were cancelled and
+     * a pause notification was posted. Not {@code boot_skip} (that means never armed).
+     */
+    public static final String KIND_ARM_BLOCKED = "arm_blocked";
+    /** Boot / time broadcast while the user had never armed the schedule. */
+    public static final String KIND_BOOT_SKIP = "boot_skip";
     public static final String KIND_QUIZ = "quiz";
     public static final String KIND_PERM = "perm";
     public static final String KIND_MEDIA = "media";

@@ -22,8 +22,11 @@ public class QuizGateAccessibilityService extends AccessibilityService {
         super.onServiceConnected();
         ScreenLockGate.register(this);
         Log.i(TAG, "a11y connected — screen_lock receiver on");
-        // If we bound while already awake with a pending lock (e.g. grant after sleep), open quiz.
-        if (ScreenLockGate.isInteractive(this)) {
+        // Re-arm if the user had armed and we are interactive with no pending lock.
+        A11yArm.reconcile(this, "a11y_connected");
+        // Pending lock (grant after sleep) still opens the quiz. Do not also force
+        // a second schedule — reconcile already armed when there is nothing pending.
+        if (ScreenLockGate.isInteractive(this) && new AppPrefs(this).isPendingScreenLock()) {
             ScreenLockGate.onWake(this, "a11y_connected");
         }
     }
@@ -31,7 +34,9 @@ public class QuizGateAccessibilityService extends AccessibilityService {
     @Override
     public boolean onUnbind(android.content.Intent intent) {
         // Keep SCREEN_OFF/ON receiver — power-cycle lock must not depend on a11y.
+        // If the secure setting is already off, cancel alarms and surface the pause.
         Log.i(TAG, "a11y unbound — screen_lock receiver kept");
+        A11yArm.reconcile(this, "a11y_unbind");
         return super.onUnbind(intent);
     }
 
