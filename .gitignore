@@ -47,3 +47,6 @@ node_modules/
 !debug.keystore
 .vercel
 data-plane/.data/
+
+# Local device pulls / scratch (never commit)
+.local/
