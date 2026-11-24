@@ -41,7 +41,7 @@ public enum RenderFormat {
         if (q != null && q.formats != null && !q.formats.isEmpty()) {
             return q.formats;
         }
-        if (q != null && "math".equals(q.type)) {
+        if (q != null && ("math".equals(q.type) || "access".equals(q.type))) {
             return Arrays.asList(EQUATION, TRUE_FALSE, CHOICE);
         }
         return Collections.singletonList(EQUATION);

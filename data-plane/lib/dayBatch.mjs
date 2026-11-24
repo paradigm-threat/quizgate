@@ -164,6 +164,23 @@ export function normalizeSchedule(raw) {
   };
 }
 
+/** Privacy-safe latency bands (correct/wrong only). No raw ms. */
+export function normalizeLatency(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const fast = nonNegInt(raw.fast_lt_3s ?? raw.fastLt3s);
+  const mid = nonNegInt(raw.mid_3_10s ?? raw.mid3To10s);
+  const slow = nonNegInt(raw.slow_ge_10s ?? raw.slowGe10s);
+  let n = nonNegInt(raw.n);
+  if (n === 0) n = fast + mid + slow;
+  if (n === 0 && fast === 0 && mid === 0 && slow === 0) return null;
+  return {
+    fast_lt_3s: fast,
+    mid_3_10s: mid,
+    slow_ge_10s: slow,
+    n,
+  };
+}
+
 /** Omit / null from Intake → keep previous; explicit object replaces. */
 function keepOrReplace(nextRaw, prevVal, normalize) {
   if (nextRaw == null) return prevVal ?? null;
@@ -172,7 +189,7 @@ function keepOrReplace(nextRaw, prevVal, normalize) {
 
 export function writeDayBatch(
   uuid,
-  { today, curriculum_id, day, by_question, by_format, schedule } = {}
+  { today, curriculum_id, day, by_question, by_format, schedule, latency } = {}
 ) {
   if (!isUuid(uuid)) throw new Error("invalid_uuid");
   const dayKey = assertDayKey(day || utcDayKey());
@@ -204,6 +221,7 @@ export function writeDayBatch(
     normalizeSchedule(prev?.schedule),
     normalizeSchedule
   );
+  const lat = keepOrReplace(latency, normalizeLatency(prev?.latency), normalizeLatency);
   const rec = {
     schema: DAY_BATCH_SCHEMA,
     user_uuid: uuid,
@@ -219,6 +237,7 @@ export function writeDayBatch(
   if (byQ) rec.by_question = byQ;
   if (byFmt) rec.by_format = byFmt;
   if (sched) rec.schedule = sched;
+  if (lat) rec.latency = lat;
 
   const tmp = `${fp}.${process.pid}.${now}.tmp`;
   writeFileSync(tmp, JSON.stringify(rec, null, 2) + "\n");

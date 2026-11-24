@@ -37,6 +37,15 @@ Source tree in this repo: [`curricula/`](../curricula/). Bundled copy: `UnlockQu
 3. Devices with **curriculum sync** enabled (default on) pull the index on Setup / Sync now, and throttled (~6h) on app open (`Diag.syncDayBatchesOnOpen` → `CurriculumIndexClient`). Any network is fine. `bundled: true` means “also in APK”, **not** “skip updates”.
 4. Sync installs when the index version/sha is newer than the **installed** dir (or none yet), so every device gets `files/curricula/{id}/` for offline use even when the APK already ships the same pack. `CurriculumStore` loads the **higher version** of installed vs APK assets.
 
+**first-access v1** (pre-math): `type: "access"` sequence items (~75% numbers / ~25% letters). Equation asks use a shared digit/letter pad (single-key attempt, up to 3 tries → one stats outcome). Prefer this pack before basic-math so kids learn the UI without mash-to-unlock.
+
+| Level | Contents |
+|------:|----------|
+| **0** | Forward count-on (answers 0–9) + **~20% reverse** numbers; **~25%** letter next within **A–I**; mostly `choice`, some equation/T/F |
+| **1** | Reverse-focused numbers + letter reverse within A–I; still ~25% letters |
+| **2** | Patterns (alternate / pairs / skip-by-2 / echo) + harder letter reverse; equation letter pad = **answer-centered contiguous 9-letter window** (no shuffle) |
+| **3** | Same skills with **randomized / non-adjacent pad** (readiness for chaos before basic-math) |
+
 **basic-math v8:** items carry a progression **`level`** (integer ≥0). Device pref `curriculum_level` (default **0**) includes items with `item.level <=` that value.
 
 | Level | Contents |
@@ -85,11 +94,12 @@ Catalog items stay **one logical question** (operands + op + correct result). Th
 | Type | Default allowed formats (code) |
 |------|--------------------------------|
 | `math` | `equation` · `true_false` · `choice` |
+| `access` | `equation` · `true_false` · `choice` (sequences; equation always uses pad) |
 | other | `equation` (fill / multiple-choice as today) |
 
-- **`equation`** — show `1 + 2 = _`; entry is digit pad or multiple-choice per `math_entry` pref.
-- **`true_false`** — show a full equation (`1 + 2 = 4`); child taps ✓ / ✗. At ask time the RHS is either the correct result (True) or a small integer offset (False). Own UI — not the digit pad.
-- **`choice`** — same blank equation prompt; always show shuffled catalog `choices` (one correct). Ignores digit-pad pref for that ask.
+- **`equation`** — show blank prompt (`1 + 2 = _` or `4, 5, 6, _`); math uses digit pad or MC per `math_entry`; **access always uses the pad** (rush blocker). Access pad: single-key submit, up to 3 tries → one logged outcome; wrong keys disable immediately.
+- **`true_false`** — show a full statement with filled blank; child taps ✓ / ✗. For math/access the blank is correct or a small offset / neighbor. Own UI — not the pad.
+- **`choice`** — same blank prompt; always show shuffled catalog `choices` (one correct). Ignores digit-pad pref for that ask.
 
 **Skip:** every ask shows a Skip control. It logs `skipped`, then immediately presents another catalog item. After a skip the picker soft-biases toward easier formats (`true_false` / `choice`) and a different op-kind when the pool allows — still randomized so consecutive skips can land on yes/no again (no fixed ladder).
 

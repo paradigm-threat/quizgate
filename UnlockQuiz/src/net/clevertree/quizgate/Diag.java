@@ -238,6 +238,12 @@ public final class Diag {
                 } catch (Exception ignored) {
                     byFmt = null;
                 }
+                StatsStore.LatencyBands latency = null;
+                try {
+                    latency = store.latencyBandsForDay(day, zone);
+                } catch (Exception ignored) {
+                    latency = null;
+                }
                 long interactiveMs = 0L;
                 try {
                     interactiveMs = interactive.getMs(day);
@@ -251,7 +257,7 @@ public final class Diag {
                     schedule = null;
                 }
                 boolean uploadedOk = TelemetryUploader.uploadDayBatch(
-                        app, uuid, day, rollup, curriculum, byQ, byFmt, schedule);
+                        app, uuid, day, rollup, curriculum, byQ, byFmt, schedule, latency);
                 if (!uploadedOk) {
                     Log.w(BuildFingerprint.DIAG_LOG_TAG, "day_batch_sync_stop day=" + day);
                     break;

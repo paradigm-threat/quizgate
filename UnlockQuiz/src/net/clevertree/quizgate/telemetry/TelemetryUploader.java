@@ -59,6 +59,16 @@ public final class TelemetryUploader {
                                          java.util.Map<String, StatsStore.QuestionStats> byQuestion,
                                          java.util.Map<String, StatsStore.QuestionStats> byFormat,
                                          ScheduleHealthPolicy.Snapshot schedule) {
+        return uploadDayBatch(ctx, userUuid, dayKey, stats, curriculumId, byQuestion, byFormat,
+                schedule, null);
+    }
+
+    public static boolean uploadDayBatch(Context ctx, String userUuid, String dayKey,
+                                         StatsStore.DayStats stats, String curriculumId,
+                                         java.util.Map<String, StatsStore.QuestionStats> byQuestion,
+                                         java.util.Map<String, StatsStore.QuestionStats> byFormat,
+                                         ScheduleHealthPolicy.Snapshot schedule,
+                                         StatsStore.LatencyBands latency) {
         if (ctx == null) return false;
         boolean runtime = new AppPrefs(ctx).isRemoteUploadEnabled();
         if (!BuildFingerprint.uploadAllowed(runtime)) return false;
@@ -105,6 +115,14 @@ public final class TelemetryUploader {
             String status = schedule.fireStatus == null ? ScheduleHealthPolicy.STATUS_UNKNOWN
                     : schedule.fireStatus;
             sb.append(",\"fire_status\":\"").append(JsonUtil.esc(status)).append('"');
+            sb.append('}');
+        }
+        if (latency != null && latency.n > 0) {
+            sb.append(",\"latency\":{");
+            sb.append("\"fast_lt_3s\":").append(Math.max(0, latency.fastLt3s));
+            sb.append(",\"mid_3_10s\":").append(Math.max(0, latency.mid3To10s));
+            sb.append(",\"slow_ge_10s\":").append(Math.max(0, latency.slowGe10s));
+            sb.append(",\"n\":").append(Math.max(0, latency.n));
             sb.append('}');
         }
         sb.append('}');

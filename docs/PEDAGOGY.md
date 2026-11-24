@@ -8,15 +8,25 @@ QuizGate replaces stretches of idle tablet time with short, age-fit practice. Le
 ## Learners and age bands
 | Pack (current) | Age band (manifest) | Focus |
 |----------------|---------------------|--------|
+| **first-access** | about **4–7** | Pre-math **UI / thinking readiness**: what-comes-next number + letter sequences (~75% / ~25%); digit/letter pad rush-blockers; L0 forward + light reverse; L1 reverse proficiency; L2 patterns + answer-centered pad; L3 randomized pad readiness before basic-math |
 | **basic-math** v8 | about **4–7** | Progression **levels**: L0 easiest add (sums ≤5) 4-option MC grid; L1 add-within-10 + harder under-8 adds + easy subtract; L2 zeros + subtract + doubles; L3 light multiply + ×0/×1. Idle MC hints until first correct of the day |
 
 | Pack (planned) | Age band | Focus |
 |----------------|----------|--------|
 | **first-touch** (not built) | about **1–3** | Picture/audio taps only after UI exists: match-same, body/self, animal sounds, count 1–3, big/small — no reading gate |
 
-Future packs will publish their own `ageMin` / `ageMax` and learning objectives the same way. **Levels** gate how deep the pool goes (default device level **0**); age tiers remain a separate optional filter.
+**Start kids on first-access, not basic-math**, until they can sit with the quiz UI (choice + true/false + pad) without mashing. Future packs publish their own `ageMin` / `ageMax`. **Levels** gate depth (default **0**); age tiers remain optional.
+
+### Anti-outcome: rush / mash-to-unlock
+A day with **high asked**, **~chance-level rights**, **choice-only** (or almost no `equation`), many **fast** latencies, and/or frequent **consoling** unlocks usually means the child is pressing every tile until the three-wrong consoling path opens — not learning. Prefer packs and formats that require composing an answer on the pad, teach format literacy first, and review day-batch **latency bands** + `by_format` remotely. On-device `events.jsonl` already has `latency_ms`; uploads use bands only.
 
 **Level-up bar (default):** at least **75%** correct among answered questions, at least **5** correct, and **not more skips than answered** (`skipped ≤ right + wrong`). Admin may override per device (including an optional skip-%-of-asked cap). SI uses these as soft gates (may exception with a reason). See [`CURRICULUM.md`](CURRICULUM.md).
+
+## Learning objectives (first-access)
+1. **Sit and think** — use choice / true-false / pad without rushing every button.
+2. **What comes next** — forward and reverse number sequences (single digits); letter sequences A–I then wider.
+3. **Pad literacy** — enter the answer on the shared digit/letter pad (up to three tries per ask; outcome-only stats).
+4. **Chaos readiness (L3)** — still find the answer when the pad is shuffled / non-adjacent before moving to basic-math.
 
 ## Learning objectives (basic-math v8)
 By working through scheduled Hard quizzes and optional practice, a child practices:

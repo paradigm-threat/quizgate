@@ -51,6 +51,8 @@ export QUIZGATE_PUBLISH_REMOTES=git://iad1.relaygateway.net:9418/quizgate-users.
 # iad1 unit uses git://127.0.0.1:9418/quizgate-users.git
 ```
 
+**Ownership (critical):** Relay bare repos under `/opt/relay/data/*.git` must stay **`relay:relay`**. Gateway / git-daemon / git-proxy run as `relay`. Never `chown` those trees to `ubuntu`, and never point `/var/quizgate/users` `origin` at the filesystem path of the bare repo — use `git://127.0.0.1:9418/quizgate-users.git` only. A filesystem push or `chown ubuntu:ubuntu` breaks SearchStore warm with “dubious ownership” (HTTP 409). Fix with `relay-ops fix-repo-ownership` (or `scripts/relay-assert-data-ownership.sh --fix` on the node). Do **not** add `git config safe.directory` as a workaround.
+
 ## Env
 
 | Var | Purpose |

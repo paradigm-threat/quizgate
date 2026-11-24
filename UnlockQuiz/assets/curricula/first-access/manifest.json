@@ -1,0 +1,13 @@
+{
+  "id": "first-access",
+  "title": "First Access",
+  "ageMin": 4,
+  "ageMax": 7,
+  "difficultyRank": 5,
+  "locale": "en",
+  "version": 1,
+  "minAppVersion": 1,
+  "description": "Pre-math UI readiness: what-comes-next number/letter sequences, pad rush-blockers. L0 forward+light reverse+letters A\u2013I; L1 reverse-focus; L2 patterns+answer-centered pad; L3 randomized pad readiness.",
+  "contentSha256": "06eac0fdd0ec99f56d58cd796f24c603f8ab54e5045121393adf58492239e5ac",
+  "sizeBytes": 26980
+}

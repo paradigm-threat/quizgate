@@ -256,6 +256,36 @@ public final class StatsStore {
         return "equation".equals(fmt) || "true_false".equals(fmt) || "choice".equals(fmt);
     }
 
+    /**
+     * Privacy-safe latency bands for correct/wrong events on one stats day
+     * (TimeEarn thresholds: &lt;3s / 3–10s / ≥10s). Skips ignored.
+     */
+    public synchronized LatencyBands latencyBandsForDay(String dayKey, TimeZone zone)
+            throws IOException {
+        String day = canonicalDayKey(dayKey);
+        LatencyBands out = new LatencyBands();
+        if (day.isEmpty() || !eventsFile.exists()) return out;
+        TimeZone z = zone == null ? TimeZone.getDefault() : zone;
+        try (BufferedReader br = new BufferedReader(new FileReader(eventsFile))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("\"demo\":true")) continue;
+                String type = JsonUtil.extract(line, "type");
+                if (!"correct".equals(type) && !"wrong".equals(type)) continue;
+                long ts = JsonUtil.extractLong(line, "ts");
+                if (ts < 0) continue;
+                if (!day.equals(dayKeyFor(ts, z))) continue;
+                long latency = JsonUtil.extractLong(line, "latency_ms");
+                if (latency < 0) continue;
+                out.n++;
+                if (latency < TimeEarnPolicy.FAST_THRESHOLD_MS) out.fastLt3s++;
+                else if (latency <= TimeEarnPolicy.THINKING_THRESHOLD_MS) out.mid3To10s++;
+                else out.slowGe10s++;
+            }
+        }
+        return out;
+    }
+
     public DayStats dayStats(long nowMs, TimeZone zone) throws IOException {
         ensureMigrated(zone);
         String today = dayKeyFor(nowMs, zone);
@@ -664,6 +694,14 @@ public final class StatsStore {
         public int correct;
         public int wrong;
         public int skipped;
+    }
+
+    /** Day-batch latency histogram (correct+wrong only; no raw ms). */
+    public static final class LatencyBands {
+        public int fastLt3s;
+        public int mid3To10s;
+        public int slowGe10s;
+        public int n;
     }
 
     public static final class QuestionEntry {

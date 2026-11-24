@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   writeDayBatch,
+  normalizeLatency,
   readDayBatch,
   utcDayKey,
   DAY_BATCH_SCHEMA,
@@ -171,6 +172,35 @@ describe("dayBatch", () => {
       assert.equal(b.by_format.choice.shown, 3);
       assert.equal(b.schedule.fire_status, "a11y_off");
       assert.equal(b.schedule.interactive_ms, 0);
+    } finally {
+      delete process.env.QUIZGATE_BATCH_DIR;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("stores latency bands; omit keeps prior", () => {
+    const root = mkdtempSync(join(tmpdir(), "qg-batches-lat-"));
+    process.env.QUIZGATE_BATCH_DIR = root;
+    const uuid = "851f35c3-2432-4e44-81cd-84050a403e50";
+    try {
+      const a = writeDayBatch(uuid, {
+        day: "2026-11-23",
+        today: { asked: 10, right: 2, wrong: 8, skipped: 0 },
+        latency: { fast_lt_3s: 7, mid_3_10s: 2, slow_ge_10s: 1, n: 10 },
+      });
+      assert.equal(a.latency.fast_lt_3s, 7);
+      assert.equal(a.latency.n, 10);
+      assert.deepEqual(normalizeLatency({ fast_lt_3s: 3, mid_3_10s: 1 }), {
+        fast_lt_3s: 3,
+        mid_3_10s: 1,
+        slow_ge_10s: 0,
+        n: 4,
+      });
+      const b = writeDayBatch(uuid, {
+        day: "2026-11-23",
+        today: { asked: 11, right: 3, wrong: 8, skipped: 0 },
+      });
+      assert.equal(b.latency.fast_lt_3s, 7);
     } finally {
       delete process.env.QUIZGATE_BATCH_DIR;
       rmSync(root, { recursive: true, force: true });

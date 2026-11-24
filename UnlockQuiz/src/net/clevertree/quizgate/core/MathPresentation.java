@@ -17,10 +17,11 @@ public final class MathPresentation {
     public static PresentedQuestion present(Question q, RenderFormat format, Random random) {
         if (q == null) throw new IllegalArgumentException("question");
         if (format == null) format = RenderFormat.EQUATION;
-        if (format == RenderFormat.TRUE_FALSE && "math".equals(q.type)) {
+        boolean multiFormat = "math".equals(q.type) || "access".equals(q.type);
+        if (format == RenderFormat.TRUE_FALSE && multiFormat) {
             return trueFalse(q, random);
         }
-        if (format == RenderFormat.CHOICE && "math".equals(q.type)) {
+        if (format == RenderFormat.CHOICE && multiFormat) {
             return choice(q);
         }
         return equation(q);
@@ -55,9 +56,17 @@ public final class MathPresentation {
     /** Test / forced ask-time path: {@code statementTrue} chooses correct vs mutated RHS. */
     public static PresentedQuestion trueFalse(Question q, boolean statementTrue, Random random) {
         if (random == null) throw new IllegalArgumentException("random");
-        int correct = parseIntSafe(q.correct);
-        int shown = statementTrue ? correct : mutateRhs(correct, random);
-        String display = fillBlank(q.symbolic, String.valueOf(shown));
+        String shownToken;
+        if (AccessPad.isLetterToken(q.correct)) {
+            shownToken = statementTrue
+                    ? String.valueOf(AccessPad.normalizeLetter(q.correct))
+                    : AccessPad.mutateLetter(q.correct, MAX_FALSE_OFFSET, random);
+        } else {
+            int correct = parseIntSafe(q.correct);
+            int shown = statementTrue ? correct : mutateRhs(correct, random);
+            shownToken = String.valueOf(shown);
+        }
+        String display = fillBlank(q.symbolic, shownToken);
         String choice = statementTrue ? PresentedQuestion.CHOICE_TRUE : PresentedQuestion.CHOICE_FALSE;
         return new PresentedQuestion(
                 q,

@@ -1,0 +1,1489 @@
+{
+  "id": "first-access",
+  "title": "First Access",
+  "tiers": [
+    {
+      "id": "K",
+      "label": "Kindergarten",
+      "ageMin": 4,
+      "ageMax": 6
+    },
+    {
+      "id": "1",
+      "label": "Early grade 1",
+      "ageMin": 6,
+      "ageMax": 7
+    }
+  ],
+  "roundSize": 1,
+  "earnMinutesPerCorrect": 2,
+  "wrongBehavior": "next",
+  "consolingUnlock": true,
+  "maxWrong": 3,
+  "items": [
+    {
+      "id": "fa.k.nf123",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "1, 2, 3, _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "3",
+        "5",
+        "2"
+      ],
+      "correct": "4",
+      "formats": [
+        "choice"
+      ],
+      "weight": 4,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nf234",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 3, 4, _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "correct": "5",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 4,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nf345",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "3, 4, 5, _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "5",
+        "7",
+        "4"
+      ],
+      "correct": "6",
+      "formats": [
+        "choice"
+      ],
+      "weight": 4,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nf456",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "4, 5, 6, _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "6",
+        "8",
+        "5"
+      ],
+      "correct": "7",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 4,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nf567",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "5, 6, 7, _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "correct": "8",
+      "formats": [
+        "choice"
+      ],
+      "weight": 4,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nf678",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "6, 7, 8, _",
+      "promptMedia": null,
+      "choices": [
+        "9",
+        "8",
+        "7",
+        "6"
+      ],
+      "correct": "9",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 4,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nr321",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "3, 2, 1, _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "0",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 1,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nr432",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "4, 3, 2, _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "0",
+        "2",
+        "3"
+      ],
+      "correct": "1",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 1,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nr543",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "5, 4, 3, _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "1",
+        "3",
+        "0"
+      ],
+      "correct": "2",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 1,
+      "level": 0
+    },
+    {
+      "id": "fa.k.nr654",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "6, 5, 4, _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "1"
+      ],
+      "correct": "3",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 1,
+      "level": 0
+    },
+    {
+      "id": "fa.k.lfABC",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "A, B, C, _",
+      "promptMedia": null,
+      "choices": [
+        "D",
+        "C",
+        "E",
+        "B"
+      ],
+      "correct": "D",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 0
+    },
+    {
+      "id": "fa.k.lfBCD",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "B, C, D, _",
+      "promptMedia": null,
+      "choices": [
+        "E",
+        "D",
+        "F",
+        "C"
+      ],
+      "correct": "E",
+      "formats": [
+        "choice"
+      ],
+      "weight": 2,
+      "level": 0
+    },
+    {
+      "id": "fa.k.lfCDE",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "C, D, E, _",
+      "promptMedia": null,
+      "choices": [
+        "F",
+        "E",
+        "G",
+        "D"
+      ],
+      "correct": "F",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 0
+    },
+    {
+      "id": "fa.k.lfDEF",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "D, E, F, _",
+      "promptMedia": null,
+      "choices": [
+        "G",
+        "F",
+        "H",
+        "E"
+      ],
+      "correct": "G",
+      "formats": [
+        "choice"
+      ],
+      "weight": 2,
+      "level": 0
+    },
+    {
+      "id": "fa.k.lfEFG",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "E, F, G, _",
+      "promptMedia": null,
+      "choices": [
+        "H",
+        "G",
+        "I",
+        "F"
+      ],
+      "correct": "H",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 0
+    },
+    {
+      "id": "fa.k.l1nr987",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "9, 8, 7, _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "5",
+        "7",
+        "4"
+      ],
+      "correct": "6",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nr876",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "8, 7, 6, _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "correct": "5",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nr765",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "7, 6, 5, _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "3",
+        "5",
+        "2"
+      ],
+      "correct": "4",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nr654",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "6, 5, 4, _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "1"
+      ],
+      "correct": "3",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nr543",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "5, 4, 3, _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "1",
+        "3",
+        "0"
+      ],
+      "correct": "2",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nr432",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "4, 3, 2, _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "0",
+        "2",
+        "3"
+      ],
+      "correct": "1",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nr321",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "3, 2, 1, _",
+      "promptMedia": null,
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "correct": "0",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nf123",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "1, 2, 3, _",
+      "promptMedia": null,
+      "choices": [
+        "4",
+        "3",
+        "5",
+        "2"
+      ],
+      "correct": "4",
+      "formats": [
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nf456",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "4, 5, 6, _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "6",
+        "8",
+        "5"
+      ],
+      "correct": "7",
+      "formats": [
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1nf678",
+      "tier": "K",
+      "skills": [
+        "seq_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "6, 7, 8, _",
+      "promptMedia": null,
+      "choices": [
+        "9",
+        "8",
+        "7",
+        "6"
+      ],
+      "correct": "9",
+      "formats": [
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lrFED",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "F, E, D, _",
+      "promptMedia": null,
+      "choices": [
+        "C",
+        "B",
+        "D",
+        "A"
+      ],
+      "correct": "C",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lrEDC",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "E, D, C, _",
+      "promptMedia": null,
+      "choices": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "correct": "B",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lrDCB",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "D, C, B, _",
+      "promptMedia": null,
+      "choices": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct": "A",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lrGFE",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "G, F, E, _",
+      "promptMedia": null,
+      "choices": [
+        "D",
+        "C",
+        "E",
+        "B"
+      ],
+      "correct": "D",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lrHGF",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "H, G, F, _",
+      "promptMedia": null,
+      "choices": [
+        "E",
+        "D",
+        "F",
+        "C"
+      ],
+      "correct": "E",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lfABC",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "A, B, C, _",
+      "promptMedia": null,
+      "choices": [
+        "D",
+        "C",
+        "E",
+        "B"
+      ],
+      "correct": "D",
+      "formats": [
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l1lfCDE",
+      "tier": "K",
+      "skills": [
+        "letter_forward"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "C, D, E, _",
+      "promptMedia": null,
+      "choices": [
+        "F",
+        "E",
+        "G",
+        "D"
+      ],
+      "correct": "F",
+      "formats": [
+        "choice"
+      ],
+      "weight": 1,
+      "level": 1
+    },
+    {
+      "id": "fa.k.l2alt12",
+      "tier": "K",
+      "skills": [
+        "pattern_alt"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "1, 2, 1, 2, _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "0",
+        "2",
+        "3"
+      ],
+      "correct": "1",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2alt21",
+      "tier": "K",
+      "skills": [
+        "pattern_alt"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 1, 2, 1, _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "1",
+        "3",
+        "0"
+      ],
+      "correct": "2",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2pair2233",
+      "tier": "K",
+      "skills": [
+        "pattern_pairs"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 2, 3, 3, _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4",
+        "1"
+      ],
+      "correct": "2",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2pair3344",
+      "tier": "K",
+      "skills": [
+        "pattern_pairs"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "3, 3, 4, 4, _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5",
+        "2"
+      ],
+      "correct": "3",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2skip246",
+      "tier": "K",
+      "skills": [
+        "pattern_skip2"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 4, 6, _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "correct": "8",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2skip135",
+      "tier": "K",
+      "skills": [
+        "pattern_skip2"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "1, 3, 5, _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "6",
+        "8",
+        "5"
+      ],
+      "correct": "7",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2echo7",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this number.",
+      "symbolic": "7",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "6",
+        "8",
+        "5"
+      ],
+      "correct": "7",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2echo3",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this number.",
+      "symbolic": "3",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "1"
+      ],
+      "correct": "3",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2echoB",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this letter.",
+      "symbolic": "B",
+      "promptMedia": null,
+      "choices": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "correct": "B",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2echoE",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this letter.",
+      "symbolic": "E",
+      "promptMedia": null,
+      "choices": [
+        "E",
+        "D",
+        "F",
+        "C"
+      ],
+      "correct": "E",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2lrONM",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "O, N, M, _",
+      "promptMedia": null,
+      "choices": [
+        "L",
+        "K",
+        "M",
+        "J"
+      ],
+      "correct": "L",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2lrNML",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "N, M, L, _",
+      "promptMedia": null,
+      "choices": [
+        "K",
+        "J",
+        "L",
+        "I"
+      ],
+      "correct": "K",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2lrPON",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "P, O, N, _",
+      "promptMedia": null,
+      "choices": [
+        "M",
+        "L",
+        "N",
+        "K"
+      ],
+      "correct": "M",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2lrMLK",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "M, L, K, _",
+      "promptMedia": null,
+      "choices": [
+        "J",
+        "I",
+        "K",
+        "H"
+      ],
+      "correct": "J",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 3,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2nr987",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "9, 8, 7, _",
+      "promptMedia": null,
+      "choices": [
+        "6",
+        "5",
+        "7",
+        "4"
+      ],
+      "correct": "6",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l2nr876",
+      "tier": "K",
+      "skills": [
+        "seq_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "8, 7, 6, _",
+      "promptMedia": null,
+      "choices": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "correct": "5",
+      "formats": [
+        "choice",
+        "true_false",
+        "equation"
+      ],
+      "weight": 2,
+      "level": 2
+    },
+    {
+      "id": "fa.k.l3alt12",
+      "tier": "K",
+      "skills": [
+        "pattern_alt"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "1, 2, 1, 2, _",
+      "promptMedia": null,
+      "choices": [
+        "1",
+        "0",
+        "2",
+        "3"
+      ],
+      "correct": "1",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3alt21",
+      "tier": "K",
+      "skills": [
+        "pattern_alt"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 1, 2, 1, _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "1",
+        "3",
+        "0"
+      ],
+      "correct": "2",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3pair2233",
+      "tier": "K",
+      "skills": [
+        "pattern_pairs"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 2, 3, 3, _",
+      "promptMedia": null,
+      "choices": [
+        "2",
+        "3",
+        "4",
+        "1"
+      ],
+      "correct": "2",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3pair3344",
+      "tier": "K",
+      "skills": [
+        "pattern_pairs"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "3, 3, 4, 4, _",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "4",
+        "5",
+        "2"
+      ],
+      "correct": "3",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3skip246",
+      "tier": "K",
+      "skills": [
+        "pattern_skip2"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "2, 4, 6, _",
+      "promptMedia": null,
+      "choices": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "correct": "8",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3skip135",
+      "tier": "K",
+      "skills": [
+        "pattern_skip2"
+      ],
+      "type": "access",
+      "spoken": "What comes next?",
+      "symbolic": "1, 3, 5, _",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "6",
+        "8",
+        "5"
+      ],
+      "correct": "7",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3echo7",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this number.",
+      "symbolic": "7",
+      "promptMedia": null,
+      "choices": [
+        "7",
+        "6",
+        "8",
+        "5"
+      ],
+      "correct": "7",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3echo3",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this number.",
+      "symbolic": "3",
+      "promptMedia": null,
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "1"
+      ],
+      "correct": "3",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3echoB",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this letter.",
+      "symbolic": "B",
+      "promptMedia": null,
+      "choices": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "correct": "B",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3echoE",
+      "tier": "K",
+      "skills": [
+        "echo"
+      ],
+      "type": "access",
+      "spoken": "Type this letter.",
+      "symbolic": "E",
+      "promptMedia": null,
+      "choices": [
+        "E",
+        "D",
+        "F",
+        "C"
+      ],
+      "correct": "E",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 2,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3lrONM",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "O, N, M, _",
+      "promptMedia": null,
+      "choices": [
+        "L",
+        "K",
+        "M",
+        "J"
+      ],
+      "correct": "L",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 3,
+      "level": 3
+    },
+    {
+      "id": "fa.k.l3lrNML",
+      "tier": "K",
+      "skills": [
+        "letter_reverse"
+      ],
+      "type": "access",
+      "spoken": "What comes next going down?",
+      "symbolic": "N, M, L, _",
+      "promptMedia": null,
+      "choices": [
+        "K",
+        "J",
+        "L",
+        "I"
+      ],
+      "correct": "K",
+      "formats": [
+        "equation",
+        "choice"
+      ],
+      "weight": 3,
+      "level": 3
+    }
+  ]
+}

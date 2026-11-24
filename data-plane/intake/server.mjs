@@ -318,6 +318,7 @@ const server = createServer(async (req, res) => {
         by_question: payload.by_question || payload.byQuestion || null,
         by_format: payload.by_format || payload.byFormat || null,
         schedule: payload.schedule || null,
+        latency: payload.latency || null,
       });
     } catch (err) {
       return json(res, 500, {

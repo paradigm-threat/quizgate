@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import net.clevertree.quizgate.core.AccessPad;
 import net.clevertree.quizgate.core.AnswerHintPolicy;
 import net.clevertree.quizgate.core.Catalog;
 import net.clevertree.quizgate.core.DiagBreadcrumb;
@@ -155,6 +156,11 @@ public class QuizActivity extends Activity {
     private FrameLayout statsOverlay;
     private AppPrefs prefs;
     private DigitAnswer digitAnswer = new DigitAnswer();
+    /** Access-pack equation pad: single-key tries (outcome-only stats). */
+    private boolean accessPadMode;
+    private int accessPadFails;
+    private static final int ACCESS_PAD_MAX_FAILS = 3;
+    private static final long ACCESS_PAD_ERROR_MS = 1000L;
     private String symbolicTemplate = "";
     private Runnable countdownTick;
     private Runnable pulseAnim;
@@ -478,10 +484,15 @@ public class QuizActivity extends Activity {
         Question q = presented.question;
         spoken.setText(presented.spoken);
         digitAnswer = new DigitAnswer();
+        accessPadMode = false;
+        accessPadFails = 0;
         boolean trueFalse = presented.isTrueFalse();
         boolean choiceFormat = presented.isChoice();
-        boolean digitMode = !trueFalse && !choiceFormat
-                && "math".equals(q.type) && prefs.useDigitPadForMath();
+        boolean accessEq = !trueFalse && !choiceFormat && AccessPad.isAccessType(q);
+        // Access equation always uses the pad (rush blocker). Math: digit pad when preferred.
+        boolean digitMode = accessEq
+                || (!trueFalse && !choiceFormat
+                && "math".equals(q.type) && prefs.useDigitPadForMath());
         if (presented.displaySymbolic != null && !presented.displaySymbolic.isEmpty()) {
             symbolicTemplate = trueFalse ? presented.displaySymbolic : q.symbolic;
             symbolic.setVisibility(View.VISIBLE);
@@ -506,7 +517,12 @@ public class QuizActivity extends Activity {
             digitPad.setVisibility(View.VISIBLE);
             digitAnswerView.setVisibility(View.VISIBLE);
             refreshDigitAnswer();
-            buildDigitPad();
+            if (accessEq) {
+                accessPadMode = true;
+                buildAccessPad(q);
+            } else {
+                buildDigitPad();
+            }
         } else {
             // EQUATION with math_entry=multiple_choice, or RenderFormat.CHOICE
             digitPad.setVisibility(View.GONE);
@@ -914,6 +930,178 @@ public class QuizActivity extends Activity {
             digitPad.addView(line);
         }
         if (quizPan != null) quizPan.requestLayout();
+    }
+
+    /**
+     * Shared pad for access packs: letter or digit glyphs, single-key submit,
+     * up to {@link #ACCESS_PAD_MAX_FAILS} tries → one stats outcome.
+     */
+    private void buildAccessPad(Question q) {
+        refreshUiScale();
+        float dens = getResources().getDisplayMetrics().density;
+        boolean land = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        boolean compact = QuizUiScale.useCompactChrome(screenW, screenH, dens);
+        int keyH = QuizUiScale.scaledDp(
+                compact ? QuizUiScale.BASE_KEY_COMPACT_DP : QuizUiScale.BASE_KEY_DP,
+                uiScale, dens);
+        float keySp = QuizUiScale.sp(compact ? 22f : 28f, uiScale);
+        int keyMargin = QuizUiScale.scaledDp(compact ? 1 : 4, uiScale, dens);
+        List<String> glyphs = AccessPad.glyphsFor(q, prefs.getCurriculumLevel(), new Random());
+        boolean letterPad = AccessPad.isLetterToken(q.correct);
+        // 3×3 for letters (A–I / window); 3×3 + bottom 0-only row omitted for letters.
+        // Digits: 1–9 then optional 0 as 4th row center (phone layout without Clear/OK).
+        int padW = QuizUiScale.columnWidthPx(screenW, uiScale);
+        LinearLayout.LayoutParams padLp = new LinearLayout.LayoutParams(
+                padW, LinearLayout.LayoutParams.WRAP_CONTENT);
+        padLp.gravity = Gravity.CENTER_HORIZONTAL;
+        digitPad.setLayoutParams(padLp);
+
+        List<String> grid = new ArrayList<>();
+        String zeroGlyph = null;
+        for (String g : glyphs) {
+            if (!letterPad && "0".equals(g)) {
+                zeroGlyph = g;
+            } else {
+                grid.add(g);
+            }
+        }
+        int cols = 3;
+        for (int i = 0; i < grid.size(); i += cols) {
+            LinearLayout line = new LinearLayout(this);
+            line.setOrientation(LinearLayout.HORIZONTAL);
+            line.setGravity(Gravity.CENTER);
+            line.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            for (int c = 0; c < cols; c++) {
+                int idx = i + c;
+                if (idx >= grid.size()) break;
+                line.addView(makeAccessPadKey(grid.get(idx), keyH, keySp, keyMargin, dens, land));
+            }
+            digitPad.addView(line);
+        }
+        if (zeroGlyph != null) {
+            LinearLayout line = new LinearLayout(this);
+            line.setOrientation(LinearLayout.HORIZONTAL);
+            line.setGravity(Gravity.CENTER);
+            line.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            // spacer | 0 | spacer
+            View sp1 = new View(this);
+            sp1.setLayoutParams(new LinearLayout.LayoutParams(0, keyH, 1f));
+            line.addView(sp1);
+            line.addView(makeAccessPadKey(zeroGlyph, keyH, keySp, keyMargin, dens, land));
+            View sp2 = new View(this);
+            sp2.setLayoutParams(new LinearLayout.LayoutParams(0, keyH, 1f));
+            line.addView(sp2);
+            digitPad.addView(line);
+        }
+        if (quizPan != null) quizPan.requestLayout();
+    }
+
+    private Button makeAccessPadKey(String glyph, int keyH, float keySp, int keyMargin,
+                                    float dens, boolean land) {
+        Button btn = new Button(this);
+        btn.setAllCaps(false);
+        btn.setText(glyph);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, keySp);
+        btn.setTextColor(getResources().getColor(R.color.header, getTheme()));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(QuizUiScale.scaledDp(land ? 14 : 18, uiScale, dens));
+        bg.setStroke(QuizUiScale.scaledDp(3, uiScale, dens),
+                getResources().getColor(R.color.button_stroke, getTheme()));
+        bg.setColor(getResources().getColor(R.color.button, getTheme()));
+        btn.setBackground(bg);
+        btn.setTag(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, keyH, 1f);
+        lp.setMargins(keyMargin, keyMargin, keyMargin, keyMargin);
+        btn.setLayoutParams(lp);
+        final String token = glyph;
+        btn.setOnClickListener(v -> onAccessPadKey(btn, token));
+        return btn;
+    }
+
+    private void onAccessPadKey(Button btn, String glyph) {
+        if (!accessPadMode || session == null || session.isEnded() || finishing || inTransition) {
+            return;
+        }
+        if (!btn.isEnabled()) return;
+        PresentedQuestion q = session.getCurrent();
+        if (q == null) return;
+        String choice = AccessPad.normalizeToken(glyph);
+        digitAnswer.clear();
+        // Show pressed glyph in the answer readout
+        digitAnswerView.setText(choice);
+        if (symbolicTemplate != null && !symbolicTemplate.isEmpty()) {
+            symbolic.setText(symbolicTemplate.replace("_", choice));
+        }
+        if (q.isCorrect(choice)) {
+            // Success flash on the correct key, then submit once (outcome correct).
+            flashAccessPadSuccess(btn, () -> {
+                setDigitPadEnabled(false);
+                onChoice(choice);
+            });
+            return;
+        }
+        // Wrong: disable immediately; error anim; other keys stay clickable.
+        btn.setEnabled(false);
+        btn.setAlpha(0.35f);
+        accessPadFails++;
+        playAccessPadError(btn);
+        digitAnswer.clear();
+        refreshDigitAnswer();
+        refreshSymbolic();
+        if (accessPadFails >= ACCESS_PAD_MAX_FAILS) {
+            setDigitPadEnabled(false);
+            // One wrong outcome only — not per-key stats.
+            onChoice(choice);
+        }
+    }
+
+    private void playAccessPadError(Button btn) {
+        if (btn == null) return;
+        btn.animate().cancel();
+        btn.setScaleX(1f);
+        btn.setScaleY(1f);
+        Object tag = btn.getTag();
+        if (tag instanceof GradientDrawable) {
+            GradientDrawable bg = (GradientDrawable) tag;
+            bg.setColor(getResources().getColor(R.color.stats_mood_trying, getTheme()));
+            handler.postDelayed(() -> {
+                try {
+                    bg.setColor(getResources().getColor(R.color.button, getTheme()));
+                } catch (Exception ignored) {}
+            }, ACCESS_PAD_ERROR_MS);
+        }
+        btn.animate()
+                .scaleX(0.92f).scaleY(0.92f)
+                .setDuration(120)
+                .withEndAction(() -> btn.animate()
+                        .scaleX(1f).scaleY(1f)
+                        .setDuration(ACCESS_PAD_ERROR_MS - 120)
+                        .start())
+                .start();
+    }
+
+    private void flashAccessPadSuccess(Button btn, Runnable then) {
+        if (btn == null) {
+            if (then != null) then.run();
+            return;
+        }
+        Object tag = btn.getTag();
+        if (tag instanceof GradientDrawable) {
+            ((GradientDrawable) tag).setColor(getResources().getColor(R.color.accent, getTheme()));
+            btn.setTextColor(Color.WHITE);
+        }
+        btn.animate()
+                .scaleX(1.08f).scaleY(1.08f)
+                .setDuration(180)
+                .withEndAction(() -> handler.postDelayed(() -> {
+                    if (then != null) then.run();
+                }, 220))
+                .start();
     }
 
     private Button styleChoiceButton(String label, Integer chipColor) {

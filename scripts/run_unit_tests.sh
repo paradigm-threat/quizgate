@@ -39,6 +39,8 @@ echo "== QuestionPickerTest =="
 java -cp "$OUT" QuestionPickerTest
 echo "== MathPresentationTest =="
 java -cp "$OUT" MathPresentationTest
+echo "== AccessPadTest =="
+java -cp "$OUT" AccessPadTest
 echo "== PerfPolicyTest =="
 java -cp "$OUT" PerfPolicyTest
 echo "== GatePolicyTest =="
@@ -49,6 +51,8 @@ echo "== ScreenLockPolicyTest =="
 java -cp "$OUT" ScreenLockPolicyTest
 echo "== CurriculumParserTest =="
 java -cp "$OUT" CurriculumParserTest "$ROOT/UnlockQuiz/assets/curricula/basic-math"
+echo "== FirstAccessPackTest =="
+java -cp "$OUT" FirstAccessPackTest "$ROOT/UnlockQuiz/assets/curricula/first-access"
 echo "== TimeEarnTest =="
 java -cp "$OUT" TimeEarnTest
 echo "== PostUnlockPlayOfferTest =="

@@ -91,6 +91,7 @@ Built by `TelemetryPayload` / `Diag.buildPayload()`. Includes:
 - `day` + `today` counts (including lock/play)
 - optional `by_question` / `by_format` (`equation`|`true_false`|`choice` → shown/correct/wrong/skipped)
 - optional `schedule` health: `a11y`, `armed`, kind counts (`alarm_fired`, `arm_blocked`, `boot_skip`, …), `interactive_ms`, and `fire_status` (`ok`|`a11y_off`|`never_armed`|`no_fire_while_interactive`|`idle_or_off`|`unknown`)
+- optional `latency` bands for correct/wrong only (TimeEarn thresholds): `fast_lt_3s` / `mid_3_10s` / `slow_ge_10s` / `n` — no raw ms (rush signal for SI)
 
 **Zero-day upload:** closed barrier days missing from `days.jsonl` (last 3) still sync as empty rollups + schedule health so SI can see “no asks.” A local `files/stats/uploaded_days.txt` ledger remembers closed days already sent; today ≤1 snapshot/day.
 

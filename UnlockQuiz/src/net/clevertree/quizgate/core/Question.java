@@ -53,11 +53,16 @@ public final class Question {
 
     public boolean isCorrect(String choice) {
         if (correct.equals(choice)) return true;
+        if (choice == null) return false;
         // Digit-pad / typed numeric answers: "07" vs "7", "10" vs "10"
-        if ("math".equals(type) && choice != null) {
+        if (("math".equals(type) || "access".equals(type))) {
             try {
                 return Integer.parseInt(choice) == Integer.parseInt(correct);
             } catch (NumberFormatException ignored) {}
+            if ("access".equals(type) && choice.length() == 1 && correct.length() == 1) {
+                return Character.toUpperCase(choice.charAt(0))
+                        == Character.toUpperCase(correct.charAt(0));
+            }
         }
         return false;
     }
@@ -79,9 +84,9 @@ public final class Question {
             throw new IllegalStateException(id + " correct not in choices: " + correct + " " + choices);
         }
         if (weight < 1) throw new IllegalStateException(id + " weight must be ≥1");
-        if ("math".equals(type)) {
+        if ("math".equals(type) || "access".equals(type)) {
             if (symbolic == null || symbolic.isEmpty()) {
-                throw new IllegalStateException(id + " math needs symbolic");
+                throw new IllegalStateException(id + " " + type + " needs symbolic");
             }
         }
         if (labels != null && labels.size() != choices.size()) {

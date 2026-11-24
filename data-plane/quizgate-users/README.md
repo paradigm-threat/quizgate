@@ -30,4 +30,8 @@ Binaries live on Intake PVC (`cache://…`), never in git. SI narrative for a dr
 git push git://iad1.relaygateway.net:9418/quizgate-users.git users
 ```
 
+On iad1, batch uses `QUIZGATE_PUBLISH_REMOTES=git://127.0.0.1:9418/quizgate-users.git`.  
+`/var/quizgate/users` `origin` must be that URL — **never** `/opt/relay/data/quizgate-users.git`.  
+Do **not** `chown` the Relay bare repo to `ubuntu` (breaks index warm).
+
 Service author for tip commits: `quizgate-batch` / `quizgate-batch@quizgate.app`.
